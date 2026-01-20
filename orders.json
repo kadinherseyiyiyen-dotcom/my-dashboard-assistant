@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": 1,
+    "masa": 1,
+    "garson": "WhatsApp Sipariş",
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1
+      }
+    ],
+    "toplam": 1290,
+    "zaman": "17:11",
+    "tarih": "20.01.2026",
+    "durum": "kapali",
+    "kaynak": "kasa",
+    "kapanma_zamani": "17:12",
+    "kapanma_tarih": "20.01.2026",
+    "odeme_turu": "kart",
+    "rehber_masa": true,
+    "indirim": 0,
+    "indirimli_tutar": 1290
+  },
+  {
+    "id": 2,
+    "masa": 15,
+    "garson": "WhatsApp Sipariş",
+    "items": [
+      {
+        "id": 3,
+        "name": "Hellim",
+        "price": 350,
+        "adet": 1
+      },
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1
+      }
+    ],
+    "toplam": 1640,
+    "zaman": "17:14",
+    "tarih": "20.01.2026",
+    "durum": "aktif",
+    "kaynak": "kasa"
+  }
+]

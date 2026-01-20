@@ -544,7 +544,7 @@
             mevcutSiparisleriGoster();
         }
         
-         {
+        function loadAktifSiparisler() {
             if (siparisInFlight) return;
             siparisInFlight = true;
             fetch('/api/kasa-init')
@@ -675,7 +675,7 @@
             siparisGuncelle();
         }
 
-        function siparisGonder() { {
+        function siparisGonder() {
             if (siparisSubmitInFlight) return;
             if (siparis.length === 0) {
                 alert('Lütfen sipariş ekleyin!');
