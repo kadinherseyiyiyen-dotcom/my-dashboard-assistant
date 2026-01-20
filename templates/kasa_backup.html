@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasa Paneli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: none;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            font-size: 1rem;
+            padding: 1rem 2rem;
+        }
+        .btn-secondary { 
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #2d3748;
+        }
+        .btn-danger { 
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
+        }
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        }
+        .stat-card.aktif-masa {
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stat-card.toplam-siparis {
+            --gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .stat-card.gunluk-ciro {
+            --gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .stat-card.gunluk-komisyon {
+            --gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            opacity: 0.8;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            color: #4a5568;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .section {
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-header .btn {
+            background: #3182ce !important;
+            color: white !important;
+        }
+        
+        .section-header .btn-secondary {
+            background: #718096 !important;
+            color: white !important;
+        }
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+        .table-card {
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            background: #f7fafc;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .table-name {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .table-amount {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #38a169;
+        }
+        .table-status {
+            font-size: 0.625rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+        .table-card:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .table-card.occupied {
+            border-color: #e53e3e;
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #742a2a;
+        }
+        .table-card.occupied .table-amount {
+            color: #c53030;
+        }
+        .orders-list {
+            padding: 1rem;
+        }
+        .order-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .order-info h4 {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .order-details {
+            font-size: 0.75rem;
+            color: #718096;
+        }
+        .order-amount {
+            font-weight: 700;
+            color: #38a169;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+        }
+        .bill-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .item-controls {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.25rem;
+        }
+        .quantity-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            background: #3182ce;
+            color: white;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quantity-btn:hover {
+            background: #2c5282;
+        }
+        .bill-total {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .bill-total-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+        .payment-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .payment-btn {
+            padding: 1.5rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            min-height: 80px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .payment-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .payment-btn:active {
+            transform: translateY(0);
+        }
+        .payment-btn.nakit {
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            color: white;
+        }
+        .payment-btn.nakit:hover {
+            background: linear-gradient(135deg, #2f855a, #276749);
+        }
+        .payment-btn.kart {
+            background: linear-gradient(135deg, #3182ce, #2c5282);
+            color: white;
+        }
+        .payment-btn.kart:hover {
+            background: linear-gradient(135deg, #2c5282, #2a4365);
+        }
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        @media (max-width: 640px) {
+            .header {
+                padding: 0.75rem;
+            }
+            .header h1 {
+                font-size: 1.125rem;
+            }
+            .btn {
+                padding: 0.375rem 0.5rem;
+                font-size: 0.625rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .tables-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+            .table-card {
+                padding: 0.75rem;
+                min-height: 70px;
+            }
+            .table-name {
+                font-size: 0.75rem;
+            }
+            .table-amount {
+                font-size: 0.875rem;
+            }
+            .order-item {
+                padding: 0.75rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            .order-amount {
+                align-self: flex-end;
+            }
+            .modal-content {
+                width: 95%;
+                margin: 2% auto;
+                padding: 1rem;
+            }
+            .payment-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* ========== MODERN POS THEME OVERRIDES (ADDED) ========== */
+
+        :root{
+          --bg: #f6f7fb;
+          --card: #ffffff;
+          --text: #0f172a;
+          --muted: #64748b;
+          --border: rgba(15, 23, 42, 0.08);
+
+          --primary: #4f46e5;     /* indigo */
+          --primary2:#7c3aed;     /* purple */
+          --success:#16a34a;
+          --warning:#f59e0b;
+          --danger:#ef4444;
+
+          --r-lg: 18px;
+          --r-md: 14px;
+          --shadow-sm: 0 6px 18px rgba(15,23,42,.06);
+          --shadow-md: 0 16px 40px rgba(15,23,42,.10);
+        }
+
+        body{
+          background: var(--bg);
+          color: var(--text);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        .header{
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          padding: 14px 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.14);
+          background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
+          box-shadow: 0 12px 40px rgba(15,23,42,.18);
+          gap: 10px;
+        }
+
+        .header h1{
+          font-size: 1.25rem;
+          letter-spacing: -0.02em;
+        }
+
+        .btn{
+          border-radius: 14px;
+          padding: 10px 14px;
+          font-size: 0.875rem;
+          box-shadow: 0 6px 16px rgba(15,23,42,.12);
+          transform: translateY(0);
+        }
+
+        .btn:hover{
+          transform: translateY(-1px);
+        }
+
+        .btn:active{
+          transform: translateY(0);
+        }
+
+        .btn-primary{
+          background: rgba(255,255,255,0.16);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.18);
+        }
+
+        .btn-secondary{
+          background: rgba(255,255,255,0.10);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.16);
+        }
+
+        .btn-danger{
+          background: rgba(239,68,68,0.92);
+          color: #fff;
+        }
+
+        .time-display{
+          color: rgba(255,255,255,0.92);
+          font-weight: 700;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+
+        .container{
+          padding: 16px;
+        }
+
+        .stats-grid{
+          gap: 14px;
+          margin-bottom: 16px;
+        }
+
+        .stat-card{
+          border-radius: var(--r-lg);
+          box-shadow: var(--shadow-sm);
+          border: 1px solid var(--border);
+          min-height: 120px;
+        }
+
+        .stat-card:hover{
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-md);
+        }
+
+        .stat-number{
+          font-size: 2.2rem;
+          letter-spacing: -0.03em;
+        }
+
+        .stat-label{
+          color: var(--muted);
+          text-transform: none;
+          letter-spacing: 0;
+          font-weight: 700;
+        }
+
+        a.stat-card{
+          border: none !important;
+          box-shadow: var(--shadow-md) !important;
+          border-radius: var(--r-lg) !important;
+        }
+        a.stat-card:hover{
+          transform: translateY(-3px) !important;
+        }
+
+        .section{
+          border-radius: var(--r-lg);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-sm);
+          overflow: hidden;
+        }
+
+        .section-header{
+          padding: 14px 16px;
+          display: flex;
+          justify-content: space-between; /* fixes invalid 'between' */
+          align-items: center;
+          gap: 10px;
+          background: rgba(255,255,255,0.7);
+          backdrop-filter: blur(8px);
+        }
+
+        .section-title{
+          font-size: 1.05rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+
+        .tables-grid{
+          padding: 14px;
+          gap: 12px;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        }
+
+        .table-card{
+          border-radius: 16px;
+          border: 1px solid var(--border);
+          background: var(--card);
+          box-shadow: 0 8px 18px rgba(15,23,42,.06);
+          min-height: 104px;
+          padding: 14px;
+        }
+
+        .table-card:hover{
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(15,23,42,.10);
+        }
+
+        .table-name{
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: var(--text);
+        }
+
+        .table-amount{
+          margin-top: 4px;
+          font-size: 1.05rem;
+          font-weight: 900;
+          color: var(--success);
+        }
+
+        .table-status{
+          margin-top: 6px;
+          font-size: 0.78rem;
+          color: var(--muted);
+        }
+
+        .table-card.occupied{
+          border: 1px solid rgba(239,68,68,0.30);
+          background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(255,255,255,1));
+          color: var(--text);
+        }
+        .table-card.occupied .table-amount{
+          color: var(--danger);
+        }
+
+        .orders-list{
+          padding: 8px 14px 14px;
+        }
+
+        .order-item{
+          border-radius: 16px;
+          border: 1px solid var(--border);
+          background: var(--card);
+          box-shadow: 0 8px 18px rgba(15,23,42,.05);
+          margin-top: 10px;
+        }
+
+        .order-info h4{
+          font-size: 0.95rem;
+          font-weight: 800;
+        }
+
+        .order-details{
+          color: var(--muted);
+        }
+
+        .order-amount{
+          font-size: 1rem;
+          font-weight: 900;
+          color: var(--success);
+        }
+
+        .modal{
+          background: rgba(2,6,23,0.55);
+          backdrop-filter: blur(6px);
+        }
+        .modal-content{
+          border-radius: 20px;
+          border: 1px solid var(--border);
+          box-shadow: 0 30px 80px rgba(0,0,0,.25);
+        }
+
+        .modal-title{
+          font-weight: 900;
+          letter-spacing: -0.02em;
+        }
+
+        .close-btn{
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+        }
+        .close-btn:hover{
+          background: rgba(15,23,42,0.06);
+        }
+
+        .quantity-btn{
+          width: 28px;
+          height: 28px;
+          font-size: 0.9rem;
+          border-radius: 999px;
+        }
+
+        .payment-btn{
+          border-radius: 18px;
+          box-shadow: var(--shadow-md);
+        }
+        .payment-btn.nakit{
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+        .payment-btn.kart{
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        @media (max-width: 640px){
+          .header{
+            padding: 10px 12px;
+          }
+          .header-actions{
+            gap: 8px;
+          }
+          .btn{
+            padding: 9px 12px;
+            font-size: 0.82rem;
+          }
+          .tables-grid{
+            grid-template-columns: repeat(3, 1fr);
+          }
+          .table-card{
+            min-height: 96px;
+            padding: 12px;
+          }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💼 Kasa Paneli</h1>
+        <div class="header-actions">
+            <span class="time-display" id="current-time"></span>
+            <a href="/komisyonlar" class="btn btn-primary">💰 Komisyonlar</a>
+            <a href="/dashboard" class="btn btn-primary">📊 Dashboard</a>
+            <a href="/istatistik" class="btn btn-primary">📊 İstatistik</a>
+            <a href="/menu-yonetim" class="btn btn-secondary">⚙️ Ayarlar</a>
+            <button class="btn btn-secondary" onclick="yenile()">🔄</button>
+            <a href="/logout" class="btn btn-danger">🚪 Çıkış</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card aktif-masa">
+                <span class="stat-icon">🏠</span>
+                <div class="stat-number" id="aktif-masa-sayisi">0</div>
+                <div class="stat-label">Aktif Masa</div>
+            </div>
+            <a href="/siparis-gir" class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 1.5rem; --gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
+                    <div style="font-size: 1rem; font-weight: 700;">Yeni Sipariş</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">🏪 Masa Durumları</h2>
+                <button class="btn btn-primary" onclick="masaTransfer()">🔄 Masa Transfer</button>
+                <button class="btn btn-secondary" onclick="masaYonetimi()">⚙️ Masa Ayarları</button>
+            </div>
+            <div class="tables-grid" id="masalar"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">📋 Aktif Siparişler</h2>
+            </div>
+            <div class="orders-list" id="siparisler"></div>
+        </div>
+    </div>
+
+    <!-- Masa Transfer Modal -->
+    <div id="transfer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Masa Transfer</h3>
+                <button class="close-btn" onclick="transferModalKapat()">&times;</button>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Kaynak Masa:</label>
+                <select id="kaynak-masa" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                    <option value="">Masa seçiniz</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Hedef Masa:</label>
+                <select id="hedef-masa" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                    <option value="">Masa seçiniz</option>
+                </select>
+            </div>
+            <div id="transfer-detay" style="margin: 1rem 0; padding: 1rem; background: #f7fafc; border-radius: 0.375rem; display: none;">
+                <h4 style="margin-bottom: 0.5rem;">Transfer Edilecek Siparişler:</h4>
+                <div id="transfer-liste"></div>
+            </div>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button class="btn btn-success" onclick="transferYap()">Transfer Yap</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hesap Modal -->
+    <div id="hesap-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="hesap-baslik">Hesap Detayı</h3>
+                <button class="close-btn" onclick="modalKapat()">&times;</button>
+            </div>
+            <div id="hesap-icerik"></div>
+        </div>
+    </div>
+
+    <!-- Masa Yönetimi Modal -->
+    <div id="masa-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Masa İsimleri</h3>
+                <button class="close-btn" onclick="masaModalKapat()">&times;</button>
+            </div>
+            <div id="masa-icerik"></div>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button class="btn btn-success" onclick="masaKaydet()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mevcutMasa = null;
+        let allOrders = [];
+        let tables = {};
+        let rehberMasalar = {};
+
+        function saatGuncelle() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('tr-TR');
+        }
+
+        function yenile() {
+            Promise.all([
+                fetch('/api/siparisler').then(r => r.json()),
+                fetch('/api/tables').then(r => r.json()),
+                fetch('/api/rehber-masalar').then(r => r.json())
+            ]).then(([orders, tableData, rehberData]) => {
+                allOrders = orders;
+                tables = tableData;
+                rehberMasalar = rehberData;
+                masalariGuncelle(orders);
+                siparisleriGuncelle(orders);
+                istatistikleriGuncelle(orders);
+            });
+        }
+
+        function istatistikleriGuncelle(orders) {
+            const aktifOrders = orders.filter(o => o.durum === 'aktif');
+            const aktifMasalar = [...new Set(aktifOrders.map(o => o.masa))];
+            
+            const bugunISO = new Date().toISOString().split('T')[0];
+            const bugunTR = new Date().toLocaleDateString('tr-TR');
+            const gunlukSiparisler = orders.filter(o => {
+                const orderDate = o.kapanma_tarih || o.tarih;
+                return (orderDate === bugunISO || orderDate === bugunTR) && o.durum === 'kapali';
+            });
+            const brutCiro = gunlukSiparisler.reduce((sum, o) => sum + (o.indirimli_tutar || o.toplam), 0);
+            
+            let gunlukKomisyon = 0;
+            gunlukSiparisler.forEach(order => {
+                if (rehberMasalar[order.masa]) {
+                    order.items.forEach(item => {
+                        if (item.name === 'Serpme Kahvaltı') {
+                            gunlukKomisyon += item.adet * 100;
+                        }
+                    });
+                }
+            });
+            
+            const netCiro = brutCiro - gunlukKomisyon;
+
+            document.getElementById('aktif-masa-sayisi').textContent = aktifMasalar.length;
+
+            // Not: Bu ID'ler kasa ekranında yok. Eğer eklemek istersen söyle, ben karta dönüştüreyim.
+            // document.getElementById('toplam-siparis').textContent = gunlukSiparisler.length;
+            // document.getElementById('gunluk-ciro').textContent = netCiro + '₺';
+            // document.getElementById('gunluk-komisyon').textContent = gunlukKomisyon + '₺';
+        }
+
+        function masalariGuncelle(orders) {
+            const masalar = document.getElementById('masalar');
+            masalar.innerHTML = '';
+
+            const masaData = {};
+            
+            orders.filter(o => o.durum === 'aktif').forEach(order => {
+                if (!masaData[order.masa]) {
+                    masaData[order.masa] = { toplam: 0, siparisler: [], garsonlar: new Set() };
+                }
+                masaData[order.masa].toplam += order.toplam;
+                masaData[order.masa].siparisler.push(order);
+                masaData[order.masa].garsonlar.add(order.garson);
+            });
+
+            for (let i = 1; i <= 20; i++) {
+                const div = document.createElement('div');
+                div.className = masaData[i] ? 'table-card occupied' : 'table-card';
+                div.onclick = () => masaDetay(i);
+                
+                const garsonlar = masaData[i] ? Array.from(masaData[i].garsonlar).join(', ') : '';
+                const rehberIcon = rehberMasalar[i] ? '👥' : '';
+                
+                div.innerHTML = `
+                    <div class="table-name">${tables[i] || 'Masa ' + i} ${rehberIcon}</div>
+                    <div class="table-amount">${masaData[i] ? masaData[i].toplam + ' ₺' : 'Boş'}</div>
+                    <div class="table-status">${masaData[i] ? garsonlar : 'Müsait'}</div>
+                `;
+                masalar.appendChild(div);
+            }
+        }
+
+        function siparisleriGuncelle(orders) {
+            const siparisler = document.getElementById('siparisler');
+            siparisler.innerHTML = '';
+
+            const aktifOrders = orders.filter(o => o.durum === 'aktif');
+            
+            if (aktifOrders.length === 0) {
+                siparisler.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Aktif sipariş bulunmuyor.</div>';
+                return;
+            }
+
+            aktifOrders.forEach(order => {
+                const div = document.createElement('div');
+                div.className = 'order-item';
+                
+                const items = order.items.map(item => `${item.name} x${item.adet}`).join(', ');
+                const kaynak = order.kaynak === 'kasa' ? '📱' : '👨🍳';
+                
+                div.innerHTML = `
+                    <div class="order-info">
+                        <h4>${kaynak} ${tables[order.masa] || 'Masa ' + order.masa}</h4>
+                        <div class="order-details">${order.garson} - ${order.zaman}</div>
+                        <div class="order-details">${items}</div>
+                    </div>
+                    <div class="order-amount">${order.toplam} ₺</div>
+                `;
+                siparisler.appendChild(div);
+            });
+        }
+
+        function masaDetay(masa) {
+            mevcutMasa = masa;
+            fetch(`/api/hesap/${masa}`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('hesap-modal');
+                    const baslik = document.getElementById('hesap-baslik');
+                    const icerik = document.getElementById('hesap-icerik');
+
+                    baslik.textContent = `${tables[masa] || 'Masa ' + masa} Hesabı`;
+
+                    if (data.siparisler.length === 0) {
+                        icerik.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Bu masada aktif sipariş yok.</div>';
+                        modal.style.display = 'block';
+                        return;
+                    }
+
+                    let hesapHTML = '';
+                    
+                    data.siparisler.forEach(siparis => {
+                        hesapHTML += `<div style="margin-bottom: 1rem; padding: 1rem; background: #f7fafc; border-radius: 0.375rem;">
+                            <strong>${siparis.garson}</strong> - ${siparis.zaman}<br>`;
+                        
+                        siparis.items.forEach(item => {
+                            hesapHTML += `
+                                <div class="bill-item">
+                                    <div>
+                                        <span>${item.name} x${item.adet}</span>
+                                        <div class="item-controls">
+                                            <button class="quantity-btn" onclick="hesapItemAzalt('${siparis.id}', ${item.id})">-</button>
+                                            <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', ${item.id})">+</button>
+                                        </div>
+                                    </div>
+                                    <span>${item.price * item.adet} ₺</span>
+                                </div>
+                            `;
+                        });
+                        hesapHTML += '</div>';
+                    });
+
+                    hesapHTML += `
+                        <div class="bill-total">
+                            <div style="margin-bottom: 0.5rem;">Toplam Tutar</div>
+                            <div class="bill-total-amount">${data.toplam} ₺</div>
+                            <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #38a169; font-weight: 600;">
+                                Nakit İndirimi (%10): ${Math.round(data.toplam * 0.9)} ₺
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin: 1rem 0;">
+                            <button class="btn" style="background: ${rehberMasalar[masa] ? '#38a169' : '#718096'} !important; color: white !important; padding: 0.75rem 1.5rem;" onclick="rehberToggle(${masa})">
+                                ${rehberMasalar[masa] ? '👥 Rehberli Masa' : '👤 Rehbersiz Masa'}
+                            </button>
+                        </div>
+                        <div class="payment-buttons">
+                            <button class="payment-btn nakit" onclick="hesapKapat('nakit')">
+                                <span style="font-size: 2rem;">💵</span>
+                                <div>
+                                    <div>NAKİT</div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">%10 İndirim</div>
+                                </div>
+                            </button>
+                            <button class="payment-btn kart" onclick="hesapKapat('kart')">
+                                <span style="font-size: 2rem;">💳</span>
+                                <div>
+                                    <div>KART</div>
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Tam Fiyat</div>
+                                </div>
+                            </button>
+                        </div>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn btn-danger" onclick="siparisIptal()" style="background: #e53e3e; color: white; padding: 0.75rem 1.5rem;">
+                                ❌ Siparişi İptal Et
+                            </button>
+                        </div>
+                    `;
+
+                    icerik.innerHTML = hesapHTML;
+                    modal.style.display = 'block';
+                });
+        }
+
+        function hesapKapat(odemeTuru) {
+            if (!mevcutMasa) return;
+            
+            const odemeTuruText = odemeTuru === 'kart' ? 'KART' : 'NAKİT';
+            
+            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} hesabını ${odemeTuruText} ile kapatmak istediğinizden emin misiniz?`)) {
+                fetch(`/api/hesap_kapat/${mevcutMasa}`, { 
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({odeme_turu: odemeTuru})
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        let mesaj = `Hesap ${odemeTuruText} ile başarıyla kapatıldı!`;
+                        if (result.indirimli_tutar) {
+                            mesaj += `\nAlınacak tutar: ${result.indirimli_tutar} ₺`;
+                        }
+                        alert(mesaj);
+                        modalKapat();
+                        yenile();
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Bir hata oluştu: ' + error.message);
+                });
+            }
+        }
+
+        function masaTransfer() {
+            const modal = document.getElementById('transfer-modal');
+            const kaynakSelect = document.getElementById('kaynak-masa');
+            const hedefSelect = document.getElementById('hedef-masa');
+            
+            kaynakSelect.innerHTML = '<option value="">Masa seçiniz</option>';
+            hedefSelect.innerHTML = '<option value="">Masa seçiniz</option>';
+            
+            for (let i = 1; i <= 20; i++) {
+                const option1 = document.createElement('option');
+                option1.value = i;
+                option1.textContent = tables[i] || 'Masa ' + i;
+                kaynakSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = i;
+                option2.textContent = tables[i] || 'Masa ' + i;
+                hedefSelect.appendChild(option2);
+            }
+            
+            kaynakSelect.onchange = function() {
+                if (this.value) {
+                    transferDetayGoster(parseInt(this.value));
+                } else {
+                    document.getElementById('transfer-detay').style.display = 'none';
+                }
+            };
+            
+            modal.style.display = 'block';
+        }
+        
+        function transferDetayGoster(masaNo) {
+            const aktifOrders = allOrders.filter(o => o.durum === 'aktif' && o.masa === masaNo);
+            const detayDiv = document.getElementById('transfer-detay');
+            const listeDiv = document.getElementById('transfer-liste');
+            
+            if (aktifOrders.length === 0) {
+                detayDiv.style.display = 'none';
+                return;
+            }
+            
+            let html = '';
+            let toplam = 0;
+            
+            aktifOrders.forEach(order => {
+                const items = order.items.map(item => `${item.name} x${item.adet}`).join(', ');
+                html += `
+                    <div style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                        <strong>${order.garson}</strong> - ${order.zaman}<br>
+                        <small>${items}</small><br>
+                        <span style="color: #38a169; font-weight: bold;">${order.toplam} ₺</span>
+                    </div>
+                `;
+                toplam += order.toplam;
+            });
+            
+            html += `<div style="text-align: center; margin-top: 1rem; font-weight: bold; color: #1a202c;">Toplam: ${toplam} ₺</div>`;
+            
+            listeDiv.innerHTML = html;
+            detayDiv.style.display = 'block';
+        }
+        
+        function transferYap() {
+            const kaynakMasa = parseInt(document.getElementById('kaynak-masa').value);
+            const hedefMasa = parseInt(document.getElementById('hedef-masa').value);
+            
+            if (!kaynakMasa || !hedefMasa) {
+                alert('Lütfen kaynak ve hedef masa seçiniz!');
+                return;
+            }
+            
+            if (kaynakMasa === hedefMasa) {
+                alert('Kaynak ve hedef masa aynı olamaz!');
+                return;
+            }
+            
+            if (confirm(`${tables[kaynakMasa] || 'Masa ' + kaynakMasa} siparişlerini ${tables[hedefMasa] || 'Masa ' + hedefMasa} masasına transfer etmek istediğinizden emin misiniz?`)) {
+                fetch('/api/masa-transfer', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        kaynak_masa: kaynakMasa,
+                        hedef_masa: hedefMasa
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert(`Transfer başarıyla tamamlandı! ${result.transfer_count} sipariş taşındı.`);
+                        transferModalKapat();
+                        yenile();
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Bir hata oluştu: ' + error.message);
+                });
+            }
+        }
+        
+        function transferModalKapat() {
+            document.getElementById('transfer-modal').style.display = 'none';
+            document.getElementById('transfer-detay').style.display = 'none';
+        }
+
+        function siparisIptal() {
+            if (!mevcutMasa) return;
+            
+            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} siparişlerini iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve ciroyu etkilemez.`)) {
+                fetch(`/api/siparis-iptal/${mevcutMasa}`, { 
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert(`${result.iptal_count} sipariş başarıyla iptal edildi!`);
+                        modalKapat();
+                        yenile();
+                    } else {
+                        alert('Hata: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Bir hata oluştu: ' + error.message);
+                });
+            }
+        }
+
+        function modalKapat() {
+            document.getElementById('hesap-modal').style.display = 'none';
+        }
+
+        function masaYonetimi() {
+            const modal = document.getElementById('masa-modal');
+            const icerik = document.getElementById('masa-icerik');
+            
+            let html = '';
+            for (let i = 1; i <= 15; i++) {
+                html += `
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Masa ${i}:</label>
+                        <input type="text" id="masa-${i}" value="${tables[i] || 'Masa ' + i}" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                    </div>
+                `;
+            }
+            
+            icerik.innerHTML = html;
+            modal.style.display = 'block';
+        }
+
+        function masaKaydet() {
+            const newTables = {};
+            for (let i = 1; i <= 15; i++) {
+                newTables[i] = document.getElementById(`masa-${i}`).value;
+            }
+            
+            fetch('/api/tables', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(newTables)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Masa isimleri başarıyla kaydedildi!');
+                    masaModalKapat();
+                    yenile();
+                }
+            });
+        }
+
+        function masaModalKapat() {
+            document.getElementById('masa-modal').style.display = 'none';
+        }
+
+        function hesapItemArttir(siparisId, itemId) {
+            fetch(`/api/hesap-item-guncelle`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    siparis_id: siparisId,
+                    item_id: itemId,
+                    action: 'arttir'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    masaDetay(mevcutMasa);
+                    yenile();
+                }
+            });
+        }
+
+        function hesapItemAzalt(siparisId, itemId) {
+            fetch(`/api/hesap-item-guncelle`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    siparis_id: siparisId,
+                    item_id: itemId,
+                    action: 'azalt'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    masaDetay(mevcutMasa);
+                    yenile();
+                }
+            });
+        }
+
+        function rehberToggle(masa) {
+            fetch(`/api/rehber-masa/${masa}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        rehberMasalar[masa] = result.rehber;
+                        masaDetay(masa);
+                        yenile();
+                    }
+                });
+        }
+
+        saatGuncelle();
+        yenile();
+        
+        setInterval(saatGuncelle, 1000);
+        setInterval(yenile, 10000);
+
+        window.onclick = function(event) {
+            const hesapModal = document.getElementById('hesap-modal');
+            const masaModal = document.getElementById('masa-modal');
+            if (event.target == hesapModal) modalKapat();
+            if (event.target == masaModal) masaModalKapat();
+            if (event.target == document.getElementById('transfer-modal')) transferModalKapat();
+        }
+    </script>
+</body>
+</html>

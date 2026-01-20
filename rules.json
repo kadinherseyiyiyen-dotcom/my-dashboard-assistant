@@ -1,0 +1,12 @@
+[
+  {
+    "id": "late_night",
+    "when": { "hour_gte": 23 },
+    "say": "Geç oldu: yarın erken kalkacaksan ekranını kapatmayı düşün."
+  },
+  {
+    "id": "morning_focus",
+    "when": { "hour_lt": 11 },
+    "say": "Günaydın! Bugün 1 küçük hedef seç: 25 dk odak + 1 işi bitir."
+  }
+]

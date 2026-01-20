@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tip Havuzu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #374151;
+        }
+        input[type="date"], input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th {
+            background: #f9fafb;
+            font-weight: 700;
+            color: #374151;
+        }
+        .row-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .summary-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Tip Havuzu (Havuz Tip) Da&#287;&#305;t&#305;m&#305;</h1>
+        <div>
+            <a href="/kasa" class="btn btn-secondary">&#8592; Kasa</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="form-grid">
+                <div>
+                    <label for="period-start">Ba&#351;lang&#305;&#231;</label>
+                    <input type="date" id="period-start">
+                </div>
+                <div>
+                    <label for="period-end">Biti&#351;</label>
+                    <input type="date" id="period-end">
+                </div>
+                <div>
+                    <label for="tip-total">Toplam Tip (&#8378;)</label>
+                    <input type="number" id="tip-total" min="0" step="0.01" value="0">
+                </div>
+                <div class="row-actions">
+                    <button class="btn btn-primary" onclick="loadPeriod()">D&#246;nemi Y&#252;kle</button>
+                    <button class="btn btn-secondary" onclick="loadWorkdaysFromAttendance()">G&#252;nleri Getir</button>
+                    <button class="btn btn-success" onclick="calculatePayouts()">Hesapla</button>
+                    <button class="btn btn-danger" onclick="savePeriod()">Kaydet</button>
+                </div>
+            </div>
+            <div class="hint">Varsay&#305;lan d&#246;nem: bu haftan&#305;n Pazartesi-Pazar aral&#305;&#287;&#305;. &#304;stersen tarihleri de&#287;i&#351;tirebilirsin.</div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <h3>Garson G&#252;nleri</h3>
+                <button class="btn btn-primary" onclick="addRow()">+ Garson Ekle</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Garson</th>
+                        <th>&#199;al&#305;&#351;ma G&#252;n&#252;</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="waiter-rows"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>Da&#287;&#305;t&#305;m Sonu&#231;lar&#305;</h3>
+            <div class="summary" style="margin: 0.75rem 0 1rem;">
+                <div class="summary-item">Toplam Tip: <span id="summary-total">0&#8378;</span></div>
+                <div class="summary-item">Toplam G&#252;n: <span id="summary-days">0</span></div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Garson</th>
+                        <th>G&#252;n</th>
+                        <th>&#214;deme (&#8378;)</th>
+                    </tr>
+                </thead>
+                <tbody id="payout-rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function startOfWeek(date) {
+            const day = date.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            const d = new Date(date);
+            d.setDate(date.getDate() + diff);
+            return d;
+        }
+
+        function endOfWeek(date) {
+            const start = startOfWeek(date);
+            const d = new Date(start);
+            d.setDate(start.getDate() + 6);
+            return d;
+        }
+
+        function formatDateInput(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function setDefaultWeek() {
+            const now = new Date();
+            document.getElementById('period-start').value = formatDateInput(startOfWeek(now));
+            document.getElementById('period-end').value = formatDateInput(endOfWeek(now));
+        }
+
+        function addRow(name = '', days = 0) {
+            const tbody = document.getElementById('waiter-rows');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="waiter-name" value="${name}"></td>
+                <td><input type="number" class="waiter-days" min="0" step="1" value="${days}"></td>
+                <td><button class="btn btn-secondary" onclick="removeRow(this)">Sil</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr').remove();
+        }
+
+        function collectWorkdays() {
+            const names = Array.from(document.querySelectorAll('.waiter-name'));
+            const days = Array.from(document.querySelectorAll('.waiter-days'));
+            const workdays = {};
+            names.forEach((input, idx) => {
+                const name = input.value.trim();
+                if (!name) return;
+                const dayVal = parseInt(days[idx].value || '0', 10);
+                workdays[name] = isNaN(dayVal) ? 0 : dayVal;
+            });
+            return workdays;
+        }
+
+        function renderPayouts(workdays, payouts) {
+            const tbody = document.getElementById('payout-rows');
+            tbody.innerHTML = '';
+            const entries = Object.keys(workdays);
+            let totalDays = 0;
+            entries.forEach(name => { totalDays += workdays[name]; });
+
+            entries.forEach(name => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${name}</td>
+                    <td>${workdays[name]}</td>
+                    <td>${(payouts[name] || 0).toFixed(2)}&#8378;</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('summary-total').textContent = (parseFloat(document.getElementById('tip-total').value || '0')).toFixed(2) + ' TL';
+            document.getElementById('summary-days').textContent = totalDays;
+        }
+
+        function loadPeriod() {
+            const start = document.getElementById('period-start').value;
+            const end = document.getElementById('period-end').value;
+            if (!start || !end) {
+                alert('Lütfen başlangıç ve bitiş tarihini seçin.');
+                return;
+            }
+
+            fetch(`/api/tip-havuzu?start=${start}&end=${end}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Veri alınamadı.');
+                        return;
+                    }
+                    const period = data.period;
+                    document.getElementById('waiter-rows').innerHTML = '';
+                    if (period) {
+                        document.getElementById('tip-total').value = period.tip_total || 0;
+                        Object.keys(period.workdays || {}).forEach(name => {
+                            addRow(name, period.workdays[name]);
+                        });
+                        renderPayouts(period.workdays || {}, period.payouts || {});
+                    } else {
+                        document.getElementById('tip-total').value = 0;
+                        addRow('', 0);
+                        renderPayouts({}, {});
+                    }
+                })
+                .catch(err => {
+                    alert('Hata: ' + err.message);
+                });
+        }
+
+        
+        function loadWorkdaysFromAttendance() {
+            const start = document.getElementById('period-start').value;
+            const end = document.getElementById('period-end').value;
+            if (!start || !end) {
+                alert('Lütfen başlangıç ve bitiş tarihini seçin.');
+                return;
+            }
+            fetch(`/api/vardiya/summary?start=${start}&end=${end}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Veri alınamadı.');
+                        return;
+                    }
+                    const workdays = data.workdays || {};
+                    const tbody = document.getElementById('waiter-rows');
+                    tbody.innerHTML = '';
+                    Object.keys(workdays).forEach(name => {
+                        addRow(name, workdays[name]);
+                    });
+                    calculatePayouts();
+                })
+                .catch(err => alert('Hata: ' + err.message));
+        }
+
+function calculatePayouts() {
+            const tipTotal = parseFloat(document.getElementById('tip-total').value || '0');
+            const workdays = collectWorkdays();
+            fetch('/api/tip-havuzu/hesapla', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tip_total: tipTotal, workdays })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Hesaplama hatası.');
+                    return;
+                }
+                renderPayouts(workdays, data.payouts || {});
+            })
+            .catch(err => alert('Hata: ' + err.message));
+        }
+
+        function savePeriod() {
+            const start = document.getElementById('period-start').value;
+            const end = document.getElementById('period-end').value;
+            const tipTotal = parseFloat(document.getElementById('tip-total').value || '0');
+            const workdays = collectWorkdays();
+
+            fetch('/api/tip-havuzu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    period_start: start,
+                    period_end: end,
+                    tip_total: tipTotal,
+                    workdays: workdays
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'K ydetme hatası.');
+                    return;
+                }
+                renderPayouts(data.period.workdays || {}, data.period.payouts || {});
+                alert('Tip havuzu kaydedildi.');
+            })
+            .catch(err => alert('Hata: ' + err.message));
+        }
+
+        setDefaultWeek();
+        addRow('', 0);
+        loadPeriod();
+    </script>
+</body>
+</html>

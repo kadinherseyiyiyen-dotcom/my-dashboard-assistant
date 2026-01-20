@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G&#252;nl&#252;k Giderler</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #374151;
+        }
+        input[type="date"], input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th {
+            background: #f9fafb;
+            font-weight: 700;
+            color: #374151;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .summary-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>G&#252;nl&#252;k Giderler</h1>
+        <div>
+            <a href="/kasa" class="btn btn-secondary">&#8592; Kasa</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="form-grid">
+                <div>
+                    <label for="gider-tarih">Tarih</label>
+                    <input type="date" id="gider-tarih">
+                </div>
+                <div>
+                    <label for="gider-kategori">Gider T&#252;r&#252;</label>
+                    <input type="text" id="gider-kategori" placeholder="Orn: Malzeme, Servis">
+                </div>
+                <div>
+                    <label for="gider-odeme">&#214;deme T&#252;r&#252;</label>
+                    <select id="gider-odeme">
+                        <option value="">Seciniz</option>
+                        <option value="nakit">Nakit</option>
+                        <option value="kart">Kart</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="gider-miktar">Miktar</label>
+                    <input type="number" id="gider-miktar" min="0" step="1" placeholder="0">
+                </div>
+                <div>
+                    <label for="gider-birim">Birim Fiyat (TL)</label>
+                    <input type="number" id="gider-birim" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                    <label for="gider-tutar">Tutar (TL)</label>
+                    <input type="number" id="gider-tutar" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                    <label for="gider-aciklama">A&#231;&#305;klama</label>
+                    <input type="text" id="gider-aciklama" placeholder="Opsiyonel not">
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="loadExpenses()">Y&#252;kle</button>
+                    <button class="btn btn-success" onclick="saveExpense()">Kaydet</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">Temizle</button>
+                </div>
+            </div>
+            <div class="hint">Girdi&#287;in giderler, se&#231;ili tarihin cirosundan otomatik d&#252;&#351;&#252;l&#252;r.</div>
+            <div class="summary">
+                <div class="summary-item">Toplam Gider: <span id="toplam-gider">0 TL</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 0.75rem;">Gider Listesi</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>T&#252;r</th>
+                        <th>&#214;deme</th>
+                        <th>Miktar</th>
+                        <th>Birim</th>
+                        <th>Tutar</th>
+                        <th>A&#231;&#305;klama</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="gider-rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function todayIso() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function formatDateDisplay(iso) {
+            if (!iso || !iso.includes('-')) return iso || '';
+            const parts = iso.split('-');
+            if (parts.length !== 3) return iso;
+            return `${parts[2]}.${parts[1]}.${parts[0]}`;
+        }
+
+        function calcTutarFromInputs() {
+            const miktarVal = document.getElementById('gider-miktar').value;
+            const birimVal = document.getElementById('gider-birim').value;
+            if (miktarVal !== '' && birimVal !== '') {
+                const miktar = parseFloat(miktarVal);
+                const birim = parseFloat(birimVal);
+                if (!isNaN(miktar) && !isNaN(birim)) {
+                    const tutar = (miktar * birim).toFixed(2);
+                    document.getElementById('gider-tutar').value = tutar;
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('gider-kategori').value = '';
+            document.getElementById('gider-odeme').value = '';
+            document.getElementById('gider-miktar').value = '';
+            document.getElementById('gider-birim').value = '';
+            document.getElementById('gider-tutar').value = '';
+            document.getElementById('gider-aciklama').value = '';
+        }
+
+        function loadExpenses() {
+            const dateVal = document.getElementById('gider-tarih').value;
+            if (!dateVal) {
+                alert('Lutfen tarih secin.');
+                return;
+            }
+            fetch(`/api/giderler?date=${dateVal}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Giderler yuklenemedi.');
+                        return;
+                    }
+                    const rows = data.records || [];
+                    const tbody = document.getElementById('gider-rows');
+                    tbody.innerHTML = '';
+                    let toplam = 0;
+                    rows.forEach(rec => {
+                        const tr = document.createElement('tr');
+                        toplam += parseFloat(rec.tutar || 0);
+                        tr.innerHTML = `
+                            <td>${formatDateDisplay(rec.date)}</td>
+                            <td>${rec.kategori || ''}</td>
+                            <td>${rec.odeme_turu || ''}</td>
+                            <td>${rec.miktar != null ? rec.miktar : ''}</td>
+                            <td>${rec.birim_fiyat != null ? rec.birim_fiyat : ''}</td>
+                            <td>${(parseFloat(rec.tutar || 0)).toFixed(2)} TL</td>
+                            <td>${rec.aciklama || ''}</td>
+                            <td><button class="btn btn-danger" onclick="deleteExpense(${rec.id})">Sil</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    document.getElementById('toplam-gider').textContent = toplam.toFixed(2) + ' TL';
+                })
+                .catch(err => alert('Hata: ' + err.message));
+        }
+
+        function saveExpense() {
+            const dateVal = document.getElementById('gider-tarih').value;
+            const kategori = document.getElementById('gider-kategori').value.trim();
+            const odeme = document.getElementById('gider-odeme').value;
+            const miktarVal = document.getElementById('gider-miktar').value;
+            const birimVal = document.getElementById('gider-birim').value;
+            const tutarVal = document.getElementById('gider-tutar').value;
+            const aciklama = document.getElementById('gider-aciklama').value.trim();
+
+            if (!dateVal) {
+                alert('Lutfen tarih secin.');
+                return;
+            }
+            if (!kategori) {
+                alert('Gider turu gerekli.');
+                return;
+            }
+            if (!odeme) {
+                alert('Odeme turu secin.');
+                return;
+            }
+
+            const payload = {
+                date: dateVal,
+                kategori: kategori,
+                odeme_turu: odeme,
+                aciklama: aciklama
+            };
+            if (miktarVal !== '') payload.miktar = miktarVal;
+            if (birimVal !== '') payload.birim_fiyat = birimVal;
+            if (tutarVal !== '') payload.tutar = tutarVal;
+
+            fetch('/api/giderler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Kaydetme hatasi.');
+                    return;
+                }
+                clearForm();
+                loadExpenses();
+            })
+            .catch(err => alert('Hata: ' + err.message));
+        }
+
+        function deleteExpense(id) {
+            if (!confirm('Gider kaydi silinsin mi?')) return;
+            fetch(`/api/giderler/${id}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert(data.message || 'Silme hatasi.');
+                        return;
+                    }
+                    loadExpenses();
+                })
+                .catch(err => alert('Hata: ' + err.message));
+        }
+
+        document.getElementById('gider-miktar').addEventListener('input', calcTutarFromInputs);
+        document.getElementById('gider-birim').addEventListener('input', calcTutarFromInputs);
+
+        document.getElementById('gider-tarih').value = todayIso();
+        loadExpenses();
+    </script>
+</body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstatistikler</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+        }
+        .header { 
+            background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+        .btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-danger { 
+            background: #e53e3e; 
+            color: white; 
+        }
+        .btn-danger:hover { 
+            background: #c53030; 
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .date-selector {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .date-selector label {
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .date-selector input {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .btn-primary { 
+            background: #ff8c00; 
+            color: white; 
+        }
+        .btn-primary:hover { 
+            background: #ff6600; 
+        }
+        .btn-secondary { 
+            background: #ffa500; 
+            color: white; 
+        }
+        .btn-secondary:hover { 
+            background: #ff8c00; 
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--color);
+        }
+        .stat-card.ciro { --color: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%); }
+        .stat-card.nakit { --color: linear-gradient(135deg, #38a169 0%, #2f855a 100%); }
+        .stat-card.kart { --color: linear-gradient(135deg, #3182ce 0%, #2c5282 100%); }
+        .stat-card.komisyon { --color: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); }
+        .stat-card.net-kar { --color: linear-gradient(135deg, #38a169 0%, #2f855a 100%); }
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #718096;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .section {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+        .chart-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f7fafc;
+            color: #4a5568;
+        }
+        .tab-btn.active {
+            background: #ff8c00;
+            color: white;
+        }
+        .chart-container {
+            padding: 1.5rem;
+            height: 400px;
+        }
+        .products-grid {
+            display: grid;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f7fafc;
+            border-radius: 0.5rem;
+            border-left: 4px solid #ff8c00;
+        }
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .product-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-details h4 {
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+        .product-details p {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .product-stats {
+            text-align: right;
+        }
+        .product-amount {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ff6600;
+            margin-bottom: 0.25rem;
+        }
+        .product-count {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+            font-size: 1.125rem;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .date-selector {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .product-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            .product-stats {
+                text-align: center;
+            }
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 İstatistikler</h1>
+        <a href="/kasa" class="btn btn-danger">← Geri Dön</a>
+    </div>
+
+    <div class="container">
+        <div class="date-selector">
+            <label for="tarih-sec">📅 Tarih Seçiniz:</label>
+            <input type="date" id="tarih-sec">
+            <button class="btn btn-primary" onclick="istatistikYukle()">🔄 Güncelle</button>
+            <button class="btn btn-secondary" onclick="bugunuSec()">📆 Bugün</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card ciro">
+                <span class="stat-icon">💰</span>
+                <div class="stat-number" id="toplam-ciro">0₺</div>
+                <div class="stat-label">Toplam Ciro</div>
+            </div>
+            <div class="stat-card nakit">
+                <span class="stat-icon">💵</span>
+                <div class="stat-number" id="nakit-satis">0₺</div>
+                <div class="stat-label">Nakit Satış</div>
+            </div>
+            <div class="stat-card kart">
+                <span class="stat-icon">💳</span>
+                <div class="stat-number" id="kart-satis">0₺</div>
+                <div class="stat-label">Kart Satış</div>
+            </div>
+            <div class="stat-card komisyon">
+                <span class="stat-icon">🤝</span>
+                <div class="stat-number" id="toplam-komisyon">0₺</div>
+                <div class="stat-label">Toplam Komisyon</div>
+            </div>
+            <div class="stat-card net-kar">
+                <span class="stat-icon">📊</span>
+                <div class="stat-number" id="net-kar">0₺</div>
+                <div class="stat-label">Net Kar</div>
+            </div>
+            <div class="stat-card siparis">
+                <span class="stat-icon">📝</span>
+                <div class="stat-number" id="siparis-sayisi">0</div>
+                <div class="stat-label">Toplam Sipariş</div>
+            </div>
+        </div>
+
+        <!-- Satış Grafikleri -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">📈 Satış Grafikleri</h2>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="grafikDegistir('haftalik')">📅 Haftalık</button>
+                    <button class="tab-btn" onclick="grafikDegistir('aylik')">📊 Aylık</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="satisGrafik"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">🍽️ Ürün Satışları</h2>
+            </div>
+            <div id="urun-listesi" class="loading">
+                Veriler yükleniyor...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const menuIcons = {
+            'Serpme Kahvaltı': '🍳',
+            'Patates Kızartması': '🍟',
+            'Hellim': '🧀',
+            'Full Falafel': '🥙',
+            'Mıhlama': '🫕',
+            'Göz Yumurta': '🍳',
+            'Çay': '🫖',
+            'Karak': '☕',
+            'Sıcak Süt': '🥛',
+            'Türk Kahvesi': '☕',
+            'Portakal Suyu': '🍊',
+            'Limonata': '🍋',
+            'Su': '💧'
+        };
+
+        let satisChart = null;
+        let aktifGrafik = 'haftalik';
+        
+        // Chart.js datalabels plugin'ini register et
+        Chart.register(ChartDataLabels);
+
+        function bugunuSec() {
+            const bugun = new Date();
+            const yil = bugun.getFullYear();
+            const ay = String(bugun.getMonth() + 1).padStart(2, '0');
+            const gun = String(bugun.getDate()).padStart(2, '0');
+            document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
+            istatistikYukle();
+        }
+
+        function istatistikYukle() {
+            const secilenTarih = document.getElementById('tarih-sec').value;
+            if (!secilenTarih) {
+                alert('Lütfen tarih seçiniz!');
+                return;
+            }
+
+            // Tarihi dd.mm.yyyy formatına çevir
+            const [yil, ay, gun] = secilenTarih.split('-');
+            const formatliTarih = `${gun}.${ay}.${yil}`;
+
+            fetch(`/api/istatistik-data?tarih=${formatliTarih}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success === false) {
+                        alert('Hata: ' + data.message);
+                        return;
+                    }
+
+                    // İstatistikleri güncelle
+                    const toplamCiro = data.toplam_ciro || 0;
+                    const toplamKomisyon = data.toplam_komisyon || 0;
+                    const netKar = toplamCiro - toplamKomisyon;
+                    
+                    document.getElementById('toplam-ciro').textContent = toplamCiro + '₺';
+                    document.getElementById('nakit-satis').textContent = (data.nakit_satis || 0) + '₺';
+                    document.getElementById('kart-satis').textContent = (data.kart_satis || 0) + '₺';
+                    document.getElementById('toplam-komisyon').textContent = toplamKomisyon + '₺';
+                    document.getElementById('net-kar').textContent = netKar + '₺';
+                    document.getElementById('siparis-sayisi').textContent = data.siparis_sayisi || 0;
+
+                    // Ürün listesini güncelle
+                    urunListesiGuncelle(data.urun_satislari || {});
+                    
+                    // Grafikleri güncelle
+                    grafikYukle();
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    document.getElementById('urun-listesi').innerHTML = 
+                        '<div class="loading" style="color: #e53e3e;">Veriler yüklenirken hata oluştu!</div>';
+                });
+        }
+
+        function grafikYukle() {
+            fetch('/api/satis-grafik')
+                .then(response => response.json())
+                .then(data => {
+                    grafikCiz(data);
+                })
+                .catch(error => {
+                    console.error('Grafik yüklenirken hata:', error);
+                });
+        }
+
+        function grafikCiz(data) {
+            const ctx = document.getElementById('satisGrafik').getContext('2d');
+            
+            if (satisChart) {
+                satisChart.destroy();
+            }
+
+            const veriSeti = aktifGrafik === 'haftalik' ? data.haftalik : data.aylik;
+            const labels = veriSeti.map(item => aktifGrafik === 'haftalik' ? item.tarih : item.ay);
+            const netKarData = veriSeti.map(item => item.net_kar);
+
+            satisChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Net Kar (₺)',
+                        data: netKarData,
+                        borderColor: '#38a169',
+                        backgroundColor: 'rgba(56, 161, 105, 0.2)',
+                        borderWidth: 4,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#38a169',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            backgroundColor: '#38a169',
+                            borderColor: '#ffffff',
+                            borderRadius: 4,
+                            borderWidth: 1,
+                            color: '#ffffff',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            padding: 4,
+                            formatter: function(value) {
+                                return value + '₺';
+                            }
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: aktifGrafik === 'haftalik' ? 'Son 7 Günün Net Kar Performansı' : 'Son 12 Ayın Net Kar Performansı',
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            },
+                            color: '#1a202c',
+                            padding: 20
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: aktifGrafik === 'haftalik' ? 'Günler' : 'Aylar',
+                                color: '#4a5568',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Net Kar (₺)',
+                                color: '#38a169',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '₺';
+                                },
+                                color: '#4a5568'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function grafikDegistir(tip) {
+            aktifGrafik = tip;
+            
+            // Tab butonlarını güncelle
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Grafik verilerini yeniden yükle
+            grafikYukle();
+        }
+
+        function urunListesiGuncelle(urunSatislari) {
+            const container = document.getElementById('urun-listesi');
+            
+            if (Object.keys(urunSatislari).length === 0) {
+                container.innerHTML = '<div class="loading">Seçilen tarihte satış bulunmuyor.</div>';
+                return;
+            }
+
+            // Ürünleri satış tutarına göre sırala
+            const sortedUrunler = Object.entries(urunSatislari)
+                .sort((a, b) => b[1].toplam_tutar - a[1].toplam_tutar);
+
+            let html = '<div class="products-grid">';
+            
+            sortedUrunler.forEach(([urunAdi, veri]) => {
+                const icon = menuIcons[urunAdi] || '🍽️';
+                html += `
+                    <div class="product-item">
+                        <div class="product-info">
+                            <div class="product-icon">${icon}</div>
+                            <div class="product-details">
+                                <h4>${urunAdi}</h4>
+                                <p>${veri.birim_fiyat}₺ / adet</p>
+                            </div>
+                        </div>
+                        <div class="product-stats">
+                            <div class="product-amount">${veri.toplam_tutar}₺</div>
+                            <div class="product-count">${veri.adet} adet satıldı</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Sayfa yüklendiğinde bugünü seç ve verileri yükle
+        document.addEventListener('DOMContentLoaded', function() {
+            bugunuSec();
+            grafikYukle();
+        });
+    </script>
+</body>
+</html>

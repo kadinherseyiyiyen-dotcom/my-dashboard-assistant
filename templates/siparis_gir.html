@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sipariş Gir - Kasa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .header { 
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #ff8c00; color: white; }
+        .btn-secondary { background: #718096; color: white; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .info-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #38a169;
+        }
+        .info-card h4 {
+            color: #38a169;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .info-card p {
+            font-size: 0.875rem;
+            color: #4a5568;
+            margin-bottom: 0.25rem;
+        }
+        .masa-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .masa-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .masa-card:hover {
+            border-color: #ff8c00;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .masa-card.selected {
+            border-color: #ff8c00;
+            background: #fff4e6;
+            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+        }
+
+        .masa-card.occupied {
+            border-color: #e53e3e;
+            background: #fff5f5;
+        }
+        .masa-card.occupied .masa-number {
+            color: #c53030;
+        }
+        .masa-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #c53030;
+        }
+        .masa-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: #2d3748;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        select, input { 
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 0.375rem; 
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus { 
+            outline: none;
+            border-color: #ff8c00;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        .menu-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+        .menu-section h3 {
+            color: #1a202c;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.125rem;
+        }
+        .menu-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+            gap: 1rem;
+        }
+        .menu-item { 
+            background: #f7fafc;
+            padding: 1rem; 
+            border-radius: 0.5rem; 
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .menu-item:hover {
+            border-color: #ff8c00;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .menu-item.selected { 
+            border-color: #ff8c00; 
+            background: #fff4e6;
+        }
+        .menu-item .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .menu-item h4 { 
+            margin: 0 0 0.5rem 0; 
+            color: #1a202c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .menu-item .price { 
+            color: #e53e3e; 
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        .siparis-ozet { 
+            background: white;
+            padding: 1.5rem; 
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            position: sticky;
+            top: 1rem;
+        }
+        .siparis-ozet h3 {
+            color: #1a202c;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1.125rem;
+        }
+
+        .mevcut-siparisler {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .mevcut-siparisler h4 {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+        .mevcut-item {
+            font-size: 0.8rem;
+            padding: 0.35rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .mevcut-item:last-child {
+            border-bottom: none;
+        }
+        .siparis-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0.75rem 0; 
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .siparis-item:last-child {
+            border-bottom: none;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .quantity-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: #ff8c00;
+            color: white;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quantity-btn:hover {
+            background: #ff6600;
+        }
+        .toplam-section {
+            background: #fff4e6;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin: 1rem 0;
+            text-align: center;
+            border: 1px solid #ffcc80;
+        }
+        .toplam-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6600;
+        }
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .btn-full {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            justify-content: center;
+        }
+        @media (min-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            .main-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+            .menu-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            .action-buttons {
+                flex-direction: row;
+            }
+            .btn-full {
+                width: auto;
+                flex: 1;
+            }
+        }
+        @media (min-width: 768px) {
+            .menu-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+            .menu-item {
+                min-height: 120px;
+            }
+            .menu-item .icon {
+                font-size: 2rem;
+            }
+            .menu-item h4 {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>📱 WhatsApp Sipariş Girişi</h2>
+        <div class="header-actions">
+            <a href="/kasa" class="btn btn-secondary">← Kasa</a>
+            <a href="/logout" class="btn btn-danger">Çıkış</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="info-card">
+            <h4>📲 WhatsApp Sipariş Alma Süreci</h4>
+            <p>1. Garson WhatsApp'tan sipariş bilgilerini iletir</p>
+            <p>2. Masa numarası, garson adı ve sipariş detaylarını aşağıya girin</p>
+            <p>3. Sipariş sisteme kaydedilir ve takip edilebilir hale gelir</p>
+        </div>
+        <div class="info-card" id="doluluk-info">
+            <h4>?? Masa Doluluk</h4>
+            <p>Dolu masa: 0 / 20</p>
+        </div>
+
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Masa Seçimi:</label>
+                    <div class="masa-grid">
+                        {% for i in range(1, 21) %}
+                        <div class="masa-card" data-masa="{{ i }}">
+                            <div class="masa-number">{{ tables[i|string] or ('Masa ' + i|string) }}</div>
+                            <div class="masa-status"></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label>Garson Adı:</label>
+                    <select id="garson">
+                        <option value="WhatsApp Sipariş">WhatsApp Sipariş</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sipariş Zamanı:</label>
+                    <input type="time" id="siparis-zaman" value="">
+                </div>
+                <div class="form-group">
+                    <label>Seçili Masa:</label>
+                    <input type="text" id="secili-masa" readonly style="background: #f7fafc; font-weight: bold; color: #ff8c00;" placeholder="Masa seçiniz">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div>
+                <div class="menu-section">
+                    <h3>🍳 Ana Menü</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.ana_menu %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>🍟 Ekstralar</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.ekstralar %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>🥤 İçecekler</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.icecekler %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="siparis-ozet">
+                    <h3>📝 Sipariş Özeti</h3>
+                    <div class="mevcut-siparisler">
+                        <h4>Mevcut Siparisler (Secili Masa)</h4>
+                        <div id="mevcut-siparisler-listesi"></div>
+                    </div>
+                    <div id="siparis-listesi"></div>
+                    <div class="toplam-section">
+                        <div>Toplam</div>
+                        <div class="toplam-amount"><span id="toplam">0</span> ₺</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary btn-full" onclick="siparisGonder()">📱 Kaydet</button>
+                        <button class="btn btn-secondary btn-full" onclick="siparisTemizle()">Temizle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let siparis = [];
+        let toplam = 0;
+        let secilenMasa = null;
+        let aktifSiparisler = [];
+
+        document.getElementById('siparis-zaman').value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+        loadAktifSiparisler();
+        setInterval(loadAktifSiparisler, 15000);
+
+        // Masa seçimi
+        document.querySelectorAll('.masa-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Önceki seçimi temizle
+                document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
+                
+                // Yeni seçimi işaretle
+                this.classList.add('selected');
+                secilenMasa = parseInt(this.dataset.masa);
+                
+                // Seçili masa alanını güncelle
+                document.getElementById('secili-masa').value = this.querySelector('.masa-number').textContent;
+                mevcutSiparisleriGoster();
+            });
+        });
+
+        
+        function loadAktifSiparisler() {
+            fetch('/api/siparisler')
+                .then(response => response.json())
+                .then(orders => {
+                    aktifSiparisler = (orders || []).filter(o => o.durum === 'aktif');
+                    masaDurumlariniGuncelle();
+                    dolulukGuncelle();
+                    mevcutSiparisleriGoster();
+                });
+        }
+
+        function masaDurumlariniGuncelle() {
+            const aktifMasalar = new Set(aktifSiparisler.map(o => String(o.masa)));
+            document.querySelectorAll('.masa-card').forEach(card => {
+                const masa = card.dataset.masa;
+                const status = card.querySelector('.masa-status');
+                if (aktifMasalar.has(masa)) {
+                    card.classList.add('occupied');
+                    status.textContent = 'DOLU';
+                } else {
+                    card.classList.remove('occupied');
+                    status.textContent = '';
+                }
+            });
+        }
+
+        function dolulukGuncelle() {
+            const dolu = new Set(aktifSiparisler.map(o => o.masa)).size;
+            document.getElementById('doluluk-info').innerHTML =
+                '<h4>?? Masa Doluluk</h4><p>Dolu masa: ' + dolu + ' / 20</p>';
+        }
+
+        function mevcutSiparisleriGoster() {
+            const container = document.getElementById('mevcut-siparisler-listesi');
+            if (!secilenMasa) {
+                container.innerHTML = '<div class="mevcut-item">Masa seciniz.</div>';
+                return;
+            }
+            const masaOrders = aktifSiparisler.filter(o => String(o.masa) === String(secilenMasa));
+            if (masaOrders.length === 0) {
+                container.innerHTML = '<div class="mevcut-item">Bu masada aktif siparis yok.</div>';
+                return;
+            }
+            let html = '';
+            masaOrders.forEach(order => {
+                const items = (order.items || []).map(i => `${i.name} x${i.adet}`).join(', ');
+                html += `<div class="mevcut-item"><strong>${order.garson}</strong> (${order.zaman})<br>${items}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                const name = this.dataset.name;
+                const price = parseInt(this.dataset.price);
+                
+                const existing = siparis.find(s => s.id === id);
+                if (existing) {
+                    existing.adet++;
+                } else {
+                    siparis.push({id, name, price, adet: 1});
+                }
+                
+                siparisGuncelle();
+            });
+        });
+
+        function siparisGuncelle() {
+            const listesi = document.getElementById('siparis-listesi');
+            listesi.innerHTML = '';
+            toplam = 0;
+
+            siparis.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'siparis-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small>${item.price} ₺ x ${item.adet}</small>
+                    </div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="azalt(${index})">-</button>
+                        <span>${item.adet}</span>
+                        <button class="quantity-btn" onclick="arttir(${index})">+</button>
+                        <button class="quantity-btn" style="background: #e53e3e; margin-left: 0.5rem;" onclick="sil(${index})">×</button>
+                    </div>
+                `;
+                listesi.appendChild(div);
+                toplam += item.price * item.adet;
+            });
+
+            document.getElementById('toplam').textContent = toplam;
+        }
+
+        function arttir(index) {
+            siparis[index].adet++;
+            siparisGuncelle();
+        }
+
+        function azalt(index) {
+            if (siparis[index].adet > 1) {
+                siparis[index].adet--;
+            } else {
+                siparis.splice(index, 1);
+            }
+            siparisGuncelle();
+        }
+
+        function sil(index) {
+            siparis.splice(index, 1);
+            siparisGuncelle();
+        }
+
+        function siparisTemizle() {
+            siparis = [];
+            toplam = 0;
+            siparisGuncelle();
+        }
+
+        function siparisGonder() {
+            if (siparis.length === 0) {
+                alert('Lütfen sipariş ekleyin!');
+                return;
+            }
+            
+            if (!secilenMasa) {
+                alert('Lütfen masa seçiniz!');
+                return;
+            }
+
+            const data = {
+                masa: secilenMasa,
+                garson: document.getElementById('garson').value,
+                items: siparis,
+                toplam: toplam,
+                zaman: document.getElementById('siparis-zaman').value
+            };
+
+            fetch('/api/siparis', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('WhatsApp siparişi başarıyla kaydedildi!');
+                    siparisTemizle();
+                    loadAktifSiparisler();
+                    // Masa seçimini de temizle
+                    document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
+                    document.getElementById('secili-masa').value = '';
+                    secilenMasa = null;
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

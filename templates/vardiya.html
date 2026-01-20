@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vardiya Takibi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #111827;
+        }
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .legend {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+        .legend span {
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            background: #f3f4f6;
+        }
+        .employee-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .employee-item {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .employee-item input {
+            flex: 1;
+            padding: 0.5rem 0.6rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+            white-space: nowrap;
+        }
+        th {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            font-weight: 700;
+        }
+        th.day-head {
+            min-width: 46px;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        th.name-head {
+            text-align: left;
+            min-width: 160px;
+        }
+        .cell {
+            cursor: pointer;
+            border-radius: 0.35rem;
+            position: relative;
+            min-width: 46px;
+            height: 42px;
+            font-weight: 700;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+        .cell .clear-btn {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 14px;
+            height: 14px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.25);
+            color: #fff;
+            font-size: 9px;
+            line-height: 14px;
+            cursor: pointer;
+        }
+        .cell .clear-btn:hover {
+            background: rgba(15, 23, 42, 0.4);
+        }
+        .s-calisti { background: #bbf7d0; }
+        .s-gec { background: #fde68a; }
+        .s-izinli { background: #bfdbfe; }
+        .s-mazeretli { background: #fbcfe8; }
+        .s-gelmedi { background: #fecaca; }
+        .note {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Vardiya Takibi</h1>
+        <div>
+            <a href="/tip-havuzu" class="btn btn-primary">Tip Havuzu</a>
+            <a href="/kasa" class="btn btn-secondary">&larr; Kasa</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="controls">
+                <input type="month" id="month">
+                <button class="btn btn-primary" onclick="loadMonth()">Yukle</button>
+                <button class="btn btn-success" onclick="saveEmployees()">Calisanlari Kaydet</button>
+            </div>
+            <div class="legend">
+                <span>C: Calisti</span>
+                <span>G: Gec Geldi</span>
+                <span>I: Izinli</span>
+                <span>M: Mazeretli</span>
+                <span>X: Gelmedi</span>
+                <span>Click: Durum sec</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Calisan Listesi</h3>
+            <div class="employee-list" id="employee-list"></div>
+            <button class="btn btn-secondary" onclick="addEmployee()" style="margin-top:0.75rem;">+ Calisan Ekle</button>
+            <div class="note">Calisan isimleri bir kere girilir. Aylik tabloda otomatik gorunur.</div>
+        </div>
+
+        <div class="card" style="overflow-x:auto;">
+            <table id="month-table">
+                <thead id="month-head"></thead>
+                <tbody id="month-body"></tbody>
+            </table>
+            <div class="note">Bir gune tikla: Calisti/Ge? Geldi/Izinli/Mazeretli/Gelmedi sec. Ge? geldi secilirse saat sorulur.</div>
+        </div>
+    </div>
+
+    <script>
+        function setDefaultMonth() {
+            const now = new Date();
+            document.getElementById('month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function daysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function addEmployee(name = '') {
+            const list = document.getElementById('employee-list');
+            const div = document.createElement('div');
+            div.className = 'employee-item';
+            div.innerHTML = `
+                <input type="text" class="employee-name" value="${name}" placeholder="Orn: Ahmet">
+                <button class="btn btn-danger" onclick="this.parentElement.remove()">Sil</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function saveEmployees() {
+            const names = Array.from(document.querySelectorAll('.employee-name')).map(i => i.value.trim()).filter(Boolean);
+            fetch('/api/calisanlar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ names })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { alert(data.message || 'Hata'); return; }
+                alert('Calisanlar kaydedildi.');
+                loadMonth();
+            });
+        }
+
+        function loadEmployees() {
+            fetch('/api/calisanlar')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('employee-list');
+                    list.innerHTML = '';
+                    (data.names || []).forEach(n => addEmployee(n));
+                    if ((data.names || []).length === 0) addEmployee('');
+                });
+        }
+
+        function loadMonth() {
+            const month = document.getElementById('month').value;
+            if (!month) return;
+            fetch(`/api/vardiya?month=${month}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { alert(data.message || 'Hata'); return; }
+                    renderMonth(month, data.records || []);
+                });
+        }
+
+        function statusCode(r) {
+            if (r.status === 'calisti') return { code: 'C', cls: 's-calisti' };
+            if (r.status === 'gec_geldi') return { code: r.late_time ? `G(${r.late_time})` : 'G', cls: 's-gec' };
+            if (r.status === 'izinli') return { code: 'I', cls: 's-izinli' };
+            if (r.status === 'mazeretli') return { code: 'M', cls: 's-mazeretli' };
+            if (r.status === 'gelmedi') return { code: 'X', cls: 's-gelmedi' };
+            return { code: '', cls: '' };
+        }
+
+        function renderMonth(month, records) {
+            const [y, m] = month.split('-').map(v => parseInt(v, 10));
+            const totalDays = daysInMonth(y, m);
+            const waiters = {};
+            records.forEach(r => {
+                if (!r.waiter) return;
+                if (!waiters[r.waiter]) waiters[r.waiter] = {};
+                waiters[r.waiter][r.date] = r;
+            });
+
+            const employeeNames = Array.from(document.querySelectorAll('.employee-name')).map(i => i.value.trim()).filter(Boolean);
+
+            const head = document.getElementById('month-head');
+            const body = document.getElementById('month-body');
+            head.innerHTML = '';
+            body.innerHTML = '';
+
+            const headRow = document.createElement('tr');
+            headRow.innerHTML = `<th class="name-head">Garson</th>` +
+                Array.from({length: totalDays}, (_, i) => `<th class="day-head">${i + 1}</th>`).join('') +
+                `<th class="day-head">Toplam Gun</th>`;
+            head.appendChild(headRow);
+
+            employeeNames.forEach(name => {
+                let total = 0;
+                const row = document.createElement('tr');
+                let cells = `<td style="text-align:left; font-weight:600;">${name}</td>`;
+                for (let d = 1; d <= totalDays; d++) {
+                    const dayStr = String(d).padStart(2, '0');
+                    const dateKey = `${month}-${dayStr}`;
+                    const r = (waiters[name] || {})[dateKey];
+                    if (r && r.status === 'calisti') total += 1;
+                    const info = r ? statusCode(r) : { code: '', cls: '' };
+                    cells += `<td class="cell ${info.cls}" data-w="${name}" data-date="${dateKey}" title="${info.code}">` +
+                    `<button class="clear-btn" data-w="${name}" data-date="${dateKey}" title="Sil">x</button>` +
+                    `<span>${info.code}</span></td>`;
+                }
+                cells += `<td>${total}</td>`;
+                row.innerHTML = cells;
+                body.appendChild(row);
+            });
+
+            bindCells();
+        }
+
+        function bindCells() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const waiter = cell.getAttribute('data-w');
+                    const date = cell.getAttribute('data-date');
+                    const choice = prompt('Durum sec (C=Calisti, G=Gec Geldi, I=Izinli, M=Mazeretli, X=Gelmedi, BOS=temizle):');
+                    if (choice === null) return;
+                    const val = choice.trim().toUpperCase();
+                    if (!val) {
+                        saveRecord({ date, waiter, clear: true });
+                        return;
+                    }
+                    let status = null;
+                    if (val === 'C') status = 'calisti';
+                    if (val === 'G') status = 'gec_geldi';
+                    if (val === 'I') status = 'izinli';
+                    if (val === 'M') status = 'mazeretli';
+                    if (val === 'X') status = 'gelmedi';
+                    if (!status) return;
+
+                    let late_time = '';
+                    if (status === 'gec_geldi') {
+                        late_time = prompt('Gelis saati (HH:MM):') || '';
+                    }
+                    saveRecord({ date, waiter, status, late_time });
+                });
+            });
+
+            document.querySelectorAll('.clear-btn').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const waiter = btn.getAttribute('data-w');
+                    const date = btn.getAttribute('data-date');
+                    saveRecord({ date, waiter, clear: true });
+                });
+            });
+        }
+
+        function saveRecord(payload) {
+            if (payload.clear) {
+                payload.status = 'gelmedi';
+            }
+            fetch('/api/vardiya', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) { alert(data.message || 'Hata'); return; }
+                loadMonth();
+            });
+        }
+
+        setDefaultMonth();
+        loadEmployees();
+        loadMonth();
+    </script>
+</body>
+</html>

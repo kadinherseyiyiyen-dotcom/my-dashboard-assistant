@@ -1,0 +1,99 @@
+{
+  "ana_menu": [
+    {
+      "category": "ana_menu",
+      "id": 1,
+      "image": "🍳",
+      "name": "Serpme Kahvaltı",
+      "price": 1290
+    }
+  ],
+  "ekstralar": [
+    {
+      "category": "ekstra",
+      "id": 2,
+      "image": "🍟",
+      "name": "Patates Kızartması",
+      "price": 350
+    },
+    {
+      "category": "ekstra",
+      "id": 3,
+      "image": "🧀",
+      "name": "Hellim",
+      "price": 350
+    },
+    {
+      "category": "ekstra",
+      "id": 4,
+      "image": "🥙",
+      "name": "Falafel",
+      "price": 350
+    },
+    {
+      "category": "ekstra",
+      "id": 5,
+      "image": "🫕",
+      "name": "Mıhlama",
+      "price": 350
+    },
+    {
+      "category": "ekstra",
+      "id": 6,
+      "image": "🍳",
+      "name": "Göz Yumurta",
+      "price": 350
+    }
+  ],
+  "icecekler": [
+    {
+      "category": "icecek",
+      "id": 7,
+      "image": "🫖",
+      "name": "Çay",
+      "price": 50
+    },
+    {
+      "category": "icecek",
+      "id": 8,
+      "image": "☕",
+      "name": "Karak",
+      "price": 100
+    },
+    {
+      "category": "icecek",
+      "id": 9,
+      "image": "🥛",
+      "name": "Sıcak Süt",
+      "price": 100
+    },
+    {
+      "category": "icecek",
+      "id": 10,
+      "image": "☕",
+      "name": "Türk Kahvesi",
+      "price": 150
+    },
+    {
+      "category": "icecek",
+      "id": 11,
+      "image": "🍊",
+      "name": "Portakal Suyu",
+      "price": 300
+    },
+    {
+      "category": "icecek",
+      "id": 12,
+      "image": "🍋",
+      "name": "Limonata",
+      "price": 300
+    },
+    {
+      "category": "icecek",
+      "id": 13,
+      "image": "💧",
+      "name": "Su",
+      "price": 60
+    }
+  ]
+}

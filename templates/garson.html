@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garson Paneli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .header { 
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white; 
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h2 {
+            font-weight: 300;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #333;
+            font-weight: 500;
+        }
+        select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e1e1e1; 
+            border-radius: 8px; 
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        select:focus { 
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .menu-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .menu-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 15px;
+        }
+
+        .menu-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+        .menu-item { 
+            background: #f8f9fa;
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .menu-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .menu-item.selected { 
+            border-color: #4CAF50; 
+            background: #e8f5e9;
+        }
+        .menu-item .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .menu-item h4 { 
+            margin: 0 0 8px 0; 
+            color: #333;
+            font-weight: 500;
+        }
+        .menu-item .price { 
+            color: #4CAF50; 
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .siparis-ozet { 
+            background: white;
+            padding: 25px; 
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 20px;
+        }
+        .siparis-ozet h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .btn { 
+            padding: 12px 25px; 
+            font-size: 16px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            color: white;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+        .btn-secondary { 
+            background: #6c757d;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn:hover { 
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .siparis-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 12px 0; 
+            border-bottom: 1px solid #eee;
+        }
+        .siparis-item:last-child {
+            border-bottom: none;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .quantity-btn {
+            width: 25px;
+            height: 25px;
+            border: none;
+            border-radius: 50%;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .toplam-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .toplam-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .my-orders {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-top: 25px;
+        }
+        .order-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+    
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .menu-layout {
+                grid-template-columns: 1fr;
+            }
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+            .siparis-ozet {
+                position: static;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>👨🍳 Garson Paneli</h2>
+        <div class="user-info">
+            <span>Hoş geldin, {{ user }}!</span>
+            <a href="/logout" class="btn btn-danger">Çıkış</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Masa Numarası:</label>
+                    <select id="masa">
+                        {% for i in range(1, 16) %}
+                        <option value="{{ i }}">Masa {{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Garson:</label>
+                    <select id="garson" disabled>
+                        <option value="{{ user }}">{{ user }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-layout">
+            <div>
+                <div class="menu-section">
+                    <h3>🍳 Ana Menü</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.ana_menu %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>🍟 Ekstralar</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.ekstralar %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <h3>🥤 İçecekler</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.icecekler %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} ₺</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="siparis-ozet">
+                    <h3>📝 Sipariş Özeti</h3>
+                    <div id="siparis-listesi"></div>
+                    <div class="toplam-section">
+                        <div>Toplam</div>
+                        <div class="toplam-amount"><span id="toplam">0</span> ₺</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button class="btn btn-primary" onclick="siparisGonder()">Sipariş Gönder</button>
+                        <button class="btn btn-secondary" onclick="siparisTemizle()">Temizle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="my-orders">
+            <h3>📋 Aktif Siparişlerim</h3>
+            <div id="aktif-siparisler"></div>
+        </div>
+    </div>
+
+    <script>
+        let siparis = [];
+        let toplam = 0;
+
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                const name = this.dataset.name;
+                const price = parseInt(this.dataset.price);
+                
+                const existing = siparis.find(s => s.id === id);
+                if (existing) {
+                    existing.adet++;
+                } else {
+                    siparis.push({id, name, price, adet: 1});
+                }
+                
+                siparisGuncelle();
+            });
+        });
+
+        function siparisGuncelle() {
+            const listesi = document.getElementById('siparis-listesi');
+            listesi.innerHTML = '';
+            toplam = 0;
+
+            siparis.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'siparis-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small>${item.price} ₺ x ${item.adet}</small>
+                    </div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="azalt(${index})">-</button>
+                        <span>${item.adet}</span>
+                        <button class="quantity-btn" onclick="arttir(${index})">+</button>
+                        <button class="quantity-btn" style="background: #dc3545; margin-left: 10px;" onclick="sil(${index})">×</button>
+                    </div>
+                `;
+                listesi.appendChild(div);
+                toplam += item.price * item.adet;
+            });
+
+            document.getElementById('toplam').textContent = toplam;
+        }
+
+        function arttir(index) {
+            siparis[index].adet++;
+            siparisGuncelle();
+        }
+
+        function azalt(index) {
+            if (siparis[index].adet > 1) {
+                siparis[index].adet--;
+            } else {
+                siparis.splice(index, 1);
+            }
+            siparisGuncelle();
+        }
+
+        function sil(index) {
+            siparis.splice(index, 1);
+            siparisGuncelle();
+        }
+
+        function siparisTemizle() {
+            siparis = [];
+            toplam = 0;
+            siparisGuncelle();
+        }
+
+        function siparisGonder() {
+            if (siparis.length === 0) {
+                alert('Lütfen sipariş ekleyin!');
+                return;
+            }
+
+            const data = {
+                masa: parseInt(document.getElementById('masa').value),
+                garson: document.getElementById('garson').value,
+                items: siparis,
+                toplam: toplam
+            };
+
+            fetch('/api/siparis', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Sipariş başarıyla gönderildi!');
+                    siparisTemizle();
+                    aktifSiparisleriYukle();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            });
+        }
+
+        function aktifSiparisleriYukle() {
+            fetch('/api/garson/siparisler')
+                .then(response => response.json())
+                .then(orders => {
+                    const container = document.getElementById('aktif-siparisler');
+                    container.innerHTML = '';
+                    
+                    if (orders.length === 0) {
+                        container.innerHTML = '<p style="text-align: center; color: #666;">Aktif siparişiniz bulunmuyor.</p>';
+                        return;
+                    }
+                    
+                    orders.forEach(order => {
+                        const div = document.createElement('div');
+                        div.className = 'order-item';
+                        const items = order.items.map(item => `${item.name} x${item.adet}`).join(', ');
+                        div.innerHTML = `
+                            <strong>Masa ${order.masa}</strong> - ${order.zaman}<br>
+                            <small>${items}</small><br>
+                            <strong>${order.toplam} ₺</strong>
+                        `;
+                        container.appendChild(div);
+                    });
+                });
+        }
+
+        // Sayfa yüklendiğinde aktif siparişleri yükle
+        aktifSiparisleriYukle();
+        
+        // Her 30 saniyede bir aktif siparişleri yenile
+        setInterval(aktifSiparisleriYukle, 30000);
+    </script>
+</body>
+</html>

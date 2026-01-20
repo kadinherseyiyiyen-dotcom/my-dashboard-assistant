@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2026-01-19",
+    "stats": {
+      "toplam_ciro": 1476,
+      "siparis_sayisi": 1,
+      "nakit_satis": 1476,
+      "kart_satis": 0,
+      "toplam_komisyon": 0,
+      "populer_urunler": [
+        [
+          "Serpme Kahvaltı",
+          1
+        ],
+        [
+          "Patates Kızartması",
+          1
+        ]
+      ],
+      "aktif_masa": 0
+    },
+    "summary_text": "19 Ocak 2026 sonu ozeti:\n\n* Toplam ciro: 1476\n* Siparis sayisi: 1\n* Nakit satis: 1476\n* Kart satis: 0\n* Toplam komisyon: 0\n* Aktif masa: 0\n\nOneriler:\n\n1. **Sipariş sayısını artırmak için pazarlama stratejileri geliştirilmeli**\n2. **Kart satışlarının artırılması için ödeme yöntemlerini çeşitlendirmek gerekir**\n3. **Popüler ürünler olan Serpme Kahvaltı ve Patates Kızartması üzerine marketting çalışmalarını yoğunlaştırmak gerekmekte**",
+    "summary_html": "19 Ocak 2026 sonu ozeti:\n\n* Toplam ciro: 1476\n* Siparis sayisi: 1\n* Nakit satis: 1476\n* Kart satis: 0\n* Toplam komisyon: 0\n* Aktif masa: 0\n\nOneriler:\n\n1. **Sipari&#351; say&#305;s&#305;n&#305; art&#305;rmak i&#231;in pazarlama stratejileri geli&#351;tirilmeli**\n2. **Kart sat&#305;&#351;lar&#305;n&#305;n art&#305;r&#305;lmas&#305; i&#231;in &#246;deme y&#246;ntemlerini &#231;e&#351;itlendirmek gerekir**\n3. **Pop&#252;ler &#252;r&#252;nler olan Serpme Kahvalt&#305; ve Patates K&#305;zartmas&#305; &#252;zerine marketting &#231;al&#305;&#351;malar&#305;n&#305; yo&#287;unla&#351;t&#305;rmak gerekmekte**",
+    "created_at": "2026-01-19 16:39:48"
+  }
+]

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş - Kahvaltı Salonu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container { 
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            max-width: 420px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .role-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+        h2 { 
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .role-info {
+            background: linear-gradient(135deg, #e6fffa, #f0fff4);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #2d3748;
+            font-size: 0.9rem;
+            border: 1px solid rgba(72, 187, 120, 0.2);
+        }
+        .form-group { 
+            margin-bottom: 1.5rem; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        input, select { 
+            width: 100%; 
+            padding: 0.875rem 1rem; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+        input:focus, select:focus { 
+            outline: none;
+            border-color: #4299e1;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        .btn { 
+            width: 100%;
+            padding: 1rem; 
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(66, 153, 225, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #a0aec0, #718096);
+            margin-top: 1rem;
+            box-shadow: 0 8px 25px rgba(160, 174, 192, 0.3);
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(160, 174, 192, 0.4);
+        }
+        .error {
+            color: #e53e3e;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+            background: #fed7d7;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 640px) {
+            .login-container {
+                padding: 2rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <div class="role-icon" id="role-icon">🔐</div>
+            <h2 id="login-title">Giriş</h2>
+        </div>
+        
+        <div class="role-info" id="role-info">Giriş bilgilerinizi giriniz</div>
+        
+        <form id="login-form">
+            <div class="form-group" id="name-group" style="display: none;">
+                <label for="name">Garson Seçin:</label>
+                <select id="name">
+                    <option value="WhatsApp Sipariş">WhatsApp Sipariş</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Şifre:</label>
+                <input type="password" id="password" required placeholder="Şifrenizi giriniz">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Giriş Yap</button>
+            <a href="/" class="btn btn-secondary">← Ana Sayfa</a>
+        </form>
+        
+        <div class="error" id="error-message"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role');
+        
+        const loginTitle = document.getElementById('login-title');
+        const roleInfo = document.getElementById('role-info');
+        const roleIcon = document.getElementById('role-icon');
+        const nameGroup = document.getElementById('name-group');
+        
+        if (role === 'garson') {
+            loginTitle.textContent = 'Garson Girişi';
+            roleIcon.textContent = '👨🍳';
+            roleInfo.textContent = 'Garson paneline erişim için şifrenizi girin';
+            nameGroup.style.display = 'block';
+        } else if (role === 'kasa') {
+            loginTitle.textContent = 'Kasa Girişi';
+            roleIcon.textContent = '💼';
+            roleInfo.textContent = 'Kasa paneline erişim için şifrenizi girin';
+        }
+        
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
+            const errorDiv = document.getElementById('error-message');
+            
+            fetch('/auth', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    role: role,
+                    password: password,
+                    name: name
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    errorDiv.textContent = data.message;
+                    errorDiv.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

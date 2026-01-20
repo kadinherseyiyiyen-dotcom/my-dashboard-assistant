@@ -1,0 +1,29 @@
+[
+  {
+    "date": "2026-01-21",
+    "waiter": "ahmet",
+    "status": "calisti",
+    "late_time": "",
+    "start_time": null,
+    "end_time": null,
+    "note": ""
+  },
+  {
+    "date": "2026-01-22",
+    "waiter": "ahmet",
+    "status": "calisti",
+    "late_time": "",
+    "start_time": null,
+    "end_time": null,
+    "note": ""
+  },
+  {
+    "date": "2026-01-23",
+    "waiter": "ahmet",
+    "status": "calisti",
+    "late_time": "",
+    "start_time": null,
+    "end_time": null,
+    "note": ""
+  }
+]

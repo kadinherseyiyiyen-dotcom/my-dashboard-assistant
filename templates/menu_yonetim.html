@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menü Yönetimi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .header { 
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white; 
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .menu-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e1e1e1;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .btn-primary { background: #2196F3; }
+        .btn-success { background: #4CAF50; }
+        .btn-danger { background: #dc3545; }
+        .btn-secondary { background: #6c757d; }
+        .add-item {
+            background: #e8f5e9;
+            border: 2px dashed #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        .add-item:hover {
+            background: #d4edda;
+        }
+        .password-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .password-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>⚙️ Menü Yönetimi</h2>
+        <div>
+            <a href="/kasa" class="btn btn-secondary">← Kasa Paneli</a>
+            <a href="/logout" class="btn btn-danger">Çıkış</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h3>🍳 Ana Menü</h3>
+            <div class="menu-grid" id="ana-menu-grid"></div>
+        </div>
+
+        <div class="section">
+            <h3>🍟 Ekstralar</h3>
+            <div class="menu-grid" id="ekstra-grid"></div>
+        </div>
+
+        <div class="section">
+            <h3>🥤 İçecek Menüsü</h3>
+            <div class="menu-grid" id="icecek-grid"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔐 Şifre Değiştir</h3>
+            <div class="password-section">
+                <div class="password-form">
+                    <div class="form-group">
+                        <label>Mevcut Şifre:</label>
+                        <input type="password" id="eski-sifre">
+                    </div>
+                    <div class="form-group">
+                        <label>Yeni Şifre:</label>
+                        <input type="password" id="yeni-sifre">
+                    </div>
+                    <button class="btn btn-primary" onclick="sifreDegistir()">Şifre Değiştir</button>
+                    <button class="btn btn-danger" onclick="denemeSifirla()">Deneme Sıfırla</button>
+                </div>
+                <div style="padding: 20px; color: #666;">
+                    <h4>Şifre Değiştirme Kuralları:</h4>
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        <li>En az 6 karakter olmalı</li>
+                        <li>Güvenli bir şifre seçin</li>
+                        <li>Şifrenizi kimseyle paylaşmayın</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn btn-success" onclick="menuKaydet()">💾 Tüm Değişiklikleri Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        let menu = {};
+        let nextId = 100;
+
+        function menuYukle() {
+            fetch('/api/menu')
+                .then(response => response.json())
+                .then(data => {
+                    menu = data;
+                    menuGoster();
+                });
+        }
+
+        function menuGoster() {
+            const anaMenuGrid = document.getElementById('ana-menu-grid');
+            const ekstraGrid = document.getElementById('ekstra-grid');
+            const icecekGrid = document.getElementById('icecek-grid');
+            
+            anaMenuGrid.innerHTML = '';
+            ekstraGrid.innerHTML = '';
+            icecekGrid.innerHTML = '';
+
+            // Ana menü items
+            if (menu.ana_menu) {
+                menu.ana_menu.forEach(item => {
+                    anaMenuGrid.appendChild(createMenuItemElement(item, 'ana_menu'));
+                });
+            }
+            anaMenuGrid.appendChild(createAddButton('ana_menu'));
+
+            // Ekstra items
+            if (menu.ekstralar) {
+                menu.ekstralar.forEach(item => {
+                    ekstraGrid.appendChild(createMenuItemElement(item, 'ekstralar'));
+                });
+            }
+            ekstraGrid.appendChild(createAddButton('ekstralar'));
+
+            // İçecek items
+            if (menu.icecekler) {
+                menu.icecekler.forEach(item => {
+                    icecekGrid.appendChild(createMenuItemElement(item, 'icecekler'));
+                });
+            }
+            icecekGrid.appendChild(createAddButton('icecekler'));
+        }
+
+        function createMenuItemElement(item, category) {
+            const div = document.createElement('div');
+            div.className = 'menu-item';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Emoji:</label>
+                    <input type="text" value="${item.image || ''}" onchange="updateItem(${item.id}, 'image', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Ürün Adı:</label>
+                    <input type="text" value="${item.name}" onchange="updateItem(${item.id}, 'name', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Fiyat (₺):</label>
+                    <input type="number" value="${item.price}" onchange="updateItem(${item.id}, 'price', parseInt(this.value))">
+                </div>
+                <button class="btn btn-danger" onclick="deleteItem(${item.id}, '${category}')">🗑️ Sil</button>
+            `;
+            return div;
+        }
+
+        function createAddButton(category) {
+            const div = document.createElement('div');
+            div.className = 'add-item';
+            div.innerHTML = '<h3>+ Yeni Ürün Ekle</h3>';
+            div.onclick = () => addNewItem(category);
+            return div;
+        }
+
+        function updateItem(id, field, value) {
+            // Ana menüde ara
+            let item = menu.ana_menu ? menu.ana_menu.find(i => i.id === id) : null;
+            if (!item && menu.ekstralar) {
+                // Ekstralarda ara
+                item = menu.ekstralar.find(i => i.id === id);
+            }
+            if (!item && menu.icecekler) {
+                // İçeceklerde ara
+                item = menu.icecekler.find(i => i.id === id);
+            }
+            
+            if (item) {
+                item[field] = value;
+            }
+        }
+
+        function deleteItem(id, category) {
+            if (confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
+                menu[category] = menu[category].filter(item => item.id !== id);
+                menuGoster();
+            }
+        }
+
+        function addNewItem(category) {
+            const name = prompt('Ürün adı:');
+            if (!name) return;
+            
+            const price = parseInt(prompt('Fiyat (₺):'));
+            if (!price) return;
+            
+            const image = prompt('Emoji (opsiyonel):') || '🍽️';
+            
+            let categoryName = 'ana_menu';
+            if (category === 'ekstralar') categoryName = 'ekstra';
+            else if (category === 'icecekler') categoryName = 'icecek';
+            
+            const newItem = {
+                id: nextId++,
+                name: name,
+                price: price,
+                category: categoryName,
+                image: image
+            };
+            
+            if (!menu[category]) {
+                menu[category] = [];
+            }
+            menu[category].push(newItem);
+            menuGoster();
+        }
+
+        function menuKaydet() {
+            fetch('/api/menu', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(menu)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Menü başarıyla kaydedildi!');
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            });
+        }
+
+        function sifreDegistir() {
+            const eskiSifre = document.getElementById('eski-sifre').value;
+            const yeniSifre = document.getElementById('yeni-sifre').value;
+            
+            if (!eskiSifre || !yeniSifre) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            if (yeniSifre.length < 6) {
+                alert('Yeni şifre en az 6 karakter olmalı!');
+                return;
+            }
+            
+            fetch('/api/sifre-degistir', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    eski_sifre: eskiSifre,
+                    yeni_sifre: yeniSifre
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Şifre başarıyla değiştirildi!');
+                    document.getElementById('eski-sifre').value = '';
+                    document.getElementById('yeni-sifre').value = '';
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            });
+        }
+
+        function denemeSifirla() {
+            if (confirm('Deneme verilerini sıfırlamak istiyor musunuz? Bu işlem tüm siparişleri siler.')) {
+                fetch('/api/deneme-sifirla', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Deneme verileri sıfırlandı.');
+                        } else {
+                            alert('Hata: ' + result.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Bir hata oluştu: ' + error.message);
+                    });
+            }
+        }
+
+        // Sayfa yüklendiğinde menüyü yükle
+        menuYukle();
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[
+  {
+    "period_start": "2026-01-19",
+    "period_end": "2026-01-25",
+    "tip_total": 0.0,
+    "workdays": {
+      "ahmet": 3
+    },
+    "payouts": {
+      "ahmet": 0.0
+    },
+    "updated_at": "2026-01-19 16:13:11"
+  }
+]

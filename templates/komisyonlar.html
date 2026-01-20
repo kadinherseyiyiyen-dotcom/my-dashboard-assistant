@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Komisyon Takibi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .header { 
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            white-space: nowrap;
+        }
+        .btn-secondary { background: #718096; color: white; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn:hover { opacity: 0.9; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #e6fffa, #f0fff4);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(72, 187, 120, 0.2);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .summary-item h3 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #38a169;
+            margin-bottom: 0.5rem;
+        }
+        .summary-item p {
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .komisyon-list {
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .komisyon-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f7fafc;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        .komisyon-header h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .komisyon-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .komisyon-item:hover {
+            background: #f7fafc;
+        }
+        .komisyon-item:last-child {
+            border-bottom: none;
+        }
+        .komisyon-info h4 {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 0.25rem;
+        }
+        .komisyon-details {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .komisyon-amount {
+            text-align: right;
+        }
+        .komisyon-amount .amount {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: #38a169;
+        }
+        .komisyon-amount .count {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #718096;
+        }
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 640px) {
+            .komisyon-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            .komisyon-amount {
+                text-align: left;
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Komisyon Takibi</h1>
+        <div class="header-actions">
+            <a href="/kasa" class="btn btn-secondary">← Kasa Paneli</a>
+            <a href="/logout" class="btn btn-danger">Çıkış</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="date-selector" style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <label for="tarih-sec" style="font-weight: 600; color: #1a202c;">📅 Tarih Seçiniz:</label>
+            <input type="date" id="tarih-sec" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.875rem;">
+            <button class="btn" style="background: #3182ce; color: white; padding: 0.75rem 1rem;" onclick="komisyonlariYukle()">🔄 Güncelle</button>
+            <button class="btn" style="background: #718096; color: white; padding: 0.75rem 1rem;" onclick="bugunuSec()">📆 Bugün</button>
+        </div>
+
+        <div class="summary-card">
+            <h2 style="color: #2d3748; margin-bottom: 1rem;">📊 Komisyon Özeti</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <h3 id="toplam-komisyon">0₺</h3>
+                    <p>Toplam Komisyon</p>
+                </div>
+                <div class="summary-item">
+                    <h3 id="toplam-serpme">0</h3>
+                    <p>Serpme Kahvaltı</p>
+                </div>
+                <div class="summary-item">
+                    <h3 id="komisyon-sayisi">0</h3>
+                    <p>Komisyon Sayısı</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="komisyon-list">
+            <div class="komisyon-header">
+                <h2>🏪 Masa Bazlı Komisyon Detayları</h2>
+            </div>
+            <div id="komisyon-listesi">
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>Komisyon verileri yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function bugunuSec() {
+            const bugun = new Date();
+            const yil = bugun.getFullYear();
+            const ay = String(bugun.getMonth() + 1).padStart(2, '0');
+            const gun = String(bugun.getDate()).padStart(2, '0');
+            document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
+            komisyonlariYukle();
+        }
+
+        function komisyonlariYukle() {
+            const secilenTarih = document.getElementById('tarih-sec').value;
+            if (!secilenTarih) {
+                alert('Lütfen tarih seçiniz!');
+                return;
+            }
+
+            // Tarihi dd.mm.yyyy formatına çevir
+            const [yil, ay, gun] = secilenTarih.split('-');
+            const formatliTarih = `${gun}.${ay}.${yil}`;
+
+            fetch(`/api/komisyonlar-tarih?tarih=${formatliTarih}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success === false) {
+                        alert('Hata: ' + data.message);
+                        return;
+                    }
+
+                    // Özet bilgileri güncelle
+                    document.getElementById('toplam-komisyon').textContent = (data.toplam_komisyon || 0) + '₺';
+                    document.getElementById('toplam-serpme').textContent = data.toplam_serpme || 0;
+                    document.getElementById('komisyon-sayisi').textContent = (data.komisyonlar || []).length;
+
+                    // Komisyon listesini güncelle
+                    const listesi = document.getElementById('komisyon-listesi');
+                    listesi.innerHTML = '';
+
+                    if (!data.komisyonlar || data.komisyonlar.length === 0) {
+                        listesi.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">🍳</div>
+                                <p>Seçilen tarihte komisyon bulunmuyor.</p>
+                                <small style="color: #a0aec0;">Serpme kahvaltı siparişleri komisyon getirir.</small>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // Komisyonları zamana göre sırala (en yeni önce)
+                    data.komisyonlar.sort((a, b) => b.zaman.localeCompare(a.zaman));
+
+                    data.komisyonlar.forEach(komisyon => {
+                        const div = document.createElement('div');
+                        div.className = 'komisyon-item';
+                        div.innerHTML = `
+                            <div class="komisyon-info">
+                                <h4>Masa ${komisyon.masa}</h4>
+                                <div class="komisyon-details">
+                                    ${komisyon.zaman} - ${komisyon.serpme_adet} Serpme Kahvaltı
+                                </div>
+                            </div>
+                            <div class="komisyon-amount">
+                                <div class="amount">${komisyon.komisyon}₺</div>
+                                <div class="count">${komisyon.serpme_adet} x 100₺</div>
+                            </div>
+                        `;
+                        listesi.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    console.error('Komisyon verileri yüklenirken hata:', error);
+                    document.getElementById('komisyon-listesi').innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">⚠️</div>
+                            <p>Veriler yüklenirken hata oluştu.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Sayfa yüklenirken bugünün tarihini seç ve komisyonları yükle
+        document.addEventListener('DOMContentLoaded', function() {
+            bugunuSec();
+        });
+    </script>
+</body>
+</html>

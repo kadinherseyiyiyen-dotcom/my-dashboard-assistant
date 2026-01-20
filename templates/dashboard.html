@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerçek Zamanlı Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+        }
+        .header { 
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card.live {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .stat-card.orders {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        .stat-card.revenue {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .popular-items {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .popular-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .popular-item:last-child {
+            border-bottom: none;
+        }
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .item-rank {
+            background: #3182ce;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .item-stats {
+            text-align: right;
+            font-size: 0.875rem;
+        }
+        .item-count {
+            font-weight: 700;
+            color: #38a169;
+        }
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            color: #38a169;
+            margin-left: auto;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #38a169;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .hour-item, .table-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .hour-item:last-child, .table-item:last-child {
+            border-bottom: none;
+        }
+        .hour-rank, .table-rank {
+            background: #f59e0b;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .hour-stats, .table-stats {
+            text-align: right;
+            font-size: 0.875rem;
+        }
+        .hour-revenue, .table-count {
+            font-weight: 700;
+            color: #f59e0b;
+        }
+        @media (max-width: 768px) {
+            .charts-grid, .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Gerçek Zamanlı Dashboard</h1>
+        <div>
+            <span class="live-indicator">
+                <span class="live-dot"></span>
+                Canlı Veri
+            </span>
+            <a href="/kasa" class="btn btn-danger" style="margin-left: 1rem;">← Geri Dön</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card live">
+                <span class="stat-icon">🔴</span>
+                <div class="stat-number" id="live-time">--:--</div>
+                <div class="stat-label">Canlı Saat</div>
+            </div>
+            <div class="stat-card orders">
+                <span class="stat-icon">📝</span>
+                <div class="stat-number" id="total-orders">0</div>
+                <div class="stat-label">Bugün Toplam Sipariş</div>
+            </div>
+            <div class="stat-card revenue">
+                <span class="stat-icon">💰</span>
+                <div class="stat-number" id="total-revenue">0₺</div>
+                <div class="stat-label">Bugün Toplam Ciro</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">📈 Saatlik Satış Grafiği</h3>
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="popular-items">
+                <h3 class="chart-title">🏆 En Popüler Ürünler</h3>
+                <div id="popular-list">
+                    <div style="text-align: center; padding: 2rem; color: #718096;">
+                        Veriler yükleniyor...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <div class="chart-card">
+                <h3 class="chart-title">💰 En Karlı Saatler</h3>
+                <div id="profitable-hours">
+                    <div style="text-align: center; padding: 2rem; color: #718096;">
+                        Veriler yükleniyor...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3 class="chart-title">🎯 Müşteri Yoğunluk Haritası</h3>
+                <div id="table-usage">
+                    <div style="text-align: center; padding: 2rem; color: #718096;">
+                        Veriler yükleniyor...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let salesChart;
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('live-time').textContent = now.toLocaleTimeString('tr-TR');
+        }
+        
+        function loadDashboardData() {
+            fetch('/api/dashboard-data')
+                .then(response => response.json())
+                .then(data => {
+                    // İstatistik kartlarını güncelle
+                    document.getElementById('total-orders').textContent = data.toplam_siparis;
+                    document.getElementById('total-revenue').textContent = data.toplam_ciro + '₺';
+                    
+                    // Saatlik satış grafiği
+                    updateSalesChart(data.saatlik_satis);
+                    
+                    // Popüler ürünler
+                    updatePopularItems(data.populer_urunler);
+                    
+                    // En karlı saatler
+                    updateProfitableHours(data.karli_saatler);
+                    
+                    // Masa kullanım analizi
+                    updateTableUsage(data.masa_kullanim);
+                })
+                .catch(error => {
+                    console.error('Dashboard veri yükleme hatası:', error);
+                });
+        }
+        
+        function updateSalesChart(saatlikData) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            const labels = Object.keys(saatlikData);
+            const values = Object.values(saatlikData);
+            
+            if (salesChart) {
+                salesChart.destroy();
+            }
+            
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Satış (₺)',
+                        data: values,
+                        borderColor: '#3182ce',
+                        backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3182ce',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '₺';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updatePopularItems(populerUrunler) {
+            const container = document.getElementById('popular-list');
+            
+            if (populerUrunler.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz satış verisi yok</div>';
+                return;
+            }
+            
+            let html = '';
+            populerUrunler.forEach((item, index) => {
+                const [name, stats] = item;
+                html += `
+                    <div class="popular-item">
+                        <div class="item-info">
+                            <div class="item-rank">${index + 1}</div>
+                            <div>
+                                <div style="font-weight: 600; color: #1a202c;">${name}</div>
+                                <div style="font-size: 0.75rem; color: #718096;">${stats.tutar}₺ toplam</div>
+                            </div>
+                        </div>
+                        <div class="item-stats">
+                            <div class="item-count">${stats.adet} adet</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateProfitableHours(karliSaatler) {
+            const container = document.getElementById('profitable-hours');
+            
+            if (karliSaatler.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz satış verisi yok</div>';
+                return;
+            }
+            
+            let html = '';
+            karliSaatler.forEach((item, index) => {
+                const [saat, tutar] = item;
+                html += `
+                    <div class="hour-item">
+                        <div class="item-info">
+                            <div class="hour-rank">${index + 1}</div>
+                            <div>
+                                <div style="font-weight: 600; color: #1a202c;">${saat}</div>
+                                <div style="font-size: 0.75rem; color: #718096;">En karlı saat</div>
+                            </div>
+                        </div>
+                        <div class="hour-stats">
+                            <div class="hour-revenue">${tutar}₺</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateTableUsage(masaKullanim) {
+            const container = document.getElementById('table-usage');
+            
+            if (masaKullanim.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
+                return;
+            }
+            
+            let html = '';
+            masaKullanim.forEach((item, index) => {
+                const [masaNo, kullanim] = item;
+                if (kullanim > 0) {
+                    html += `
+                        <div class="table-item">
+                            <div class="item-info">
+                                <div class="table-rank">${index + 1}</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #1a202c;">Masa ${masaNo}</div>
+                                    <div style="font-size: 0.75rem; color: #718096;">Son 7 gün</div>
+                                </div>
+                            </div>
+                            <div class="table-stats">
+                                <div class="table-count">${kullanim} kez</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (html === '') {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
+            } else {
+                container.innerHTML = html;
+            }
+        }
+        
+        // Sayfa yüklendiğinde
+        updateTime();
+        loadDashboardData();
+        
+        // Her saniye saati güncelle
+        setInterval(updateTime, 1000);
+        
+        // Her 10 saniyede dashboard verilerini güncelle
+        setInterval(loadDashboardData, 10000);
+    </script>
+</body>
+</html>
