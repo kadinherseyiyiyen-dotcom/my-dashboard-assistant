@@ -30,6 +30,7 @@ if DATA_DIR and DATA_DIR not in ['.', './']:
     os.makedirs(DATA_DIR, exist_ok=True)
 
 _DB_READY = False
+_DB_POOL = None
 _CACHE = {}
 ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '5'))
 MENU_CACHE_TTL = int(os.environ.get('MENU_CACHE_TTL', '60'))
@@ -50,22 +51,44 @@ def cached_load(key, loader, ttl_seconds):
 def invalidate_cache(key):
     _CACHE.pop(key, None)
 
-def get_db_conn():
+def init_db_pool():
+    global _DB_POOL
+    if _DB_POOL is not None or not USE_DB:
+        return
     try:
-        import psycopg2
+        import psycopg2  # noqa: F401
+        from psycopg2.pool import ThreadedConnectionPool
     except Exception as e:
         raise RuntimeError(f"psycopg2 import failed: {e}")
-
-    db_url = os.getenv('DATABASE_URL', '')
+    db_url = os.getenv('DATABASE_URL', '').strip()
     if not db_url:
+        return
+    minconn = int(os.environ.get('DB_POOL_MIN', '1'))
+    maxconn = int(os.environ.get('DB_POOL_MAX', '5'))
+    _DB_POOL = ThreadedConnectionPool(
+        minconn=minconn,
+        maxconn=maxconn,
+        dsn=db_url,
+        sslmode=os.environ.get('DB_SSLMODE', 'require')
+    )
+
+def get_db_conn():
+    init_db_pool()
+    if _DB_POOL is None:
         return None
-    return psycopg2.connect(db_url, sslmode=os.environ.get('DB_SSLMODE', 'require'))
+    return _DB_POOL.getconn()
+
+def release_db_conn(conn):
+    if _DB_POOL and conn:
+        _DB_POOL.putconn(conn)
 
 def ensure_kv_table():
     global _DB_READY
     if _DB_READY or not USE_DB:
         return
     conn = get_db_conn()
+    if conn is None:
+        return
     cur = conn.cursor()
     cur.execute("""
         create table if not exists kv_store (
@@ -77,18 +100,20 @@ def ensure_kv_table():
     cur.execute("create index if not exists kv_store_key_idx on kv_store(key)")
     conn.commit()
     cur.close()
-    conn.close()
+    release_db_conn(conn)
     _DB_READY = True
 
 def storage_has_key(key):
     if USE_DB:
         ensure_kv_table()
         conn = get_db_conn()
+        if conn is None:
+            return False
         cur = conn.cursor()
         cur.execute("select 1 from kv_store where key = %s", (key,))
         row = cur.fetchone()
         cur.close()
-        conn.close()
+        release_db_conn(conn)
         return row is not None
     return os.path.exists(data_path(key))
 
@@ -96,11 +121,13 @@ def load_json_storage(key, default):
     if USE_DB:
         ensure_kv_table()
         conn = get_db_conn()
+        if conn is None:
+            return default
         cur = conn.cursor()
         cur.execute("select data from kv_store where key = %s", (key,))
         row = cur.fetchone()
         cur.close()
-        conn.close()
+        release_db_conn(conn)
         if not row or row[0] is None:
             return default
         try:
@@ -117,6 +144,8 @@ def save_json_storage(key, data):
     if USE_DB:
         ensure_kv_table()
         conn = get_db_conn()
+        if conn is None:
+            return
         cur = conn.cursor()
         payload = json.dumps(data, ensure_ascii=False)
         cur.execute("""
@@ -126,7 +155,7 @@ def save_json_storage(key, data):
         """, (key, payload))
         conn.commit()
         cur.close()
-        conn.close()
+        release_db_conn(conn)
         return
     with open(data_path(key), 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -758,10 +787,14 @@ def otopark_ayarlar():
 @app.route('/api/hesap/<int:masa>')
 def hesap_getir(masa):
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    t0 = time.time()
     orders = load_orders()
+    t1 = time.time()
     masa_orders = [o for o in orders if o['masa'] == masa and o['durum'] == 'aktif']
     toplam = sum(o['toplam'] for o in masa_orders)
+    t2 = time.time()
+    print("hesap_getir timings:", "load_orders=", round(t1 - t0, 3), "compute=", round(t2 - t1, 3), "total=", round(t2 - t0, 3))
     return jsonify({
         'masa': masa,
         'siparisler': masa_orders,

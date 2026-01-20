@@ -480,6 +480,9 @@
             try {
                 const r = await fetch('/api/kasa-init');
                 const data = await r.json();
+                if (data && data.success === false) {
+                    throw new Error(data.message || 'kasa-init hatasi');
+                }
                 const orders = data.orders || [];
                 aktifSiparisler = orders.filter(o => o.durum === 'aktif');
                 renderTables(data.tables || {}, orders);
@@ -491,6 +494,14 @@
                 renderMenu(menu || {});
             } catch (err) {
                 console.error('Init hata:', err);
+                const tablesEl = document.getElementById('tablesGrid');
+                if (tablesEl) tablesEl.innerHTML = 'Veri alinamadi';
+                const ana = document.getElementById('menuGridAna');
+                const ekstra = document.getElementById('menuGridEkstra');
+                const icecek = document.getElementById('menuGridIcecek');
+                if (ana) ana.innerHTML = 'Veri alinamadi';
+                if (ekstra) ekstra.innerHTML = 'Veri alinamadi';
+                if (icecek) icecek.innerHTML = 'Veri alinamadi';
             }
         }
 
