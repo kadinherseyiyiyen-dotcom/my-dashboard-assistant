@@ -820,6 +820,7 @@
     <script>
         let mevcutMasa = null;
         let allOrders = [];
+        let hesapInFlight = {};
         let tables = {};
         let rehberMasalar = {};
 
@@ -969,6 +970,8 @@
         }
 
         function masaDetay(masa) {
+            if (hesapInFlight[masa]) return;
+            hesapInFlight[masa] = true;
             mevcutMasa = masa;
             fetch(`/api/hesap/${masa}`)
                 .then(response => response.json())
@@ -1046,6 +1049,12 @@
 
                     icerik.innerHTML = hesapHTML;
                     modal.style.display = 'block';
+                })
+                .catch(err => {
+                    console.error('Hesap yukleme hatasi:', err);
+                })
+                .finally(() => {
+                    hesapInFlight[masa] = false;
                 });
         }
 
