@@ -28,17 +28,18 @@ def data_path(filename):
 if DATA_DIR and DATA_DIR not in ['.', './']:
     os.makedirs(DATA_DIR, exist_ok=True)
 
-try:
-    import psycopg2
-except Exception:
-    psycopg2 = None
-
 _DB_READY = False
 
 def get_db_conn():
-    if not psycopg2:
-        raise RuntimeError('psycopg2-binary not installed')
-    return psycopg2.connect(DB_URL, sslmode=os.environ.get('DB_SSLMODE', 'require'))
+    try:
+        import psycopg2
+    except Exception as e:
+        raise RuntimeError(f"psycopg2 import failed: {e}")
+
+    db_url = os.getenv('DATABASE_URL', '')
+    if not db_url:
+        return None
+    return psycopg2.connect(db_url, sslmode=os.environ.get('DB_SSLMODE', 'require'))
 
 def ensure_kv_table():
     global _DB_READY
