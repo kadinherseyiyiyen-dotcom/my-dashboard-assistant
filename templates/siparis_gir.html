@@ -432,6 +432,8 @@
         let toplam = 0;
         let secilenMasa = null;
         let aktifSiparisler = [];
+        let siparisInFlight = false;
+        let siparisSubmitInFlight = false;
 
         function renderTables(tables, orders) {
             const el = document.getElementById('tablesGrid');
@@ -542,9 +544,7 @@
             mevcutSiparisleriGoster();
         }
         
-        let siparisInFlight = false;
-
-        function loadAktifSiparisler() {
+         {
             if (siparisInFlight) return;
             siparisInFlight = true;
             fetch('/api/kasa-init')
@@ -675,9 +675,7 @@
             siparisGuncelle();
         }
 
-        let siparisSubmitInFlight = false;
-
-        function siparisGonder() {
+        function siparisGonder() { {
             if (siparisSubmitInFlight) return;
             if (siparis.length === 0) {
                 alert('Lütfen sipariş ekleyin!');
