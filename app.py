@@ -32,7 +32,7 @@ if DATA_DIR and DATA_DIR not in ['.', './']:
 _DB_READY = False
 _DB_POOL = None
 _CACHE = {}
-ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '5'))
+ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '10'))
 MENU_CACHE_TTL = int(os.environ.get('MENU_CACHE_TTL', '60'))
 TABLES_CACHE_TTL = int(os.environ.get('TABLES_CACHE_TTL', '60'))
 REHBER_CACHE_TTL = int(os.environ.get('REHBER_CACHE_TTL', '60'))
@@ -78,9 +78,16 @@ def get_db_conn():
         return None
     return _DB_POOL.getconn()
 
-def release_db_conn(conn):
-    if _DB_POOL and conn:
-        _DB_POOL.putconn(conn)
+def release_db_conn(conn, close=False):
+    if not _DB_POOL or not conn:
+        return
+    if close:
+        try:
+            _DB_POOL.putconn(conn, close=True)
+        except TypeError:
+            conn.close()
+        return
+    _DB_POOL.putconn(conn)
 
 def ensure_kv_table():
     global _DB_READY
@@ -120,20 +127,38 @@ def storage_has_key(key):
 def load_json_storage(key, default):
     if USE_DB:
         ensure_kv_table()
-        conn = get_db_conn()
-        if conn is None:
-            return default
-        cur = conn.cursor()
-        cur.execute("select data from kv_store where key = %s", (key,))
-        row = cur.fetchone()
-        cur.close()
-        release_db_conn(conn)
-        if not row or row[0] is None:
-            return default
         try:
-            return json.loads(row[0])
+            import psycopg2
         except Exception:
-            return default
+            psycopg2 = None
+        for attempt in (1, 2):
+            conn = None
+            try:
+                conn = get_db_conn()
+                if conn is None:
+                    return default
+                cur = conn.cursor()
+                cur.execute("select data from kv_store where key = %s", (key,))
+                row = cur.fetchone()
+                cur.close()
+                release_db_conn(conn)
+                if not row or row[0] is None:
+                    return default
+                try:
+                    return json.loads(row[0])
+                except Exception:
+                    return default
+            except Exception as e:
+                if psycopg2 and isinstance(e, psycopg2.OperationalError):
+                    if conn:
+                        try:
+                            release_db_conn(conn, close=True)
+                        except Exception:
+                            pass
+                    if attempt == 2:
+                        raise
+                    continue
+                raise
     try:
         with open(data_path(key), 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -615,9 +640,9 @@ def siparisler():
 def kasa_init():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-    orders = cached_load('orders', load_orders, 5)
-    tables = cached_load('tables', load_tables, 30)
-    rehber = cached_load('rehber', load_rehber_masalar, 30)
+    orders = cached_load('orders', load_orders, 10)
+    tables = cached_load('tables', load_tables, 60)
+    rehber = cached_load('rehber', load_rehber_masalar, 60)
     return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber})
 
 @app.route('/api/tables', methods=['GET', 'POST'])
