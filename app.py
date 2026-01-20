@@ -31,6 +31,10 @@ if DATA_DIR and DATA_DIR not in ['.', './']:
 
 _DB_READY = False
 _CACHE = {}
+ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '5'))
+MENU_CACHE_TTL = int(os.environ.get('MENU_CACHE_TTL', '60'))
+TABLES_CACHE_TTL = int(os.environ.get('TABLES_CACHE_TTL', '60'))
+REHBER_CACHE_TTL = int(os.environ.get('REHBER_CACHE_TTL', '60'))
 
 def cached_load(key, loader, ttl_seconds):
     now = time.time()
@@ -178,25 +182,28 @@ def init_data():
 init_data()
 
 def load_orders():
-    return load_json_storage(ORDERS_FILE, [])
+    return cached_load('orders', lambda: load_json_storage(ORDERS_FILE, []), ORDERS_CACHE_TTL)
 
 def save_orders(orders):
     save_json_storage(ORDERS_FILE, orders)
+    invalidate_cache('orders')
 
 def load_menu():
-    return load_json_storage(MENU_FILE, {})
+    return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
 
 def load_tables():
-    return load_json_storage(TABLES_FILE, {str(i): f"Masa {i}" for i in range(1, 21)})
+    return cached_load('tables', lambda: load_json_storage(TABLES_FILE, {str(i): f"Masa {i}" for i in range(1, 21)}), TABLES_CACHE_TTL)
 
 def save_tables(tables):
     save_json_storage(TABLES_FILE, tables)
+    invalidate_cache('tables')
 
 def load_rehber_masalar():
-    return load_json_storage(REHBER_FILE, {})
+    return cached_load('rehber', lambda: load_json_storage(REHBER_FILE, {}), REHBER_CACHE_TTL)
 
 def save_rehber_masalar(rehber_masalar):
     save_json_storage(REHBER_FILE, rehber_masalar)
+    invalidate_cache('rehber')
 
 def load_tip_periods():
     return load_json_storage(TIP_FILE, [])
@@ -609,6 +616,7 @@ def handle_menu():
             return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
         data = request.json
         save_json_storage(MENU_FILE, data)
+        invalidate_cache('menu')
         return jsonify({'success': True})
 
 @app.route('/api/giderler', methods=['GET', 'POST'])

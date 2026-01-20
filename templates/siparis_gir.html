@@ -363,7 +363,7 @@
                     <label>Masa Seçimi:</label>
                     <div class="masa-grid">
                         {% for i in range(1, 21) %}
-                        <div class="masa-card" data-masa="{{ i }}" onclick="selectMasa({{ i }}, this)">
+                        <div class="masa-card" data-masa="{{ i }}">
                             <div class="masa-number">{{ tables[i|string] or ('Masa ' + i|string) }}</div>
                             <div class="masa-status"></div>
                         </div>
@@ -395,7 +395,7 @@
                     <h3>🍳 Ana Menü</h3>
                     <div class="menu-grid">
                         {% for item in menu.ana_menu %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -408,7 +408,7 @@
                     <h3>🍟 Ekstralar</h3>
                     <div class="menu-grid">
                         {% for item in menu.ekstralar %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -421,7 +421,7 @@
                     <h3>🥤 İçecekler</h3>
                     <div class="menu-grid">
                         {% for item in menu.icecekler %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -623,7 +623,10 @@
             siparisGuncelle();
         }
 
+        let siparisSubmitInFlight = false;
+
         function siparisGonder() {
+            if (siparisSubmitInFlight) return;
             if (siparis.length === 0) {
                 alert('Lütfen sipariş ekleyin!');
                 return;
@@ -633,6 +636,8 @@
                 alert('Lütfen masa seçiniz!');
                 return;
             }
+
+            siparisSubmitInFlight = true;
 
             const data = {
                 masa: secilenMasa,
@@ -660,6 +665,12 @@
                 } else {
                     alert('Hata: ' + result.message);
                 }
+            })
+            .catch(err => {
+                alert('Hata: ' + err.message);
+            })
+            .finally(() => {
+                siparisSubmitInFlight = false;
             });
         }
     </script>
