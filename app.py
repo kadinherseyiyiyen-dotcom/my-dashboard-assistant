@@ -346,9 +346,7 @@ def kasa():
 def siparis_gir():
     if session.get('role') != 'kasa':
         return redirect(url_for('login'))
-    menu = load_menu()
-    tables = load_tables()
-    return render_template('siparis_gir.html', menu=menu, tables=tables)
+    return render_template('siparis_gir.html')
 
 @app.route('/menu-yonetim')
 def menu_yonetim():

@@ -361,13 +361,8 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Masa Seçimi:</label>
-                    <div class="masa-grid">
-                        {% for i in range(1, 21) %}
-                        <div class="masa-card" data-masa="{{ i }}" onclick="selectMasa({{ i }}, this)">
-                            <div class="masa-number">{{ tables[i|string] or ('Masa ' + i|string) }}</div>
-                            <div class="masa-status"></div>
-                        </div>
-                        {% endfor %}
+                    <div class="masa-grid" id="tablesGrid">
+                        Yükleniyor...
                     </div>
                 </div>
             </div>
@@ -457,6 +452,71 @@
         let toplam = 0;
         let secilenMasa = null;
         let aktifSiparisler = [];
+
+        function renderTables(tables, orders) {
+            const el = document.getElementById('tablesGrid');
+            if (!el) return;
+            el.innerHTML = '';
+            const aktifMasalar = new Set((orders || []).filter(o => o.durum === 'aktif').map(o => String(o.masa)));
+            const entries = Object.entries(tables || {});
+            entries.sort((a,b) => Number(a[0]) - Number(b[0]));
+            entries.forEach(([masaNo, masaAdi]) => {
+                const card = document.createElement('div');
+                card.className = 'masa-card' + (aktifMasalar.has(String(masaNo)) ? ' occupied' : '');
+                card.dataset.masa = masaNo;
+                card.innerHTML = `<div class="masa-number">${masaAdi || ('Masa ' + masaNo)}</div><div class="masa-status"></div>`;
+                el.appendChild(card);
+            });
+        }
+
+        function renderMenu(menu) {
+            const el = document.getElementById('menuGrid');
+            if (!el) return;
+            el.innerHTML = '';
+            const all = [].concat(menu.ana_menu || [], menu.ekstralar || [], menu.icecekler || []);
+            all.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.dataset.id = item.id;
+                div.dataset.name = item.name;
+                div.dataset.price = item.price;
+                div.innerHTML = `<div class="icon">${item.image || ''}</div><h4>${item.name}</h4><div class="price">${item.price} TL</div>`;
+                el.appendChild(div);
+            });
+        }
+
+        async function initSiparisGir() {
+            try {
+                const r = await fetch('/api/kasa-init');
+                const data = await r.json();
+                const orders = data.orders || [];
+                aktifSiparisler = orders.filter(o => o.durum === 'aktif');
+                renderTables(data.tables || {}, orders);
+                masaDurumlariniGuncelle();
+                dolulukGuncelle();
+                mevcutSiparisleriGoster();
+                const mr = await fetch('/api/menu');
+                const menu = await mr.json();
+                renderMenu(menu || {});
+            } catch (err) {
+                console.error('Init hata:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initSiparisGir);
+
+        document.addEventListener('click', function(e) {
+            const card = e.target.closest('.masa-card');
+            if (card) {
+                selectMasa(parseInt(card.dataset.masa), card);
+                return;
+            }
+            const item = e.target.closest('.menu-item');
+            if (item) {
+                selectMenuItem(item);
+            }
+        });
+
 
 
         document.getElementById('siparis-zaman').value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
