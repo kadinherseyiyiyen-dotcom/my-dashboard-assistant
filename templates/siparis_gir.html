@@ -363,7 +363,7 @@
                     <label>Masa Seçimi:</label>
                     <div class="masa-grid">
                         {% for i in range(1, 21) %}
-                        <div class="masa-card" data-masa="{{ i }}">
+                        <div class="masa-card" data-masa="{{ i }}" onclick="selectMasa({{ i }}, this)">
                             <div class="masa-number">{{ tables[i|string] or ('Masa ' + i|string) }}</div>
                             <div class="masa-status"></div>
                         </div>
@@ -395,7 +395,7 @@
                     <h3>🍳 Ana Menü</h3>
                     <div class="menu-grid">
                         {% for item in menu.ana_menu %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -408,7 +408,7 @@
                     <h3>🍟 Ekstralar</h3>
                     <div class="menu-grid">
                         {% for item in menu.ekstralar %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -421,7 +421,7 @@
                     <h3>🥤 İçecekler</h3>
                     <div class="menu-grid">
                         {% for item in menu.icecekler %}
-                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" onclick="selectMenuItem(this)">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
                             <div class="price">{{ item.price }} ₺</div>
@@ -462,21 +462,26 @@
         loadAktifSiparisler();
         setInterval(loadAktifSiparisler, 20000);
 
-        // Masa seçimi
-        document.querySelectorAll('.masa-card').forEach(card => {
-            card.addEventListener('click', function() {
-                // Önceki seçimi temizle
-                document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
-                
-                // Yeni seçimi işaretle
-                this.classList.add('selected');
-                secilenMasa = parseInt(this.dataset.masa);
-                
-                // Seçili masa alanını güncelle
-                document.getElementById('secili-masa').value = this.querySelector('.masa-number').textContent;
-                mevcutSiparisleriGoster();
+        function selectMasa(masaNo, el) {
+            const card = el || document.querySelector(`.masa-card[data-masa="${masaNo}"]`);
+            if (!card) return;
+            document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            secilenMasa = parseInt(card.dataset.masa);
+            document.getElementById('secili-masa').value = card.querySelector('.masa-number').textContent;
+            mevcutSiparisleriGoster();
+        }
+
+        // Masa secimi (event delegation)
+        const masaGrid = document.querySelector('.masa-grid');
+        if (masaGrid) {
+            masaGrid.addEventListener('click', function(e) {
+                const target = e.target && e.target.closest ? e.target : (e.target && e.target.parentElement);
+                const card = target && target.closest ? target.closest('.masa-card') : null;
+                if (!card) return;
+                selectMasa(parseInt(card.dataset.masa), card);
             });
-        });
+        }
 
         
         let siparisInFlight = false;
@@ -544,20 +549,25 @@
             container.innerHTML = html;
         }
 
-document.querySelectorAll('.menu-item').forEach(item => {
+        function selectMenuItem(el) {
+            if (!el) return;
+            const id = parseInt(el.dataset.id);
+            const name = el.dataset.name;
+            const price = parseInt(el.dataset.price);
+
+            const existing = siparis.find(s => s.id === id);
+            if (existing) {
+                existing.adet++;
+            } else {
+                siparis.push({id, name, price, adet: 1});
+            }
+            
+            siparisGuncelle();
+        }
+
+        document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function() {
-                const id = parseInt(this.dataset.id);
-                const name = this.dataset.name;
-                const price = parseInt(this.dataset.price);
-                
-                const existing = siparis.find(s => s.id === id);
-                if (existing) {
-                    existing.adet++;
-                } else {
-                    siparis.push({id, name, price, adet: 1});
-                }
-                
-                siparisGuncelle();
+                selectMenuItem(this);
             });
         });
 
