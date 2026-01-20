@@ -19,6 +19,8 @@ def add_charset(response):
     return response
 
 DATA_DIR = os.environ.get('DATA_DIR', '.')
+DB_URL = os.environ.get('DATABASE_URL', '').strip()
+USE_DB = bool(DB_URL)
 
 def data_path(filename):
     return os.path.join(DATA_DIR, filename)
@@ -26,30 +28,107 @@ def data_path(filename):
 if DATA_DIR and DATA_DIR not in ['.', './']:
     os.makedirs(DATA_DIR, exist_ok=True)
 
-ORDERS_FILE = data_path('orders.json')
-MENU_FILE = data_path('menu.json')
-TABLES_FILE = data_path('tables.json')
-REHBER_FILE = data_path('rehber_masalar.json')
-ATTENDANCE_FILE = data_path('vardiya.json')
-ATTENDANCE_CONFIG_FILE = data_path('vardiya_config.json')
-EMPLOYEES_FILE = data_path('calisanlar.json')
-TIP_FILE = data_path('tip_havuzu.json')
-EXPENSES_FILE = data_path('giderler.json')
-CONFIG_FILE = data_path('config.json')
-OTOPARK_CONFIG_FILE = data_path('otopark_config.json')
+try:
+    import psycopg2
+except Exception:
+    psycopg2 = None
+
+_DB_READY = False
+
+def get_db_conn():
+    if not psycopg2:
+        raise RuntimeError('psycopg2-binary not installed')
+    return psycopg2.connect(DB_URL, sslmode=os.environ.get('DB_SSLMODE', 'require'))
+
+def ensure_kv_table():
+    global _DB_READY
+    if _DB_READY or not USE_DB:
+        return
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        create table if not exists kv_store (
+            key text primary key,
+            data text,
+            updated_at timestamptz default now()
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+    _DB_READY = True
+
+def storage_has_key(key):
+    if USE_DB:
+        ensure_kv_table()
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("select 1 from kv_store where key = %s", (key,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row is not None
+    return os.path.exists(data_path(key))
+
+def load_json_storage(key, default):
+    if USE_DB:
+        ensure_kv_table()
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("select data from kv_store where key = %s", (key,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row or row[0] is None:
+            return default
+        try:
+            return json.loads(row[0])
+        except Exception:
+            return default
+    try:
+        with open(data_path(key), 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+def save_json_storage(key, data):
+    if USE_DB:
+        ensure_kv_table()
+        conn = get_db_conn()
+        cur = conn.cursor()
+        payload = json.dumps(data, ensure_ascii=False)
+        cur.execute("""
+            insert into kv_store (key, data, updated_at)
+            values (%s, %s, now())
+            on conflict (key) do update set data = excluded.data, updated_at = now()
+        """, (key, payload))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return
+    with open(data_path(key), 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+ORDERS_FILE = 'orders.json'
+MENU_FILE = 'menu.json'
+TABLES_FILE = 'tables.json'
+REHBER_FILE = 'rehber_masalar.json'
+ATTENDANCE_FILE = 'vardiya.json'
+ATTENDANCE_CONFIG_FILE = 'vardiya_config.json'
+EMPLOYEES_FILE = 'calisanlar.json'
+TIP_FILE = 'tip_havuzu.json'
+EXPENSES_FILE = 'giderler.json'
+CONFIG_FILE = 'config.json'
+OTOPARK_CONFIG_FILE = 'otopark_config.json'
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
 
 def load_config():
-    try:
-        with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return {'kasa_sifre': 'kasa123'}
+    return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
 
 def init_data():
-    if not os.path.exists(MENU_FILE):
+    if not storage_has_key(MENU_FILE):
         menu = {
             "ana_menu": [{"id": 1, "name": "Serpme Kahvaltı", "price": 85, "category": "ana_menu", "image": "🍳"}],
             "ekstralar": [
@@ -69,65 +148,41 @@ def init_data():
                 {"id": 13, "name": "Su", "price": 5, "category": "icecek", "image": "💧"}
             ]
         }
-        with open(MENU_FILE, 'w', encoding='utf-8') as f:
-            json.dump(menu, f, ensure_ascii=False, indent=2)
+        save_json_storage(MENU_FILE, menu)
     
-    if not os.path.exists(ORDERS_FILE):
-        with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump([], f, ensure_ascii=False, indent=2)
+    if not storage_has_key(ORDERS_FILE):
+        save_json_storage(ORDERS_FILE, [])
     
-    if not os.path.exists(TABLES_FILE):
+    if not storage_has_key(TABLES_FILE):
         tables = {str(i): f"Masa {i}" for i in range(1, 21)}
-        with open(TABLES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(tables, f, ensure_ascii=False, indent=2)
+        save_json_storage(TABLES_FILE, tables)
 
 def load_orders():
-    try:
-        with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+    return load_json_storage(ORDERS_FILE, [])
 
 def save_orders(orders):
-    with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(orders, f, ensure_ascii=False, indent=2)
+    save_json_storage(ORDERS_FILE, orders)
 
 def load_menu():
-    with open(MENU_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    return load_json_storage(MENU_FILE, {})
 
 def load_tables():
-    try:
-        with open(TABLES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {str(i): f"Masa {i}" for i in range(1, 21)}
+    return load_json_storage(TABLES_FILE, {str(i): f"Masa {i}" for i in range(1, 21)})
 
 def save_tables(tables):
-    with open(TABLES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(tables, f, ensure_ascii=False, indent=2)
+    save_json_storage(TABLES_FILE, tables)
 
 def load_rehber_masalar():
-    try:
-        with open(REHBER_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {}
+    return load_json_storage(REHBER_FILE, {})
 
 def save_rehber_masalar(rehber_masalar):
-    with open(REHBER_FILE, 'w', encoding='utf-8') as f:
-        json.dump(rehber_masalar, f, ensure_ascii=False, indent=2)
+    save_json_storage(REHBER_FILE, rehber_masalar)
 
 def load_tip_periods():
-    try:
-        with open(TIP_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+    return load_json_storage(TIP_FILE, [])
 
 def save_tip_periods(periods):
-    with open(TIP_FILE, 'w', encoding='utf-8') as f:
-        json.dump(periods, f, ensure_ascii=False, indent=2)
+    save_json_storage(TIP_FILE, periods)
 
 def normalize_tip_total(value):
     return Decimal(str(value)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -165,26 +220,16 @@ def calculate_tip_payouts(tip_total, workdays):
 
 
 def load_attendance():
-    try:
-        with open(ATTENDANCE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+    return load_json_storage(ATTENDANCE_FILE, [])
 
 def save_attendance(records):
-    with open(ATTENDANCE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
+    save_json_storage(ATTENDANCE_FILE, records)
 
 def load_attendance_config():
-    try:
-        with open(ATTENDANCE_CONFIG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {'start_time': '09:00', 'end_time': '18:00'}
+    return load_json_storage(ATTENDANCE_CONFIG_FILE, {'start_time': '09:00', 'end_time': '18:00'})
 
 def save_attendance_config(cfg):
-    with open(ATTENDANCE_CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    save_json_storage(ATTENDANCE_CONFIG_FILE, cfg)
 
 def parse_date(value):
     try:
@@ -194,26 +239,16 @@ def parse_date(value):
 
 
 def load_employees():
-    try:
-        with open(EMPLOYEES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+    return load_json_storage(EMPLOYEES_FILE, [])
 
 def save_employees(names):
-    with open(EMPLOYEES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(names, f, ensure_ascii=False, indent=2)
+    save_json_storage(EMPLOYEES_FILE, names)
 
 def load_expenses():
-    try:
-        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+    return load_json_storage(EXPENSES_FILE, [])
 
 def save_expenses(records):
-    with open(EXPENSES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(records, f, ensure_ascii=False, indent=2)
+    save_json_storage(EXPENSES_FILE, records)
 
 def normalize_date(value):
     if not value:
@@ -360,8 +395,7 @@ def satis_grafik():
     
     # Rehber masalarını yükle
     try:
-        with open(REHBER_FILE, 'r') as f:
-            rehber_masalar = json.load(f)
+        rehber_masalar = load_rehber_masalar()
     except:
         rehber_masalar = {}
     
@@ -545,8 +579,7 @@ def handle_menu():
         if session.get('role') != 'kasa':
             return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
         data = request.json
-        with open(MENU_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        save_json_storage(MENU_FILE, data)
         return jsonify({'success': True})
 
 @app.route('/api/giderler', methods=['GET', 'POST'])
@@ -678,15 +711,13 @@ def otopark_ayarlar():
     
     if request.method == 'GET':
         try:
-            with open(OTOPARK_CONFIG_FILE, 'r') as f:
-                config = json.load(f)
+            config = load_json_storage(OTOPARK_CONFIG_FILE, {'otopark_fiyat': 50})
             return jsonify(config)
         except:
             return jsonify({'otopark_fiyat': 50})
     else:
         data = request.json
-        with open(OTOPARK_CONFIG_FILE, 'w') as f:
-            json.dump(data, f)
+        save_json_storage(OTOPARK_CONFIG_FILE, data)
         return jsonify({'success': True})
 
 @app.route('/api/hesap/<int:masa>')
