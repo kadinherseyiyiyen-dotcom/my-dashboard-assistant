@@ -734,7 +734,7 @@
     <div class="container">
         <div class="stats-grid">
             <div class="stat-card aktif-masa">
-                <span class="stat-icon">🏠</span>
+                <span class="stat-icon">🍽️</span>
                 <div class="stat-number" id="aktif-masa-sayisi">0</div>
                 <div class="stat-label">Aktif Masa</div>
             </div>
@@ -922,7 +922,7 @@
                 masaData[order.masa].garsonlar.add(order.garson);
             });
 
-            for (let i = 1; i <= 20; i++) {
+            for (let i = 1; i <= 25; i++) {
                 const div = document.createElement('div');
                 div.className = masaData[i] ? 'table-card occupied' : 'table-card';
                 div.onclick = () => masaDetay(i);
@@ -1097,7 +1097,7 @@
             kaynakSelect.innerHTML = '<option value="">Masa seçiniz</option>';
             hedefSelect.innerHTML = '<option value="">Masa seçiniz</option>';
             
-            for (let i = 1; i <= 20; i++) {
+            for (let i = 1; i <= 25; i++) {
                 const option1 = document.createElement('option');
                 option1.value = i;
                 option1.textContent = tables[i] || 'Masa ' + i;
@@ -1228,7 +1228,7 @@
             const icerik = document.getElementById('masa-icerik');
             
             let html = '';
-            for (let i = 1; i <= 15; i++) {
+            for (let i = 1; i <= 25; i++) {
                 html += `
                     <div style="margin-bottom: 1rem;">
                         <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Masa ${i}:</label>
@@ -1244,7 +1244,7 @@
 
         function masaKaydet() {
             const newTables = {};
-            for (let i = 1; i <= 15; i++) {
+            for (let i = 1; i <= 25; i++) {
                 newTables[i] = document.getElementById(`masa-${i}`).value;
             }
             

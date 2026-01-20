@@ -230,7 +230,7 @@ def init_data():
         save_json_storage(ORDERS_FILE, [])
     
     if not storage_has_key(TABLES_FILE):
-        tables = {str(i): f"Masa {i}" for i in range(1, 21)}
+        tables = {str(i): f"Masa {i}" for i in range(1, 26)}
         save_json_storage(TABLES_FILE, tables)
 
 init_data()
@@ -246,7 +246,7 @@ def load_menu():
     return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
 
 def load_tables():
-    return cached_load('tables', lambda: load_json_storage(TABLES_FILE, {str(i): f"Masa {i}" for i in range(1, 21)}), TABLES_CACHE_TTL)
+    return cached_load('tables', lambda: load_json_storage(TABLES_FILE, {str(i): f"Masa {i}" for i in range(1, 26)}), TABLES_CACHE_TTL)
 
 def save_tables(tables):
     save_json_storage(TABLES_FILE, tables)
@@ -1073,7 +1073,7 @@ def dashboard_data():
     
     urun_satis = {}
     masa_kullanim = {}
-    for i in range(1, 21):
+    for i in range(1, 26):
         masa_kullanim[i] = 0
     
     bugun_orders = [
