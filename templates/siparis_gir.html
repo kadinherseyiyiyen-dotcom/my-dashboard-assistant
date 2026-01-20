@@ -479,14 +479,28 @@
         });
 
         
+        let siparisInFlight = false;
+
         function loadAktifSiparisler() {
-            fetch('/api/siparisler')
+            if (siparisInFlight) return;
+            siparisInFlight = true;
+            fetch('/api/kasa-init')
                 .then(response => response.json())
-                .then(orders => {
-                    aktifSiparisler = (orders || []).filter(o => o.durum === 'aktif');
+                .then(data => {
+                    if (data.success === false) {
+                        throw new Error(data.message || 'Yukleme hatasi');
+                    }
+                    const orders = data.orders || [];
+                    aktifSiparisler = orders.filter(o => o.durum === 'aktif');
                     masaDurumlariniGuncelle();
                     dolulukGuncelle();
                     mevcutSiparisleriGoster();
+                })
+                .catch(err => {
+                    console.error('Aktif siparis yukleme hatasi:', err);
+                })
+                .finally(() => {
+                    siparisInFlight = false;
                 });
         }
 
