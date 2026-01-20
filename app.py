@@ -67,6 +67,7 @@ def ensure_kv_table():
             updated_at timestamptz default now()
         )
     """)
+    cur.execute("create index if not exists kv_store_key_idx on kv_store(key)")
     conn.commit()
     cur.close()
     conn.close()
@@ -575,9 +576,9 @@ def siparisler():
 def kasa_init():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-    orders = cached_load('orders', load_orders, 2)
-    tables = cached_load('tables', load_tables, 10)
-    rehber = cached_load('rehber', load_rehber_masalar, 10)
+    orders = cached_load('orders', load_orders, 5)
+    tables = cached_load('tables', load_tables, 30)
+    rehber = cached_load('rehber', load_rehber_masalar, 30)
     return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber})
 
 @app.route('/api/tables', methods=['GET', 'POST'])
