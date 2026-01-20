@@ -43,6 +43,9 @@ def cached_load(key, loader, ttl_seconds):
     _CACHE[key] = (now, data)
     return data
 
+def invalidate_cache(key):
+    _CACHE.pop(key, None)
+
 def get_db_conn():
     try:
         import psycopg2
