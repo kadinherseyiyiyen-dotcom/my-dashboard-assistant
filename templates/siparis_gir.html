@@ -475,7 +475,11 @@
             addItems(menu.icecekler, icecek);
         }
 
+        let initSiparisGirInFlight = false;
+
         async function initSiparisGir() {
+            if (initSiparisGirInFlight) return;
+            initSiparisGirInFlight = true;
             try {
                 const r = await fetch('/api/kasa-init');
                 const data = await r.json();
@@ -501,10 +505,14 @@
                 if (ana) ana.innerHTML = 'Veri alinamadi';
                 if (ekstra) ekstra.innerHTML = 'Veri alinamadi';
                 if (icecek) icecek.innerHTML = 'Veri alinamadi';
+            } finally {
+                initSiparisGirInFlight = false;
             }
         }
 
         document.addEventListener('DOMContentLoaded', initSiparisGir);
+        window.addEventListener('load', initSiparisGir);
+        setTimeout(initSiparisGir, 0);
 
         document.addEventListener('click', function(e) {
             const card = e.target.closest('.masa-card');
