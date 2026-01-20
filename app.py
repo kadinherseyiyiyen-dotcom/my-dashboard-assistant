@@ -207,6 +207,28 @@ def now_tr():
     except Exception:
         return datetime.now()
 
+def parse_order_datetime(order):
+    date_str = order.get('kapanma_tarih') or order.get('tarih') or ''
+    time_str = order.get('kapanma_zamani') or order.get('zaman') or '00:00'
+    try:
+        if '.' in date_str:
+            gun, ay, yil = date_str.split('.')
+            dt = datetime(int(yil), int(ay), int(gun))
+        else:
+            yil, ay, gun = date_str.split('-')
+            dt = datetime(int(yil), int(ay), int(gun))
+        saat, dakika = time_str.split(':')
+        dt = dt.replace(hour=int(saat), minute=int(dakika))
+        return dt.replace(tzinfo=ZoneInfo("Europe/Istanbul"))
+    except Exception:
+        return now_tr()
+
+def business_day_key(dt):
+    cutoff = dt.replace(hour=19, minute=0, second=0, microsecond=0)
+    if dt < cutoff:
+        return (dt - timedelta(days=1)).date()
+    return dt.date()
+
 def load_config():
     return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
 
@@ -1071,11 +1093,10 @@ def dashboard_data():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     
     orders = load_orders()
-    bugun_iso = now_tr().strftime('%Y-%m-%d')
-    bugun_tr = now_tr().strftime('%d.%m.%Y')
+    bugun_key = business_day_key(now_tr())
     
     saatlik_satis = {}
-    for i in range(7, 20):
+    for i in range(0, 24):
         saatlik_satis[f"{i:02d}:00"] = 0
     
     urun_satis = {}
@@ -1083,25 +1104,15 @@ def dashboard_data():
     for i in range(1, 26):
         masa_kullanim[i] = 0
     
-    bugun_orders = [
-        o for o in orders
-        if (get_order_date(o) == bugun_iso or get_order_date(o) == bugun_tr)
-        and o['durum'] == 'kapali'
-    ]
+    bugun_orders = []
+    for o in orders:
+        if o.get('durum') != 'kapali':
+            continue
+        order_dt = parse_order_datetime(o)
+        if business_day_key(order_dt) == bugun_key:
+            bugun_orders.append(o)
     
-    from datetime import timedelta
-    son_7_gun = []
-    for i in range(7):
-        tarih = (now_tr() - timedelta(days=i)).strftime('%Y-%m-%d')
-        tarih_tr = (now_tr() - timedelta(days=i)).strftime('%d.%m.%Y')
-        gun_orders = [
-            o for o in orders
-            if (get_order_date(o) == tarih or get_order_date(o) == tarih_tr)
-            and o['durum'] == 'kapali'
-        ]
-        son_7_gun.extend(gun_orders)
-    
-    for order in son_7_gun:
+    for order in bugun_orders:
         masa_key = order.get('masa')
         if isinstance(masa_key, str) and masa_key.isdigit():
             masa_key = int(masa_key)
@@ -1114,7 +1125,7 @@ def dashboard_data():
             saat = int(saat_str.split(':')[0])
         except ValueError:
             saat = None
-        if saat is not None and 7 <= saat <= 19:
+        if saat is not None and 0 <= saat <= 23:
             saatlik_satis[f"{saat:02d}:00"] += order.get('indirimli_tutar', order.get('toplam', 0))
         
         for item in order.get('items', []):
@@ -1132,7 +1143,7 @@ def dashboard_data():
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
     populer_masalar = sorted(masa_kullanim.items(), key=lambda x: x[1], reverse=True)[:10]
     
-    toplam_gider = sum_expenses_for_date(bugun_iso)
+    toplam_gider = sum_expenses_for_date(now_tr().strftime('%Y-%m-%d'))
     toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
     net_ciro = toplam_ciro - toplam_gider
 
