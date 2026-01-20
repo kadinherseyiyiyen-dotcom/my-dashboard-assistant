@@ -18,22 +18,32 @@ def add_charset(response):
         response.headers['Content-Type'] = 'text/html; charset=utf-8'
     return response
 
-ORDERS_FILE = 'orders.json'
-MENU_FILE = 'menu.json'
-TABLES_FILE = 'tables.json'
-REHBER_FILE = 'rehber_masalar.json'
-ATTENDANCE_FILE = 'vardiya.json'
-ATTENDANCE_CONFIG_FILE = 'vardiya_config.json'
-EMPLOYEES_FILE = 'calisanlar.json'
-TIP_FILE = 'tip_havuzu.json'
-EXPENSES_FILE = 'giderler.json'
+DATA_DIR = os.environ.get('DATA_DIR', '.')
+
+def data_path(filename):
+    return os.path.join(DATA_DIR, filename)
+
+if DATA_DIR and DATA_DIR not in ['.', './']:
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+ORDERS_FILE = data_path('orders.json')
+MENU_FILE = data_path('menu.json')
+TABLES_FILE = data_path('tables.json')
+REHBER_FILE = data_path('rehber_masalar.json')
+ATTENDANCE_FILE = data_path('vardiya.json')
+ATTENDANCE_CONFIG_FILE = data_path('vardiya_config.json')
+EMPLOYEES_FILE = data_path('calisanlar.json')
+TIP_FILE = data_path('tip_havuzu.json')
+EXPENSES_FILE = data_path('giderler.json')
+CONFIG_FILE = data_path('config.json')
+OTOPARK_CONFIG_FILE = data_path('otopark_config.json')
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
 
 def load_config():
     try:
-        with open('config.json', 'r') as f:
+        with open(CONFIG_FILE, 'r') as f:
             return json.load(f)
     except:
         return {'kasa_sifre': 'kasa123'}
@@ -350,7 +360,7 @@ def satis_grafik():
     
     # Rehber masalarını yükle
     try:
-        with open('rehber_masalar.json', 'r') as f:
+        with open(REHBER_FILE, 'r') as f:
             rehber_masalar = json.load(f)
     except:
         rehber_masalar = {}
@@ -668,14 +678,14 @@ def otopark_ayarlar():
     
     if request.method == 'GET':
         try:
-            with open('otopark_config.json', 'r') as f:
+            with open(OTOPARK_CONFIG_FILE, 'r') as f:
                 config = json.load(f)
             return jsonify(config)
         except:
             return jsonify({'otopark_fiyat': 50})
     else:
         data = request.json
-        with open('otopark_config.json', 'w') as f:
+        with open(OTOPARK_CONFIG_FILE, 'w') as f:
             json.dump(data, f)
         return jsonify({'success': True})
 
