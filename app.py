@@ -172,6 +172,8 @@ def init_data():
         tables = {str(i): f"Masa {i}" for i in range(1, 21)}
         save_json_storage(TABLES_FILE, tables)
 
+init_data()
+
 def load_orders():
     return load_json_storage(ORDERS_FILE, [])
 
