@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import time
 from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_UP
 import json
@@ -199,6 +200,12 @@ OTOPARK_CONFIG_FILE = 'otopark_config.json'
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
+
+def now_tr():
+    try:
+        return datetime.now(ZoneInfo("Europe/Istanbul"))
+    except Exception:
+        return datetime.now()
 
 def load_config():
     return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
@@ -428,8 +435,8 @@ def debug_orders():
     
     from datetime import timedelta
     orders = load_orders()
-    bugun = datetime.now().strftime('%d.%m.%Y')
-    dun = (datetime.now() - timedelta(days=1)).strftime('%d.%m.%Y')
+    bugun = now_tr().strftime('%d.%m.%Y')
+    dun = (now_tr() - timedelta(days=1)).strftime('%d.%m.%Y')
     
     debug_info = {
         'bugun': bugun,
@@ -479,7 +486,7 @@ def satis_grafik():
         rehber_masalar = {}
     
     # Son 7 günün verilerini hazırla
-    bugun = datetime.now()
+    bugun = now_tr()
     haftalik_data = []
     
     for i in range(6, -1, -1):
@@ -618,8 +625,8 @@ def siparis_ekle():
         'garson': garson_name,
         'items': data['items'],
         'toplam': data['toplam'],
-        'zaman': datetime.now().strftime('%H:%M'),
-        'tarih': datetime.now().strftime('%d.%m.%Y'),
+        'zaman': now_tr().strftime('%H:%M'),
+        'tarih': now_tr().strftime('%d.%m.%Y'),
         'durum': 'aktif',
         'kaynak': 'kasa' if session.get('role') == 'kasa' else 'garson'
     }
@@ -780,9 +787,9 @@ def otopark_gider():
         'garson': 'Sistem',
         'items': [{'name': 'Otopark Gideri', 'adet': 1, 'fiyat': -tutar}],
         'toplam': -tutar,
-        'zaman': datetime.now().strftime('%H:%M'),
-        'tarih': datetime.now().strftime('%d.%m.%Y'),
-        'kapanma_tarih': datetime.now().strftime('%Y-%m-%d'),
+        'zaman': now_tr().strftime('%H:%M'),
+        'tarih': now_tr().strftime('%d.%m.%Y'),
+        'kapanma_tarih': now_tr().strftime('%Y-%m-%d'),
         'durum': 'kapali',
         'tip': 'gider',
         'odeme_turu': 'nakit'
@@ -842,8 +849,8 @@ def hesap_kapat(masa):
         if order['masa'] == masa and order['durum'] == 'aktif':
             toplam_tutar += order['toplam']
             order['durum'] = 'kapali'
-            order['kapanma_zamani'] = datetime.now().strftime('%H:%M')
-            order['kapanma_tarih'] = datetime.now().strftime('%d.%m.%Y')
+            order['kapanma_zamani'] = now_tr().strftime('%H:%M')
+            order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
             order['odeme_turu'] = data.get('odeme_turu', 'nakit')
             order['rehber_masa'] = masa_rehber_durumu
             if data.get('odeme_turu') == 'nakit':
@@ -924,8 +931,8 @@ def get_komisyonlar_tarih():
     orders = load_orders()
     
     if not tarih:
-        bugun_iso = datetime.now().strftime('%Y-%m-%d')
-        bugun_tr = datetime.now().strftime('%d.%m.%Y')
+        bugun_iso = now_tr().strftime('%Y-%m-%d')
+        bugun_tr = now_tr().strftime('%d.%m.%Y')
         tarih = bugun_tr
         tarih_iso = bugun_iso
     else:
@@ -987,8 +994,8 @@ def istatistik_data():
     orders = load_orders()
     
     if not tarih:
-        bugun_iso = datetime.now().strftime('%Y-%m-%d')
-        bugun_tr = datetime.now().strftime('%d.%m.%Y')
+        bugun_iso = now_tr().strftime('%Y-%m-%d')
+        bugun_tr = now_tr().strftime('%d.%m.%Y')
         tarih = bugun_tr
         tarih_iso = bugun_iso
     else:
@@ -1064,8 +1071,8 @@ def dashboard_data():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     
     orders = load_orders()
-    bugun_iso = datetime.now().strftime('%Y-%m-%d')
-    bugun_tr = datetime.now().strftime('%d.%m.%Y')
+    bugun_iso = now_tr().strftime('%Y-%m-%d')
+    bugun_tr = now_tr().strftime('%d.%m.%Y')
     
     saatlik_satis = {}
     for i in range(7, 20):
@@ -1085,8 +1092,8 @@ def dashboard_data():
     from datetime import timedelta
     son_7_gun = []
     for i in range(7):
-        tarih = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-        tarih_tr = (datetime.now() - timedelta(days=i)).strftime('%d.%m.%Y')
+        tarih = (now_tr() - timedelta(days=i)).strftime('%Y-%m-%d')
+        tarih_tr = (now_tr() - timedelta(days=i)).strftime('%d.%m.%Y')
         gun_orders = [
             o for o in orders
             if (get_order_date(o) == tarih or get_order_date(o) == tarih_tr)
@@ -1250,7 +1257,7 @@ def tip_havuzu_api():
         'tip_total': float(normalize_tip_total(tip_total_val)),
         'workdays': cleaned_workdays,
         'payouts': payouts,
-        'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'updated_at': now_tr().strftime('%Y-%m-%d %H:%M:%S')
     }
 
     updated = False
