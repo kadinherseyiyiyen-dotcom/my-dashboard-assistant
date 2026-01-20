@@ -43,6 +43,13 @@
       "image": "🍳",
       "name": "Göz Yumurta",
       "price": 350
+    },
+    {
+      "id": 100,
+      "name": "Sucuk ",
+      "price": 350,
+      "category": "ekstra",
+      "image": "🍳"
     }
   ],
   "icecekler": [

@@ -427,6 +427,7 @@
         </div>
     </div>
 
+    
     <script>
         let siparis = [];
         let toplam = 0;
@@ -434,6 +435,7 @@
         let aktifSiparisler = [];
         let siparisInFlight = false;
         let siparisSubmitInFlight = false;
+        let initSiparisGirInFlight = false;
 
         function renderTables(tables, orders) {
             const el = document.getElementById('tablesGrid');
@@ -441,43 +443,37 @@
             el.innerHTML = '';
             const aktifMasalar = new Set((orders || []).filter(o => o.durum === 'aktif').map(o => String(o.masa)));
             const entries = Object.entries(tables || {});
-            entries.sort((a,b) => Number(a[0]) - Number(b[0]));
+            entries.sort((a, b) => Number(a[0]) - Number(b[0]));
             entries.forEach(([masaNo, masaAdi]) => {
                 const card = document.createElement('div');
-                card.className = 'masa-card' + (aktifMasalar.has(String(masaNo)) ? ' occupied' : '');
+                const isDolu = aktifMasalar.has(String(masaNo));
+                card.className = 'masa-card' + (isDolu ? ' occupied' : '');
                 card.dataset.masa = masaNo;
-                card.innerHTML = `<div class="masa-number">${masaAdi || ('Masa ' + masaNo)}</div><div class="masa-status"></div>`;
+                card.innerHTML = `<div class="masa-number">${masaAdi || ('Masa ' + masaNo)}</div><div class="masa-status">${isDolu ? 'DOLU' : ''}</div>`;
                 el.appendChild(card);
             });
         }
 
-        function renderMenu(menu) {
-            const ana = document.getElementById('menuGridAna');
-            const ekstra = document.getElementById('menuGridEkstra');
-            const icecek = document.getElementById('menuGridIcecek');
-            if (!ana || !ekstra || !icecek) return;
-            ana.innerHTML = '';
-            ekstra.innerHTML = '';
-            icecek.innerHTML = '';
-
-            function addItems(list, target) {
-                (list || []).forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'menu-item';
-                    div.dataset.id = item.id;
-                    div.dataset.name = item.name;
-                    div.dataset.price = item.price;
-                    div.innerHTML = `<div class="icon">${item.image || ''}</div><h4>${item.name}</h4><div class="price">${item.price} TL</div>`;
-                    target.appendChild(div);
-                });
-            }
-
-            addItems(menu.ana_menu, ana);
-            addItems(menu.ekstralar, ekstra);
-            addItems(menu.icecekler, icecek);
+        function renderMenuSection(list, targetId) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            el.innerHTML = '';
+            (list || []).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.dataset.id = item.id;
+                div.dataset.name = item.name;
+                div.dataset.price = item.price;
+                div.innerHTML = `<div class="icon">${item.image || ''}</div><h4>${item.name}</h4><div class="price">${item.price} TL</div>`;
+                el.appendChild(div);
+            });
         }
 
-        let initSiparisGirInFlight = false;
+        function renderMenu(menu) {
+            renderMenuSection(menu.ana_menu || [], 'menuGridAna');
+            renderMenuSection(menu.ekstralar || [], 'menuGridEkstra');
+            renderMenuSection(menu.icecekler || [], 'menuGridIcecek');
+        }
 
         async function initSiparisGir() {
             if (initSiparisGirInFlight) return;
@@ -494,6 +490,7 @@
                 masaDurumlariniGuncelle();
                 dolulukGuncelle();
                 mevcutSiparisleriGoster();
+
                 const mr = await fetch('/api/menu');
                 const menu = await mr.json();
                 renderMenu(menu || {});
@@ -512,38 +509,6 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', initSiparisGir);
-        window.addEventListener('load', initSiparisGir);
-        setTimeout(initSiparisGir, 0);
-
-        document.addEventListener('click', function(e) {
-            const card = e.target.closest('.masa-card');
-            if (card) {
-                selectMasa(parseInt(card.dataset.masa), card);
-                return;
-            }
-            const item = e.target.closest('.menu-item');
-            if (item) {
-                selectMenuItem(item);
-            }
-        });
-
-
-
-        document.getElementById('siparis-zaman').value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-        loadAktifSiparisler();
-        setInterval(loadAktifSiparisler, 20000);
-
-        function selectMasa(masaNo, el) {
-            const card = el || document.querySelector(`.masa-card[data-masa="${masaNo}"]`);
-            if (!card) return;
-            document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            secilenMasa = parseInt(card.dataset.masa);
-            document.getElementById('secili-masa').value = card.querySelector('.masa-number').textContent;
-            mevcutSiparisleriGoster();
-        }
-        
         function loadAktifSiparisler() {
             if (siparisInFlight) return;
             siparisInFlight = true;
@@ -567,6 +532,16 @@
                 });
         }
 
+        function selectMasa(masaNo, el) {
+            const card = el || document.querySelector(`.masa-card[data-masa="${masaNo}"]`);
+            if (!card) return;
+            document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            secilenMasa = parseInt(card.dataset.masa);
+            document.getElementById('secili-masa').value = card.querySelector('.masa-number').textContent;
+            mevcutSiparisleriGoster();
+        }
+
         function masaDurumlariniGuncelle() {
             const aktifMasalar = new Set(aktifSiparisler.map(o => String(o.masa)));
             document.querySelectorAll('.masa-card').forEach(card => {
@@ -584,12 +559,15 @@
 
         function dolulukGuncelle() {
             const dolu = new Set(aktifSiparisler.map(o => o.masa)).size;
-            document.getElementById('doluluk-info').innerHTML =
-                '<h4>?? Masa Doluluk</h4><p>Dolu masa: ' + dolu + ' / 25</p>';
+            const doluluk = document.getElementById('doluluk-info');
+            if (doluluk) {
+                doluluk.innerHTML = '<h4>?? Masa Doluluk</h4><p>Dolu masa: ' + dolu + ' / 25</p>';
+            }
         }
 
         function mevcutSiparisleriGoster() {
             const container = document.getElementById('mevcut-siparisler-listesi');
+            if (!container) return;
             if (!secilenMasa) {
                 container.innerHTML = '<div class="mevcut-item">Masa seciniz.</div>';
                 return;
@@ -612,41 +590,38 @@
             const id = parseInt(el.dataset.id);
             const name = el.dataset.name;
             const price = parseInt(el.dataset.price);
-
             const existing = siparis.find(s => s.id === id);
             if (existing) {
                 existing.adet++;
             } else {
-                siparis.push({id, name, price, adet: 1});
+                siparis.push({ id, name, price, adet: 1 });
             }
-            
             siparisGuncelle();
         }
 
         function siparisGuncelle() {
             const listesi = document.getElementById('siparis-listesi');
+            if (!listesi) return;
             listesi.innerHTML = '';
             toplam = 0;
-
             siparis.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'siparis-item';
                 div.innerHTML = `
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small>${item.price} ₺ x ${item.adet}</small>
+                        <small>${item.price} TL x ${item.adet}</small>
                     </div>
                     <div class="quantity-controls">
                         <button class="quantity-btn" onclick="azalt(${index})">-</button>
                         <span>${item.adet}</span>
                         <button class="quantity-btn" onclick="arttir(${index})">+</button>
-                        <button class="quantity-btn" style="background: #e53e3e; margin-left: 0.5rem;" onclick="sil(${index})">×</button>
+                        <button class="quantity-btn" style="background: #e53e3e; margin-left: 0.5rem;" onclick="sil(${index})">X</button>
                     </div>
                 `;
                 listesi.appendChild(div);
                 toplam += item.price * item.adet;
             });
-
             document.getElementById('toplam').textContent = toplam;
         }
 
@@ -678,17 +653,14 @@
         function siparisGonder() {
             if (siparisSubmitInFlight) return;
             if (siparis.length === 0) {
-                alert('Lütfen sipariş ekleyin!');
+                alert('Lutfen siparis ekleyin!');
                 return;
             }
-            
             if (!secilenMasa) {
-                alert('Lütfen masa seçiniz!');
+                alert('Lutfen masa seciniz!');
                 return;
             }
-
             siparisSubmitInFlight = true;
-
             const data = {
                 masa: secilenMasa,
                 garson: document.getElementById('garson').value,
@@ -696,19 +668,17 @@
                 toplam: toplam,
                 zaman: document.getElementById('siparis-zaman').value
             };
-
             fetch('/api/siparis', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert('WhatsApp siparişi başarıyla kaydedildi!');
+                    alert('Siparis kaydedildi.');
                     siparisTemizle();
                     loadAktifSiparisler();
-                    // Masa seçimini de temizle
                     document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
                     document.getElementById('secili-masa').value = '';
                     secilenMasa = null;
@@ -723,6 +693,29 @@
                 siparisSubmitInFlight = false;
             });
         }
+
+        document.addEventListener('click', function(e) {
+            const card = e.target.closest('.masa-card');
+            if (card) {
+                selectMasa(parseInt(card.dataset.masa), card);
+                return;
+            }
+            const item = e.target.closest('.menu-item');
+            if (item) {
+                selectMenuItem(item);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const timeInput = document.getElementById('siparis-zaman');
+            if (timeInput) {
+                timeInput.value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+            }
+            initSiparisGir();
+            loadAktifSiparisler();
+            setInterval(loadAktifSiparisler, 20000);
+        });
     </script>
+
 </body>
 </html>
