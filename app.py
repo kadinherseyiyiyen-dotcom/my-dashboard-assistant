@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from datetime import datetime
+import time
 from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_UP
 import json
 import os
@@ -29,6 +30,18 @@ if DATA_DIR and DATA_DIR not in ['.', './']:
     os.makedirs(DATA_DIR, exist_ok=True)
 
 _DB_READY = False
+_CACHE = {}
+
+def cached_load(key, loader, ttl_seconds):
+    now = time.time()
+    cached = _CACHE.get(key)
+    if cached:
+        ts, data = cached
+        if now - ts < ttl_seconds:
+            return data
+    data = loader()
+    _CACHE[key] = (now, data)
+    return data
 
 def get_db_conn():
     try:
@@ -557,6 +570,15 @@ def siparisler():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     orders = load_orders()
     return jsonify(orders)
+
+@app.route('/api/kasa-init')
+def kasa_init():
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    orders = cached_load('orders', load_orders, 2)
+    tables = cached_load('tables', load_tables, 10)
+    rehber = cached_load('rehber', load_rehber_masalar, 10)
+    return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber})
 
 @app.route('/api/tables', methods=['GET', 'POST'])
 def handle_tables():

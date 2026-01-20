@@ -828,18 +828,28 @@
             document.getElementById('current-time').textContent = now.toLocaleTimeString('tr-TR');
         }
 
+        let yenileInFlight = false;
+
         function yenile() {
-            Promise.all([
-                fetch('/api/siparisler').then(r => r.json()),
-                fetch('/api/tables').then(r => r.json()),
-                fetch('/api/rehber-masalar').then(r => r.json())
-            ]).then(([orders, tableData, rehberData]) => {
+            if (yenileInFlight) return;
+            yenileInFlight = true;
+            fetch('/api/kasa-init')
+                .then(r => r.json())
+                .then(data => {
+                if (data.success === false) {
+                    throw new Error(data.message || 'Yukleme hatasi');
+                }
+                const orders = data.orders || [];
                 allOrders = orders;
-                tables = tableData;
-                rehberMasalar = rehberData;
+                tables = data.tables || {};
+                rehberMasalar = data.rehber || {};
                 masalariGuncelle(orders);
                 siparisleriGuncelle(orders);
                 istatistikleriGuncelle(orders);
+            }).catch(err => {
+                console.error('Yenileme hatasi:', err);
+            }).finally(() => {
+                yenileInFlight = false;
             });
         }
 
@@ -1363,7 +1373,7 @@ function otoparkGideri() {
         yenile();
         
         setInterval(saatGuncelle, 1000);
-        setInterval(yenile, 10000);
+        setInterval(yenile, 15000);
 
         window.onclick = function(event) {
             const hesapModal = document.getElementById('hesap-modal');
