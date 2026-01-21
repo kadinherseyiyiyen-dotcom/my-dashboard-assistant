@@ -110,8 +110,45 @@
     "toplam": 1290,
     "zaman": "15:35",
     "tarih": "21.01.2026",
+    "durum": "kapali",
+    "kaynak": "kasa",
+    "masa_acilis_ts": "2026-01-21T15:35:00.064627+03:00",
+    "kapanma_zamani": "19:55",
+    "kapanma_tarih": "21.01.2026",
+    "odeme_turu": "kart",
+    "rehber_masa": false,
+    "indirim": 0,
+    "indirimli_tutar": 1290
+  },
+  {
+    "id": 6,
+    "masa": 1,
+    "garson": "WhatsApp Sipariş",
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1
+      },
+      {
+        "id": 3,
+        "name": "Hellim",
+        "price": 350,
+        "adet": 1
+      },
+      {
+        "id": 4,
+        "name": "Falafel",
+        "price": 350,
+        "adet": 1
+      }
+    ],
+    "toplam": 1990,
+    "zaman": "00:09",
+    "tarih": "22.01.2026",
     "durum": "aktif",
     "kaynak": "kasa",
-    "masa_acilis_ts": "2026-01-21T15:35:00.064627+03:00"
+    "masa_acilis_ts": "2026-01-22T00:09:45.522819+03:00"
   }
 ]

@@ -240,11 +240,18 @@ th {
     cursor: pointer;
     position: relative;
     border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e3e6ef;
     transition: transform 0.15s ease;
     min-width: 40px;
 }
 .cell:hover { transform: translateY(-1px); }
+.cell.is-empty {
+    background: #f6f7fb;
+}
+.cell.is-empty:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
 .cell-wrap {
     position: relative;
     width: 32px;
@@ -271,8 +278,10 @@ th {
 .s-mazeretli { background: #fbcfe8; border-color: #f9a8d4; }
 .s-gelmedi { background: #fecaca; border-color: #fca5a5; }
 
-.is-weekend { background: rgba(0, 0, 0, 0.04); }
-.cell.is-today.is-empty { background: rgba(255, 200, 0, 0.12); }
+.is-weekend { background: rgba(15, 23, 42, 0.035); }
+.cell.is-today {
+    box-shadow: inset 2px 0 0 rgba(255, 200, 0, 0.7), inset -2px 0 0 rgba(255, 200, 0, 0.7);
+}
 th.is-today { box-shadow: inset 0 -2px 0 rgba(255, 165, 0, 0.6); }
 .cell.is-today .shift-cell.s-calisti,
 .cell.is-today .shift-cell.s-gec,

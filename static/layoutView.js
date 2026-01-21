@@ -199,12 +199,21 @@
         var kisi = meta.kisi || 0;
         var sure = meta.sure || '--';
         var toplam = meta.toplam || (state.occupied[key] ? '' : 'Bos');
+        var minutes = meta.minutes || 0;
+        if (!minutes && typeof sure === 'string') {
+          var match = sure.match(/(\d+)\s*dk/i);
+          minutes = match ? parseInt(match[1], 10) : 0;
+        }
         card.innerHTML = '' +
+          '<div class="table-progress" aria-hidden="true"></div>' +
           '<div class="table-name">' + (table.name || ('Masa ' + id)) + '</div>' +
           '<div class="table-amount">' + toplam + '</div>' +
           '<div class="table-meta">' +
           '<span>&#x1F464; ' + kisi + ' kisi &#x23F1;&#xFE0F; ' + sure + '</span>' +
           '</div>';
+        if (minutes) {
+          card.dataset.minutes = minutes;
+        }
         card.addEventListener('click', function (e) {
           if (state.editMode) {
             e.preventDefault();

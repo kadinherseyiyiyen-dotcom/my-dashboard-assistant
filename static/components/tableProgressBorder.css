@@ -1,0 +1,26 @@
+.table-card {
+    position: relative;
+}
+.table-progress {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 3px;
+    background: conic-gradient(var(--prog-color, #22c55e) var(--prog-angle, 0deg), transparent 0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.95;
+}
+.table-progress.hidden {
+    display: none;
+}
+.table-progress.pulse {
+    animation: table-progress-pulse 1.6s ease-in-out infinite;
+}
+@keyframes table-progress-pulse {
+    0% { opacity: 0.75; }
+    50% { opacity: 1; }
+    100% { opacity: 0.75; }
+}

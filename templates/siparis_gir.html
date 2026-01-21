@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sipariş Gir - Kasa</title>
+    <title>Sipari&#351; Gir - Kasa</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='layoutView.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='components/tableProgressBorder.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -75,20 +76,12 @@
             color: #4a5568;
             margin-bottom: 0.25rem;
         }
-        .masa-grid {
+        .tables-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 0.75rem;
-            margin-top: 0.5rem;
-        }
-        .tables-map {
-            position: relative;
-            min-height: 360px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            margin-top: 0.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 0.75rem;
+            padding: 0.5rem 0;
         }
         .layout-hidden {
             display: none;
@@ -102,52 +95,69 @@
             gap: 0.5rem;
             margin-top: 0.5rem;
         }
-        .masa-card {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            text-align: center;
+        .table-card {
+            border-radius: 16px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            background: #ffffff;
+            box-shadow: 0 8px 18px rgba(15,23,42,.06);
+            min-height: 104px;
+            padding: 14px;
             cursor: pointer;
-            transition: all 0.2s;
-            min-height: 70px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            transition: all 0.2s;
         }
-        .masa-card:hover {
-            border-color: #ff8c00;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .table-card:hover{
+            transform: translateY(-2px);
+            box-shadow: 0 16px 34px rgba(15,23,42,.10);
         }
-        .masa-card.selected {
-            border-color: #ff8c00;
-            background: #fff4e6;
-            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+        .table-card.selected {
+            border: 1px solid #ff8c00;
+            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.12);
         }
-
-        .masa-card.occupied {
-            border-color: #e53e3e;
-            background: #fff5f5;
-        }
-        .masa-card.occupied .masa-number {
-            color: #c53030;
-        }
-        .masa-status {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #c53030;
-        }
-        .masa-number {
-            font-size: 1.25rem;
-            font-weight: 700;
+        .table-name{
+            font-size: 0.95rem;
+            font-weight: 800;
             color: #1a202c;
-            margin-bottom: 0.25rem;
+        }
+        .table-amount{
+            margin-top: 4px;
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #16a34a;
+        }
+        .table-meta{
+            margin-top: 6px;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+        .table-card.occupied{
+            border: 1px solid rgba(239,68,68,0.30);
+            background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(255,255,255,1));
+            color: #0f172a;
+        }
+        .table-card.occupied .table-amount{
+            color: #ef4444;
+        }
+        .layout-canvas {
+            position: relative;
+            height: 75vh;
+            min-height: 600px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: auto;
+            margin-top: 0.75rem;
         }
         .form-row {
             display: grid;
             grid-template-columns: 1fr;
             gap: 1rem;
             margin-bottom: 1rem;
+        }
+        .form-row.full-row {
+            grid-template-columns: 1fr;
         }
         .form-group label { 
             display: block; 
@@ -328,6 +338,9 @@
             .form-row {
                 grid-template-columns: 1fr 1fr 1fr;
             }
+            .form-row.full-row {
+                grid-template-columns: 1fr;
+            }
             .main-grid {
                 grid-template-columns: 2fr 1fr;
             }
@@ -356,57 +369,50 @@
                 font-size: 0.875rem;
             }
         }
+        @media (max-width: 640px) {
+            .tables-grid{
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>📱 WhatsApp Sipariş Girişi</h2>
+        <h2>&#128241; WhatsApp Sipari&#351; Giri&#351;i</h2>
         <div class="header-actions">
-            <a href="/kasa" class="btn btn-secondary">← Kasa</a>
-            <a href="/logout" class="btn btn-danger">Çıkış</a>
+            <a href="/kasa" class="btn btn-secondary">&#8592; Kasa</a>
+            <a href="/logout" class="btn btn-danger">&#199;&#305;k&#305;&#351;</a>
         </div>
     </div>
 
-    <div class="container">
-        <div class="info-card">
-            <h4>📲 WhatsApp Sipariş Alma Süreci</h4>
-            <p>1. Garson WhatsApp'tan sipariş bilgilerini iletir</p>
-            <p>2. Masa numarası, garson adı ve sipariş detaylarını aşağıya girin</p>
-            <p>3. Sipariş sisteme kaydedilir ve takip edilebilir hale gelir</p>
-        </div>
-        <div class="info-card" id="doluluk-info">
-            <h4>?? Masa Doluluk</h4>
-            <p>Dolu masa: 0 / 25</p>
-        </div>
-
-        <div class="form-section">
-            <div class="form-row">
+    <div class="container"><div class="form-section">
+            <div class="form-row full-row">
                 <div class="form-group">
-                    <label>Masa Seçimi:</label>
+                    <label>Masa Se&#231;imi:</label>
                     <div class="view-toggle">
                         <button class="btn btn-secondary" type="button" id="view-grid-btn">Grid</button>
                         <button class="btn btn-secondary" type="button" id="view-layout-btn">Harita</button>
                         <label class="layout-edit-toggle"><input type="checkbox" id="layout-edit-toggle"> Edit Mode</label>
                         <button class="btn btn-success" type="button" id="layout-save-btn" style="display:none;">Kaydet</button>
                     </div>
-                    <div class="masa-grid" id="tablesGrid">Y??kleniyor...</div>
-                    <div class="layout-canvas layout-hidden" id="layoutCanvas">Y??kleniyor...</div>
+                    <div class="tables-grid" id="tablesGrid">Yukleniyor...</div>
+                    <div class="layout-canvas layout-hidden" id="layoutCanvas">Yukleniyor...</div>
                 </div>
             </div>
             <div class="form-row" style="margin-top: 1rem;">
                 <div class="form-group">
-                    <label>Garson Adı:</label>
+                    <label>Garson Ad&#305;:</label>
                     <select id="garson">
-                        <option value="WhatsApp Sipariş">WhatsApp Sipariş</option>
+                        <option value="WhatsApp Siparis">WhatsApp Sipari&#351;</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Sipariş Zamanı:</label>
+                    <label>Sipari&#351; Zaman&#305;:</label>
                     <input type="time" id="siparis-zaman" value="">
                 </div>
                 <div class="form-group">
-                    <label>Seçili Masa:</label>
-                    <input type="text" id="secili-masa" readonly style="background: #f7fafc; font-weight: bold; color: #ff8c00;" placeholder="Masa seçiniz">
+                    <label>Se&#231;ili Masa:</label>
+                    <input type="text" id="secili-masa" readonly style="background: #f7fafc; font-weight: bold; color: #ff8c00;" placeholder="Masa se&#231;iniz">
                 </div>
             </div>
         </div>
@@ -414,7 +420,7 @@
         <div class="main-grid">
             <div>
                 <div class="menu-section">
-                    <h3>Ana Menu</h3>
+                    <h3>Ana Men&#252;</h3>
                     <div class="menu-grid" id="menuGridAna">
                         Yukleniyor...
                     </div>
@@ -426,7 +432,7 @@
                     </div>
                 </div>
                 <div class="menu-section">
-                    <h3>Icecekler</h3>
+                    <h3>&#304;&#231;ecekler</h3>
                     <div class="menu-grid" id="menuGridIcecek">
                         Yukleniyor...
                     </div>
@@ -435,18 +441,17 @@
 
             <div>
                 <div class="siparis-ozet">
-                    <h3>📝 Sipariş Özeti</h3>
+                    <h3>&#128221; Sipari&#351; &#214;zeti</h3>
                     <div class="mevcut-siparisler">
-                        <h4>Mevcut Siparisler (Secili Masa)</h4>
+                        <h4>Mevcut Sipari&#351;ler (Se&#231;ili Masa)</h4>
                         <div id="mevcut-siparisler-listesi"></div>
                     </div>
                     <div id="siparis-listesi"></div>
                     <div class="toplam-section">
-                        <div>Toplam</div>
-                        <div class="toplam-amount"><span id="toplam">0</span> ₺</div>
+                        <div>Toplam</div><div class="toplam-amount"><span id="toplam">0</span> TL</div>
                     </div>
                     <div class="action-buttons">
-                        <button class="btn btn-primary btn-full" onclick="siparisGonder()">📱 Kaydet</button>
+                        <button class="btn btn-primary btn-full" onclick="siparisGonder()">Kaydet</button>
                         <button class="btn btn-secondary btn-full" onclick="siparisTemizle()">Temizle</button>
                     </div>
                 </div>
@@ -457,6 +462,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="{{ url_for('static', filename='layoutView.js') }}"></script>
+    <script src="{{ url_for('static', filename='components/tableProgressBorder.js') }}"></script>
     <script>
         let siparis = [];
         let toplam = 0;
@@ -466,38 +472,101 @@
         let siparisSubmitInFlight = false;
         let initSiparisGirInFlight = false;
         let layoutViewInstance = null;
+        let tableProgressInstance = null;
         let tablesCache = {};
+        let tableSessions = {};
 
-        function renderTablesGrid(tables, orders) {
+        function getTableOpenMinutes(masaData, masa) {
+            let openTs = tableSessions[String(masa)];
+            if (!openTs && masaData[masa]) {
+                masaData[masa].siparisler.forEach(order => {
+                    if (order.masa_acilis_ts) {
+                        if (!openTs || order.masa_acilis_ts < openTs) {
+                            openTs = order.masa_acilis_ts;
+                        }
+                    }
+                });
+            }
+            if (!openTs) return 0;
+            const dt = new Date(openTs);
+            if (Number.isNaN(dt.getTime())) return 0;
+            return Math.max(1, Math.floor((Date.now() - dt.getTime()) / 60000));
+        }
+
+        function countSerpme(siparisler) {
+            let kisi = 0;
+            (siparisler || []).forEach(order => {
+                (order.items || []).forEach(item => {
+                    const name = String(item.name || '').toLowerCase();
+                    if (name.includes('serpme')) {
+                        kisi += Number(item.adet || 0);
+                    }
+                });
+            });
+            return kisi;
+        }
+
+        function buildTableCard(i, masaData) {
+            const data = masaData[i];
+            const totalText = data ? data.toplam + ' TL' : 'Bos';
+            const kisi = data ? countSerpme(data.siparisler) : 0;
+            const sure = data ? getTableOpenMinutes(masaData, i) : 0;
+            const sureText = sure ? sure + ' dk' : '--';
+            const div = document.createElement('div');
+            div.className = (data ? 'table-card occupied' : 'table-card') + (secilenMasa === i ? ' selected' : '');
+            div.dataset.masa = i;
+            div.dataset.minutes = sure;
+            div.innerHTML = `
+                <div class="table-progress" aria-hidden="true"></div>
+                <div class="table-name">${tablesCache[i] || 'Masa ' + i}</div>
+                <div class="table-amount">${totalText}</div>
+                <div class="table-meta">
+                    <span>&#x1F464; ${kisi} kisi &#x23F1;&#xFE0F; ${sureText}</span>
+                </div>
+            `;
+            return div;
+        }
+
+        function renderTablesGrid(masaData) {
             const el = document.getElementById('tablesGrid');
             if (!el) return;
             el.innerHTML = '';
-            const aktifMasalar = new Set((orders || []).filter(o => o.durum === 'aktif').map(o => String(o.masa)));
             for (let i = 1; i <= 25; i++) {
-                const masaAdi = (tables || {})[i] || (tables || {})[String(i)] || ('Masa ' + i);
-                const isDolu = aktifMasalar.has(String(i));
-                const card = document.createElement('div');
-                card.className = 'masa-card' + (isDolu ? ' occupied' : '');
-                card.dataset.masa = i;
-                card.innerHTML = `<div class="masa-number">${masaAdi}</div><div class="masa-status">${isDolu ? 'DOLU' : ''}</div>`;
+                const card = buildTableCard(i, masaData);
                 el.appendChild(card);
             }
         }
 
-        function renderTables(tables, orders) {
-            renderTablesGrid(tables, orders);
-            if (layoutViewInstance) {
-                const occupied = {};
-                (orders || []).filter(o => o.durum === 'aktif').forEach(o => {
-                    occupied[String(o.masa)] = true;
-                });
-                const fullTables = {};
-                for (let i = 1; i <= 25; i++) {
-                    fullTables[i] = tables[i] || 'Masa ' + i;
+        function masalariGuncelle(orders) {
+            const masaData = {};
+            const aktifMasalar = {};
+            (orders || []).filter(o => o.durum === 'aktif').forEach(order => {
+                if (!masaData[order.masa]) {
+                    masaData[order.masa] = { toplam: 0, siparisler: [] };
                 }
-                layoutViewInstance.setData(fullTables, occupied, function (tableId) {
+                masaData[order.masa].toplam += order.toplam;
+                masaData[order.masa].siparisler.push(order);
+                aktifMasalar[String(order.masa)] = true;
+            });
+            renderTablesGrid(masaData);
+            if (layoutViewInstance) {
+                const fullTables = {};
+                const metaMap = {};
+                for (let i = 1; i <= 25; i++) {
+                    fullTables[i] = tablesCache[i] || 'Masa ' + i;
+                    const data = masaData[i];
+                    const kisi = data ? countSerpme(data.siparisler) : 0;
+                    const sure = data ? getTableOpenMinutes(masaData, i) : 0;
+                    const sureText = sure ? sure + ' dk' : '--';
+                    const toplamText = data ? data.toplam + ' TL' : 'Bos';
+                    metaMap[String(i)] = { kisi: kisi, sure: sureText, toplam: toplamText, minutes: sure };
+                }
+                layoutViewInstance.setData(fullTables, aktifMasalar, function (tableId) {
                     selectMasa(tableId);
-                });
+                }, metaMap);
+            }
+            if (tableProgressInstance && tableProgressInstance.update) {
+                tableProgressInstance.update();
             }
         }
 
@@ -533,9 +602,9 @@
                 }
                 const orders = data.orders || [];
                 tablesCache = data.tables || {};
+                tableSessions = data.table_sessions || {};
                 aktifSiparisler = orders.filter(o => o.durum === 'aktif');
-                renderTables(tablesCache, orders);
-                masaDurumlariniGuncelle();
+                masalariGuncelle(orders);
                 dolulukGuncelle();
                 mevcutSiparisleriGoster();
 
@@ -567,9 +636,9 @@
                         throw new Error(data.message || 'Yukleme hatasi');
                     }
                     const orders = data.orders || [];
+                    tableSessions = data.table_sessions || {};
                     aktifSiparisler = orders.filter(o => o.durum === 'aktif');
-                    renderTables(tablesCache, orders);
-                    masaDurumlariniGuncelle();
+                    masalariGuncelle(orders);
                     dolulukGuncelle();
                     mevcutSiparisleriGoster();
                     if (secilenMasa) {
@@ -585,35 +654,20 @@
         }
 
         function selectMasa(masaNo, el) {
-            const card = el || document.querySelector(`.masa-card[data-masa="${masaNo}"]`);
+            const card = el || document.querySelector(`.table-card[data-masa="${masaNo}"]`);
             if (!card) return;
-            document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             secilenMasa = parseInt(card.dataset.masa);
-            document.getElementById('secili-masa').value = card.querySelector('.masa-number').textContent;
+            document.getElementById('secili-masa').value = card.querySelector('.table-name').textContent;
             mevcutSiparisleriGoster();
-        }
-
-        function masaDurumlariniGuncelle() {
-            const aktifMasalar = new Set(aktifSiparisler.map(o => String(o.masa)));
-            document.querySelectorAll('.masa-card').forEach(card => {
-                const masa = card.dataset.masa;
-                const status = card.querySelector('.masa-status');
-                if (aktifMasalar.has(masa)) {
-                    card.classList.add('occupied');
-                    status.textContent = 'DOLU';
-                } else {
-                    card.classList.remove('occupied');
-                    status.textContent = '';
-                }
-            });
         }
 
         function dolulukGuncelle() {
             const dolu = new Set(aktifSiparisler.map(o => o.masa)).size;
             const doluluk = document.getElementById('doluluk-info');
             if (doluluk) {
-                doluluk.innerHTML = '<h4>?? Masa Doluluk</h4><p>Dolu masa: ' + dolu + ' / 25</p>';
+                doluluk.innerHTML = '<h4>Masa Doluluk</h4><p>Dolu masa: ' + dolu + ' / 25</p>';
             }
         }
 
@@ -747,7 +801,7 @@
         }
 
         document.addEventListener('click', function(e) {
-            const card = e.target.closest('.masa-card');
+            const card = e.target.closest('.table-card');
             if (card) {
                 selectMasa(parseInt(card.dataset.masa), card);
                 return;
@@ -774,6 +828,9 @@
                     area: 'salon'
                 });
             }
+            if (window.TableProgressBorder) {
+                tableProgressInstance = TableProgressBorder.initTableProgressBorders(document);
+            }
             initSiparisGir();
             loadAktifSiparisler();
             setInterval(loadAktifSiparisler, 20000);
@@ -782,3 +839,6 @@
 
 </body>
 </html>
+
+
+
