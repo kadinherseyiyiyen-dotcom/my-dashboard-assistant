@@ -1,0 +1,108 @@
+.layout-canvas {
+  position: relative;
+  width: 100%;
+  height: 75vh;
+  min-height: 600px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: auto;
+}
+
+.layout-hidden {
+  display: none;
+}
+
+.layout-canvas .table-card {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 90px;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  color: #1a202c;
+}
+
+.layout-canvas .table-card.occupied {
+  border-color: #e53e3e;
+  background: #fff5f5;
+  color: #c53030;
+}
+
+.layout-edit-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.layout-edit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.layout-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: rgba(17, 24, 39, 0.95);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 9999;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+
+.layout-canvas .table-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.layout-canvas .table-amount {
+  font-weight: 700;
+  color: #38a169;
+  margin-bottom: 4px;
+}
+
+.layout-canvas .table-meta {
+  font-size: 0.75rem;
+  color: #4a5568;
+}
+
+.layout-canvas .table-card.occupied .table-amount {
+  color: #c53030;
+}
+
+
+.layout-canvas .table-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  font-size: 0.7rem;
+}
+
+.layout-canvas .table-card {
+  padding: 6px;
+}
+
+.layout-canvas .table-name {
+  font-size: 0.85rem;
+}
+
+.layout-canvas .table-amount {
+  font-size: 0.85rem;
+}

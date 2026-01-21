@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sipariş Gir - Kasa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='layoutView.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -78,6 +79,27 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
             gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .tables-map {
+            position: relative;
+            min-height: 360px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .layout-hidden {
+            display: none;
+        }
+        .map-card {
+            position: absolute;
+            user-select: none;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
             margin-top: 0.5rem;
         }
         .masa-card {
@@ -361,9 +383,14 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Masa Seçimi:</label>
-                    <div class="masa-grid" id="tablesGrid">
-                        Yükleniyor...
+                    <div class="view-toggle">
+                        <button class="btn btn-secondary" type="button" id="view-grid-btn">Grid</button>
+                        <button class="btn btn-secondary" type="button" id="view-layout-btn">Harita</button>
+                        <label class="layout-edit-toggle"><input type="checkbox" id="layout-edit-toggle"> Edit Mode</label>
+                        <button class="btn btn-success" type="button" id="layout-save-btn" style="display:none;">Kaydet</button>
                     </div>
+                    <div class="masa-grid" id="tablesGrid">Y??kleniyor...</div>
+                    <div class="layout-canvas layout-hidden" id="layoutCanvas">Y??kleniyor...</div>
                 </div>
             </div>
             <div class="form-row" style="margin-top: 1rem;">
@@ -428,6 +455,8 @@
     </div>
 
     
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="{{ url_for('static', filename='layoutView.js') }}"></script>
     <script>
         let siparis = [];
         let toplam = 0;
@@ -436,22 +465,40 @@
         let siparisInFlight = false;
         let siparisSubmitInFlight = false;
         let initSiparisGirInFlight = false;
+        let layoutViewInstance = null;
+        let tablesCache = {};
 
-        function renderTables(tables, orders) {
+        function renderTablesGrid(tables, orders) {
             const el = document.getElementById('tablesGrid');
             if (!el) return;
             el.innerHTML = '';
             const aktifMasalar = new Set((orders || []).filter(o => o.durum === 'aktif').map(o => String(o.masa)));
-            const entries = Object.entries(tables || {});
-            entries.sort((a, b) => Number(a[0]) - Number(b[0]));
-            entries.forEach(([masaNo, masaAdi]) => {
+            for (let i = 1; i <= 25; i++) {
+                const masaAdi = (tables || {})[i] || (tables || {})[String(i)] || ('Masa ' + i);
+                const isDolu = aktifMasalar.has(String(i));
                 const card = document.createElement('div');
-                const isDolu = aktifMasalar.has(String(masaNo));
                 card.className = 'masa-card' + (isDolu ? ' occupied' : '');
-                card.dataset.masa = masaNo;
-                card.innerHTML = `<div class="masa-number">${masaAdi || ('Masa ' + masaNo)}</div><div class="masa-status">${isDolu ? 'DOLU' : ''}</div>`;
+                card.dataset.masa = i;
+                card.innerHTML = `<div class="masa-number">${masaAdi}</div><div class="masa-status">${isDolu ? 'DOLU' : ''}</div>`;
                 el.appendChild(card);
-            });
+            }
+        }
+
+        function renderTables(tables, orders) {
+            renderTablesGrid(tables, orders);
+            if (layoutViewInstance) {
+                const occupied = {};
+                (orders || []).filter(o => o.durum === 'aktif').forEach(o => {
+                    occupied[String(o.masa)] = true;
+                });
+                const fullTables = {};
+                for (let i = 1; i <= 25; i++) {
+                    fullTables[i] = tables[i] || 'Masa ' + i;
+                }
+                layoutViewInstance.setData(fullTables, occupied, function (tableId) {
+                    selectMasa(tableId);
+                });
+            }
         }
 
         function renderMenuSection(list, targetId) {
@@ -485,8 +532,9 @@
                     throw new Error(data.message || 'kasa-init hatasi');
                 }
                 const orders = data.orders || [];
+                tablesCache = data.tables || {};
                 aktifSiparisler = orders.filter(o => o.durum === 'aktif');
-                renderTables(data.tables || {}, orders);
+                renderTables(tablesCache, orders);
                 masaDurumlariniGuncelle();
                 dolulukGuncelle();
                 mevcutSiparisleriGoster();
@@ -520,9 +568,13 @@
                     }
                     const orders = data.orders || [];
                     aktifSiparisler = orders.filter(o => o.durum === 'aktif');
+                    renderTables(tablesCache, orders);
                     masaDurumlariniGuncelle();
                     dolulukGuncelle();
                     mevcutSiparisleriGoster();
+                    if (secilenMasa) {
+                        selectMasa(secilenMasa);
+                    }
                 })
                 .catch(err => {
                     console.error('Aktif siparis yukleme hatasi:', err);
@@ -710,6 +762,17 @@
             const timeInput = document.getElementById('siparis-zaman');
             if (timeInput) {
                 timeInput.value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+            }
+            if (window.LayoutView) {
+                layoutViewInstance = LayoutView.init({
+                    gridId: 'tablesGrid',
+                    canvasId: 'layoutCanvas',
+                    viewGridBtnId: 'view-grid-btn',
+                    viewLayoutBtnId: 'view-layout-btn',
+                    editToggleId: 'layout-edit-toggle',
+                    saveBtnId: 'layout-save-btn',
+                    area: 'salon'
+                });
             }
             initSiparisGir();
             loadAktifSiparisler();

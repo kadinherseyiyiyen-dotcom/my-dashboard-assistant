@@ -4,182 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tip Havuzu</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            color: #1f2937;
-        }
-        .header {
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .header h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        .btn {
-            padding: 0.5rem 0.75rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .btn-primary { background: #2563eb; color: #fff; }
-        .btn-secondary { background: #6b7280; color: #fff; }
-        .btn-success { background: #16a34a; color: #fff; }
-        .btn-danger { background: #dc2626; color: #fff; }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-        .card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-            margin-bottom: 1.5rem;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            align-items: end;
-        }
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.35rem;
-            color: #374151;
-        }
-        input[type="date"], input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 0.6rem 0.75rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-        th {
-            background: #f9fafb;
-            font-weight: 700;
-            color: #374151;
-        }
-        .row-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .hint {
-            font-size: 0.8rem;
-            color: #6b7280;
-            margin-top: 0.5rem;
-        }
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .summary-item {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-        }
-        @media (max-width: 768px) {
-            .header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/tip.modern.css">
 </head>
 <body>
-    <div class="header">
-        <h1>Tip Havuzu (Havuz Tip) Da&#287;&#305;t&#305;m&#305;</h1>
-        <div>
-            <a href="/kasa" class="btn btn-secondary">&#8592; Kasa</a>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="card">
-            <div class="form-grid">
+        <div class="page-header">
+            <div class="page-title">
+                <div class="page-badge">&#128176;</div>
                 <div>
-                    <label for="period-start">Ba&#351;lang&#305;&#231;</label>
-                    <input type="date" id="period-start">
-                </div>
-                <div>
-                    <label for="period-end">Biti&#351;</label>
-                    <input type="date" id="period-end">
-                </div>
-                <div>
-                    <label for="tip-total">Toplam Tip (&#8378;)</label>
-                    <input type="number" id="tip-total" min="0" step="0.01" value="0">
-                </div>
-                <div class="row-actions">
-                    <button class="btn btn-primary" onclick="loadPeriod()">D&#246;nemi Y&#252;kle</button>
-                    <button class="btn btn-secondary" onclick="loadWorkdaysFromAttendance()">G&#252;nleri Getir</button>
-                    <button class="btn btn-success" onclick="calculatePayouts()">Hesapla</button>
-                    <button class="btn btn-danger" onclick="savePeriod()">Kaydet</button>
+                    <div class="title">Tip Havuzu Dagitimi</div>
+                    <div class="subtitle">Donem, gun ve odeme dagilimini yonetin.</div>
                 </div>
             </div>
-            <div class="hint">Varsay&#305;lan d&#246;nem: bu haftan&#305;n Pazartesi-Pazar aral&#305;&#287;&#305;. &#304;stersen tarihleri de&#287;i&#351;tirebilirsin.</div>
+            <div class="header-actions">
+                <a href="/kasa" class="btn btn-secondary">&#8592; Kasa</a>
+            </div>
         </div>
 
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                <h3>Garson G&#252;nleri</h3>
-                <button class="btn btn-primary" onclick="addRow()">+ Garson Ekle</button>
+        <div class="card control-card">
+            <div class="control-grid">
+                <div class="field-block">
+                    <label for="period-start">Baslangic</label>
+                    <input type="date" id="period-start" class="field-input">
+                </div>
+                <div class="field-block">
+                    <label for="period-end">Bitis</label>
+                    <input type="date" id="period-end" class="field-input">
+                </div>
+                <div class="field-block tip-total">
+                    <label for="tip-total">Toplam Tip</label>
+                    <div class="tip-input">
+                        <input type="number" id="tip-total" min="0" step="0.01" value="0">
+                        <span class="tip-suffix">TL</span>
+                    </div>
+                </div>
+                <div class="actions-block">
+                    <button class="btn btn-secondary" onclick="loadPeriod()">Donemi Yukle</button>
+                    <button class="btn btn-secondary" onclick="loadWorkdaysFromAttendance()">Gunleri Getir</button>
+                    <button class="btn btn-primary" onclick="calculatePayouts()">Hesapla</button>
+                    <button class="btn btn-success" onclick="savePeriod()">Kaydet</button>
+                </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Garson</th>
-                        <th>&#199;al&#305;&#351;ma G&#252;n&#252;</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="waiter-rows"></tbody>
-            </table>
+            <div class="hint">Varsayilan donem: bu haftanin Pazartesi-Pazar araligi. Istersen tarihleri degistirebilirsin.</div>
         </div>
 
-        <div class="card">
-            <h3>Da&#287;&#305;t&#305;m Sonu&#231;lar&#305;</h3>
-            <div class="summary" style="margin: 0.75rem 0 1rem;">
-                <div class="summary-item">Toplam Tip: <span id="summary-total">0&#8378;</span></div>
-                <div class="summary-item">Toplam G&#252;n: <span id="summary-days">0</span></div>
+        <div class="cards-grid">
+            <div class="card list-card">
+                <div class="card-header">
+                    <h3>Garson Gunleri</h3>
+                    <button class="btn btn-primary" onclick="addRow()">+ Garson Ekle</button>
+                </div>
+                <div class="rows" id="waiter-rows"></div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Garson</th>
-                        <th>G&#252;n</th>
-                        <th>&#214;deme (&#8378;)</th>
-                    </tr>
-                </thead>
-                <tbody id="payout-rows"></tbody>
-            </table>
+
+            <div class="card result-card">
+                <div class="card-header">
+                    <h3>Dagitim Sonuclari</h3>
+                </div>
+                <div class="summary">
+                    <div class="summary-item">
+                        <span>Toplam Tip</span>
+                        <strong id="summary-total">0 TL</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Toplam Gun</span>
+                        <strong id="summary-days">0</strong>
+                    </div>
+                </div>
+                <div class="results" id="payout-rows"></div>
+            </div>
         </div>
     </div>
 
@@ -214,17 +107,18 @@
 
         function addRow(name = '', days = 0) {
             const tbody = document.getElementById('waiter-rows');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="text" class="waiter-name" value="${name}"></td>
-                <td><input type="number" class="waiter-days" min="0" step="1" value="${days}"></td>
-                <td><button class="btn btn-secondary" onclick="removeRow(this)">Sil</button></td>
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML = `
+                <input type="text" class="waiter-name" value="${name}" placeholder="Garson adi">
+                <input type="number" class="waiter-days" min="0" step="1" value="${days}">
+                <button class="btn btn-secondary" onclick="removeRow(this)">Sil</button>
             `;
-            tbody.appendChild(tr);
+            tbody.appendChild(row);
         }
 
         function removeRow(btn) {
-            btn.closest('tr').remove();
+            btn.closest('.row').remove();
         }
 
         function collectWorkdays() {
@@ -248,13 +142,22 @@
             entries.forEach(name => { totalDays += workdays[name]; });
 
             entries.forEach(name => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${name}</td>
-                    <td>${workdays[name]}</td>
-                    <td>${(payouts[name] || 0).toFixed(2)}&#8378;</td>
+                const ratio = totalDays > 0 ? (workdays[name] / totalDays) * 100 : 0;
+                const row = document.createElement('div');
+                row.className = 'result-row';
+                row.innerHTML = `
+                    <div class="result-left">
+                        <div class="result-name">${name}</div>
+                        <div class="result-days">${workdays[name]} gun</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: ${ratio.toFixed(1)}%"></div>
+                        </div>
+                    </div>
+                    <div class="result-amount">${(payouts[name] || 0).toFixed(2)} TL</div>
                 `;
-                tbody.appendChild(tr);
+                tbody.appendChild(row);
             });
 
             document.getElementById('summary-total').textContent = (parseFloat(document.getElementById('tip-total').value || '0')).toFixed(2) + ' TL';
@@ -265,7 +168,7 @@
             const start = document.getElementById('period-start').value;
             const end = document.getElementById('period-end').value;
             if (!start || !end) {
-                alert('Lütfen başlangıç ve bitiş tarihini seçin.');
+                alert('Lutfen baslangic ve bitis tarihini secin.');
                 return;
             }
 
@@ -273,7 +176,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (!data.success) {
-                        alert(data.message || 'Veri alınamadı.');
+                        alert(data.message || 'Veri alinamadi.');
                         return;
                     }
                     const period = data.period;
@@ -295,19 +198,18 @@
                 });
         }
 
-        
         function loadWorkdaysFromAttendance() {
             const start = document.getElementById('period-start').value;
             const end = document.getElementById('period-end').value;
             if (!start || !end) {
-                alert('Lütfen başlangıç ve bitiş tarihini seçin.');
+                alert('Lutfen baslangic ve bitis tarihini secin.');
                 return;
             }
             fetch(`/api/vardiya/summary?start=${start}&end=${end}`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data.success) {
-                        alert(data.message || 'Veri alınamadı.');
+                        alert(data.message || 'Veri alinamadi.');
                         return;
                     }
                     const workdays = data.workdays || {};
@@ -321,7 +223,7 @@
                 .catch(err => alert('Hata: ' + err.message));
         }
 
-function calculatePayouts() {
+        function calculatePayouts() {
             const tipTotal = parseFloat(document.getElementById('tip-total').value || '0');
             const workdays = collectWorkdays();
             fetch('/api/tip-havuzu/hesapla', {
@@ -332,7 +234,7 @@ function calculatePayouts() {
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
-                    alert(data.message || 'Hesaplama hatası.');
+                    alert(data.message || 'Hesaplama hatasi.');
                     return;
                 }
                 renderPayouts(workdays, data.payouts || {});
@@ -359,7 +261,7 @@ function calculatePayouts() {
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
-                    alert(data.message || 'K ydetme hatası.');
+                    alert(data.message || 'Kaydetme hatasi.');
                     return;
                 }
                 renderPayouts(data.period.workdays || {}, data.period.payouts || {});

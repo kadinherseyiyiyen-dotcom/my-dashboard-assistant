@@ -1,0 +1,204 @@
+{
+  "salon": {
+    "1": {
+      "pos_x": 16,
+      "pos_y": 16,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "2": {
+      "pos_x": 152,
+      "pos_y": 16,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "3": {
+      "pos_x": 288,
+      "pos_y": 16,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "4": {
+      "pos_x": 424,
+      "pos_y": 16,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "5": {
+      "pos_x": 560,
+      "pos_y": 16,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "6": {
+      "pos_x": 16,
+      "pos_y": 122,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "7": {
+      "pos_x": 152,
+      "pos_y": 122,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "8": {
+      "pos_x": 288,
+      "pos_y": 122,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "9": {
+      "pos_x": 424,
+      "pos_y": 122,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "10": {
+      "pos_x": 560,
+      "pos_y": 122,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "11": {
+      "pos_x": 16,
+      "pos_y": 228,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "12": {
+      "pos_x": 152,
+      "pos_y": 228,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "13": {
+      "pos_x": 288,
+      "pos_y": 228,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "14": {
+      "pos_x": 424,
+      "pos_y": 228,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "15": {
+      "pos_x": 560,
+      "pos_y": 228,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "16": {
+      "pos_x": 16,
+      "pos_y": 334,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "17": {
+      "pos_x": 152,
+      "pos_y": 334,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "18": {
+      "pos_x": 288,
+      "pos_y": 334,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "19": {
+      "pos_x": 424,
+      "pos_y": 334,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "20": {
+      "pos_x": 560,
+      "pos_y": 334,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "21": {
+      "pos_x": 16,
+      "pos_y": 440,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "22": {
+      "pos_x": 152,
+      "pos_y": 440,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "23": {
+      "pos_x": 288,
+      "pos_y": 440,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "24": {
+      "pos_x": 424,
+      "pos_y": 440,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    },
+    "25": {
+      "pos_x": 560,
+      "pos_y": 440,
+      "width": 120,
+      "height": 90,
+      "rotation": 0,
+      "area": "salon"
+    }
+  }
+}

@@ -4,190 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vardiya Takibi</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            color: #111827;
-        }
-        .header {
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn {
-            padding: 0.5rem 0.75rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .btn-primary { background: #2563eb; color: #fff; }
-        .btn-secondary { background: #6b7280; color: #fff; }
-        .btn-success { background: #16a34a; color: #fff; }
-        .btn-danger { background: #dc2626; color: #fff; }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-        .card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-        }
-        .controls {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .legend {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 0.75rem;
-            font-size: 0.85rem;
-        }
-        .legend span {
-            padding: 0.2rem 0.5rem;
-            border-radius: 999px;
-            background: #f3f4f6;
-        }
-        .employee-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-        .employee-item {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .employee-item input {
-            flex: 1;
-            padding: 0.5rem 0.6rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        th, td {
-            padding: 0.6rem 0.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: center;
-            white-space: nowrap;
-        }
-        th {
-            background: #f9fafb;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            font-weight: 700;
-        }
-        th.day-head {
-            min-width: 46px;
-            font-size: 0.8rem;
-            color: #475569;
-        }
-        th.name-head {
-            text-align: left;
-            min-width: 160px;
-        }
-        .cell {
-            cursor: pointer;
-            border-radius: 0.35rem;
-            position: relative;
-            min-width: 46px;
-            height: 42px;
-            font-weight: 700;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-        }
-        .cell .clear-btn {
-            position: absolute;
-            top: 3px;
-            right: 3px;
-            width: 14px;
-            height: 14px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(15, 23, 42, 0.25);
-            color: #fff;
-            font-size: 9px;
-            line-height: 14px;
-            cursor: pointer;
-        }
-        .cell .clear-btn:hover {
-            background: rgba(15, 23, 42, 0.4);
-        }
-        .s-calisti { background: #bbf7d0; }
-        .s-gec { background: #fde68a; }
-        .s-izinli { background: #bfdbfe; }
-        .s-mazeretli { background: #fbcfe8; }
-        .s-gelmedi { background: #fecaca; }
-        .note {
-            font-size: 0.8rem;
-            color: #6b7280;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/vardiya.modern.css">
 </head>
 <body>
-    <div class="header">
-        <h1>Vardiya Takibi</h1>
-        <div>
-            <a href="/tip-havuzu" class="btn btn-primary">Tip Havuzu</a>
-            <a href="/kasa" class="btn btn-secondary">&larr; Kasa</a>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="card">
-            <div class="controls">
-                <input type="month" id="month">
-                <button class="btn btn-primary" onclick="loadMonth()">Yukle</button>
-                <button class="btn btn-success" onclick="saveEmployees()">Calisanlari Kaydet</button>
+        <div class="page-header">
+            <div class="page-title">
+                <div class="page-badge">&#128197;</div>
+                <div>
+                    <div class="title">Vardiya Takibi</div>
+                    <div class="subtitle">Donem secimi ve vardiya durumu guncelleyin.</div>
+                </div>
             </div>
-            <div class="legend">
-                <span>C: Calisti</span>
-                <span>G: Gec Geldi</span>
-                <span>I: Izinli</span>
-                <span>M: Mazeretli</span>
-                <span>X: Gelmedi</span>
-                <span>Click: Durum sec</span>
+            <div class="header-actions">
+                <a href="/tip-havuzu" class="btn btn-secondary">Tip Havuzu</a>
+                <a href="/kasa" class="btn btn-secondary">&larr; Kasa</a>
             </div>
         </div>
 
-        <div class="card">
-            <h3>Calisan Listesi</h3>
+        <div class="card toolbar-card">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <label class="field-label" for="month">Donem Secimi</label>
+                    <div class="field-with-icon">
+                        <span class="field-icon">&#128197;</span>
+                        <input type="month" id="month" class="field-input">
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="loadMonth()">Yukle</button>
+                    <button class="btn btn-success" onclick="saveEmployees()">Calisanlari Kaydet</button>
+                </div>
+            </div>
+            <div class="status-legend">
+                <div class="status-pill s-calisti">C</div>
+                <span>Calisti</span>
+                <div class="status-pill s-gec">G</div>
+                <span>Gec Geldi</span>
+                <div class="status-pill s-izinli">I</div>
+                <span>Izinli</span>
+                <div class="status-pill s-mazeretli">M</div>
+                <span>Mazeretli</span>
+                <div class="status-pill s-gelmedi">X</div>
+                <span>Gelmedi</span>
+                <span class="legend-info">Tikla: Durum sec</span>
+            </div>
+        </div>
+
+        <div class="card employee-card">
+            <div class="card-title">Calisan Listesi</div>
             <div class="employee-list" id="employee-list"></div>
-            <button class="btn btn-secondary" onclick="addEmployee()" style="margin-top:0.75rem;">+ Calisan Ekle</button>
-            <div class="note">Calisan isimleri bir kere girilir. Aylik tabloda otomatik gorunur.</div>
+            <div class="employee-actions">
+                <button class="btn btn-primary" onclick="addEmployee()">+ Calisan Ekle</button>
+                <div class="note">Calisan isimleri bir kere girilir. Aylik tabloda otomatik gorunur.</div>
+            </div>
         </div>
 
-        <div class="card" style="overflow-x:auto;">
-            <table id="month-table">
-                <thead id="month-head"></thead>
-                <tbody id="month-body"></tbody>
-            </table>
-            <div class="note">Bir gune tikla: Calisti/Ge? Geldi/Izinli/Mazeretli/Gelmedi sec. Ge? geldi secilirse saat sorulur.</div>
+        <div class="card table-card">
+            <div class="card-title">Vardiya Takibi</div>
+            <div class="table-wrap">
+                <table id="month-table">
+                    <thead id="month-head"></thead>
+                    <tbody id="month-body"></tbody>
+                </table>
+            </div>
+            <div class="note">Bir gune tikla: Calisti/Gec Geldi/Izinli/Mazeretli/Gelmedi sec. Gec geldi secilirse saat sorulur.</div>
         </div>
     </div>
 
@@ -204,10 +85,10 @@
         function addEmployee(name = '') {
             const list = document.getElementById('employee-list');
             const div = document.createElement('div');
-            div.className = 'employee-item';
+            div.className = 'employee-chip';
             div.innerHTML = `
                 <input type="text" class="employee-name" value="${name}" placeholder="Orn: Ahmet">
-                <button class="btn btn-danger" onclick="this.parentElement.remove()">Sil</button>
+                <button class="chip-remove" onclick="this.parentElement.remove()" title="Sil">&times;</button>
             `;
             list.appendChild(div);
         }
@@ -258,9 +139,21 @@
             return { code: '', cls: '' };
         }
 
+        function statusLabel(r) {
+            if (!r) return '';
+            if (r.status === 'calisti') return 'Calisti';
+            if (r.status === 'gec_geldi') return r.late_time ? `Gec geldi ${r.late_time}` : 'Gec geldi';
+            if (r.status === 'izinli') return 'Izinli';
+            if (r.status === 'mazeretli') return 'Mazeretli';
+            if (r.status === 'gelmedi') return 'Gelmedi';
+            return '';
+        }
+
         function renderMonth(month, records) {
             const [y, m] = month.split('-').map(v => parseInt(v, 10));
             const totalDays = daysInMonth(y, m);
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === y && (today.getMonth() + 1) === m;
             const waiters = {};
             records.forEach(r => {
                 if (!r.waiter) return;
@@ -277,25 +170,45 @@
 
             const headRow = document.createElement('tr');
             headRow.innerHTML = `<th class="name-head">Garson</th>` +
-                Array.from({length: totalDays}, (_, i) => `<th class="day-head">${i + 1}</th>`).join('') +
-                `<th class="day-head">Toplam Gun</th>`;
+                Array.from({length: totalDays}, (_, i) => {
+                    const day = i + 1;
+                    const dateObj = new Date(y, m - 1, day);
+                    const dayOfWeek = dateObj.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    const isToday = isCurrentMonth && day === today.getDate();
+                    const classNames = ['day-head'];
+                    if (isWeekend) classNames.push('is-weekend');
+                    if (isToday) classNames.push('is-today');
+                    return `<th class="${classNames.join(' ')}">${day}</th>`;
+                }).join('') +
+                `<th class="day-head total-head">Toplam Gun</th>`;
             head.appendChild(headRow);
 
             employeeNames.forEach(name => {
                 let total = 0;
                 const row = document.createElement('tr');
-                let cells = `<td style="text-align:left; font-weight:600;">${name}</td>`;
+                let cells = `<td class="name-cell">${name}</td>`;
                 for (let d = 1; d <= totalDays; d++) {
                     const dayStr = String(d).padStart(2, '0');
                     const dateKey = `${month}-${dayStr}`;
                     const r = (waiters[name] || {})[dateKey];
                     if (r && r.status === 'calisti') total += 1;
                     const info = r ? statusCode(r) : { code: '', cls: '' };
-                    cells += `<td class="cell ${info.cls}" data-w="${name}" data-date="${dateKey}" title="${info.code}">` +
-                    `<button class="clear-btn" data-w="${name}" data-date="${dateKey}" title="Sil">x</button>` +
-                    `<span>${info.code}</span></td>`;
+                    const hint = statusLabel(r);
+                    const dateObj = new Date(y, m - 1, d);
+                    const dayOfWeek = dateObj.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    const isToday = isCurrentMonth && d === today.getDate();
+                    const classNames = ['cell', info.cls];
+                    if (isWeekend) classNames.push('is-weekend');
+                    if (isToday) classNames.push('is-today');
+                    if (!info.code) classNames.push('is-empty');
+                    cells += `<td class="${classNames.join(' ')}" data-w="${name}" data-date="${dateKey}" title="${hint ? hint : 'Tikla: Durum sec'}">` +
+                    `<div class="cell-wrap">` +
+                    `<div class="shift-cell ${info.cls}"></div>` +
+                    `</div></td>`;
                 }
-                cells += `<td>${total}</td>`;
+                cells += `<td class="total-cell">${total}</td>`;
                 row.innerHTML = cells;
                 body.appendChild(row);
             });
@@ -305,38 +218,11 @@
 
         function bindCells() {
             document.querySelectorAll('.cell').forEach(cell => {
-                cell.addEventListener('click', () => {
+                cell.addEventListener('click', (event) => {
+                    event.stopPropagation();
                     const waiter = cell.getAttribute('data-w');
                     const date = cell.getAttribute('data-date');
-                    const choice = prompt('Durum sec (C=Calisti, G=Gec Geldi, I=Izinli, M=Mazeretli, X=Gelmedi, BOS=temizle):');
-                    if (choice === null) return;
-                    const val = choice.trim().toUpperCase();
-                    if (!val) {
-                        saveRecord({ date, waiter, clear: true });
-                        return;
-                    }
-                    let status = null;
-                    if (val === 'C') status = 'calisti';
-                    if (val === 'G') status = 'gec_geldi';
-                    if (val === 'I') status = 'izinli';
-                    if (val === 'M') status = 'mazeretli';
-                    if (val === 'X') status = 'gelmedi';
-                    if (!status) return;
-
-                    let late_time = '';
-                    if (status === 'gec_geldi') {
-                        late_time = prompt('Gelis saati (HH:MM):') || '';
-                    }
-                    saveRecord({ date, waiter, status, late_time });
-                });
-            });
-
-            document.querySelectorAll('.clear-btn').forEach(btn => {
-                btn.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    const waiter = btn.getAttribute('data-w');
-                    const date = btn.getAttribute('data-date');
-                    saveRecord({ date, waiter, clear: true });
+                    showStatusPopover(cell, waiter, date);
                 });
             });
         }
@@ -356,6 +242,82 @@
                 loadMonth();
             });
         }
+
+        let activePopover = null;
+        let popoverContext = null;
+
+        function ensurePopover() {
+            if (activePopover) return activePopover;
+            const pop = document.createElement('div');
+            pop.className = 'status-popover';
+            pop.innerHTML = `
+                <div class="pop-grid">
+                    <button class="status-pill-btn s-calisti" data-status="calisti">Calisti</button>
+                    <button class="status-pill-btn s-gec" data-status="gec_geldi">Gec</button>
+                    <button class="status-pill-btn s-izinli" data-status="izinli">Izinli</button>
+                    <button class="status-pill-btn s-mazeretli" data-status="mazeretli">Mazeret</button>
+                    <button class="status-pill-btn s-gelmedi" data-status="gelmedi">Gelmedi</button>
+                    <button class="status-pill-btn s-clear" data-status="clear">Temizle</button>
+                </div>
+            `;
+            pop.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const btn = event.target.closest('button[data-status]');
+                if (!btn || !popoverContext) return;
+                const status = btn.getAttribute('data-status');
+                if (status === 'clear') {
+                    saveRecord({ date: popoverContext.date, waiter: popoverContext.waiter, clear: true });
+                    hidePopover();
+                    return;
+                }
+                let late_time = '';
+                if (status === 'gec_geldi') {
+                    late_time = prompt('Gelis saati (HH:MM):') || '';
+                }
+                saveRecord({ date: popoverContext.date, waiter: popoverContext.waiter, status, late_time });
+                hidePopover();
+            });
+            document.body.appendChild(pop);
+            activePopover = pop;
+            return pop;
+        }
+
+        function positionPopover(popover, cell) {
+            const rect = cell.getBoundingClientRect();
+            const popRect = popover.getBoundingClientRect();
+            const padding = 8;
+            let top = rect.top - popRect.height - padding;
+            if (top < padding) {
+                top = rect.bottom + padding;
+            }
+            let left = rect.left + (rect.width / 2) - (popRect.width / 2);
+            if (left < padding) left = padding;
+            if (left + popRect.width > window.innerWidth - padding) {
+                left = window.innerWidth - popRect.width - padding;
+            }
+            popover.style.top = `${top + window.scrollY}px`;
+            popover.style.left = `${left + window.scrollX}px`;
+        }
+
+        function showStatusPopover(cell, waiter, date) {
+            const pop = ensurePopover();
+            popoverContext = { waiter, date };
+            pop.classList.add('open');
+            pop.style.display = 'block';
+            positionPopover(pop, cell);
+        }
+
+        function hidePopover() {
+            if (!activePopover) return;
+            activePopover.classList.remove('open');
+            activePopover.style.display = 'none';
+            popoverContext = null;
+        }
+
+        document.addEventListener('click', () => hidePopover());
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') hidePopover();
+        });
 
         setDefaultMonth();
         loadEmployees();

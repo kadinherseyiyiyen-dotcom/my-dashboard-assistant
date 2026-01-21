@@ -190,6 +190,9 @@ ORDERS_FILE = 'orders.json'
 MENU_FILE = 'menu.json'
 TABLES_FILE = 'tables.json'
 REHBER_FILE = 'rehber_masalar.json'
+TABLES_LAYOUT_FILE = 'tables_layout.json'
+TABLE_SESSIONS_FILE = 'table_sessions.json'
+TABLE_USAGE_FILE = 'table_usage.json'
 ATTENDANCE_FILE = 'vardiya.json'
 ATTENDANCE_CONFIG_FILE = 'vardiya_config.json'
 EMPLOYEES_FILE = 'calisanlar.json'
@@ -228,6 +231,50 @@ def business_day_key(dt):
     if dt < cutoff:
         return (dt - timedelta(days=1)).date()
     return dt.date()
+
+def parse_iso_datetime(value):
+    try:
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=ZoneInfo("Europe/Istanbul"))
+        return dt
+    except Exception:
+        return None
+
+def get_table_open_ts(orders, masa):
+    open_ts = None
+    for order in orders:
+        if order.get('durum') != 'aktif':
+            continue
+        if str(order.get('masa')) != str(masa):
+            continue
+        ts = order.get('masa_acilis_ts')
+        if not ts:
+            continue
+        if open_ts is None or ts < open_ts:
+            open_ts = ts
+    return open_ts
+
+def finalize_table_session(masa, orders):
+    sessions = load_table_sessions()
+    open_ts = sessions.get(str(masa))
+    if not open_ts:
+        open_ts = get_table_open_ts(orders, masa)
+    start_dt = parse_iso_datetime(open_ts) if open_ts else None
+    if not start_dt:
+        return
+    end_dt = now_tr()
+    duration_seconds = max(0, int((end_dt - start_dt).total_seconds()))
+    if duration_seconds <= 0:
+        return
+    day_key = business_day_key(end_dt).isoformat()
+    usage = load_table_usage()
+    day_usage = usage.get(day_key, {})
+    day_usage[str(masa)] = int(day_usage.get(str(masa), 0)) + duration_seconds
+    usage[day_key] = day_usage
+    save_table_usage(usage)
+    sessions.pop(str(masa), None)
+    save_table_sessions(sessions)
 
 def load_config():
     return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
@@ -287,6 +334,57 @@ def load_rehber_masalar():
 def save_rehber_masalar(rehber_masalar):
     save_json_storage(REHBER_FILE, rehber_masalar)
     invalidate_cache('rehber')
+
+def default_tables_layout(area):
+    layout = {}
+    cols = 5
+    width = 120
+    height = 90
+    gap = 16
+    start_x = 16
+    start_y = 16
+    for i in range(1, 26):
+        idx = i - 1
+        col = idx % cols
+        row = idx // cols
+        x = start_x + col * (width + gap)
+        y = start_y + row * (height + gap)
+        layout[str(i)] = {
+            'pos_x': x,
+            'pos_y': y,
+            'width': width,
+            'height': height,
+            'rotation': 0,
+            'area': area
+        }
+    return layout
+
+def load_tables_layout(area='salon'):
+    def loader():
+        data = load_json_storage(TABLES_LAYOUT_FILE, {})
+        if area not in data or not isinstance(data.get(area), dict):
+            data[area] = default_tables_layout(area)
+            save_json_storage(TABLES_LAYOUT_FILE, data)
+        return data.get(area, {})
+    return cached_load(f'tables_layout_{area}', loader, 60)
+
+def save_tables_layout(area, layout):
+    data = load_json_storage(TABLES_LAYOUT_FILE, {})
+    data[area] = layout
+    save_json_storage(TABLES_LAYOUT_FILE, data)
+    invalidate_cache(f'tables_layout_{area}')
+
+def load_table_sessions():
+    return load_json_storage(TABLE_SESSIONS_FILE, {})
+
+def save_table_sessions(sessions):
+    save_json_storage(TABLE_SESSIONS_FILE, sessions)
+
+def load_table_usage():
+    return load_json_storage(TABLE_USAGE_FILE, {})
+
+def save_table_usage(usage):
+    save_json_storage(TABLE_USAGE_FILE, usage)
 
 def load_tip_periods():
     return load_json_storage(TIP_FILE, [])
@@ -635,6 +733,19 @@ def siparis_ekle():
         
     data = request.json
     orders = load_orders()
+    masa = data.get('masa')
+    open_ts = get_table_open_ts(orders, masa)
+    if not open_ts:
+        open_ts = now_tr().isoformat()
+    for order in orders:
+        if order.get('durum') == 'aktif' and str(order.get('masa')) == str(masa):
+            if not order.get('masa_acilis_ts'):
+                order['masa_acilis_ts'] = open_ts
+
+    sessions = load_table_sessions()
+    if str(masa) not in sessions:
+        sessions[str(masa)] = open_ts
+        save_table_sessions(sessions)
     
     if session.get('role') == 'kasa':
         garson_name = data.get('garson', 'WhatsApp')
@@ -643,14 +754,15 @@ def siparis_ekle():
     
     new_order = {
         'id': len(orders) + 1,
-        'masa': data['masa'],
+        'masa': masa,
         'garson': garson_name,
         'items': data['items'],
         'toplam': data['toplam'],
         'zaman': now_tr().strftime('%H:%M'),
         'tarih': now_tr().strftime('%d.%m.%Y'),
         'durum': 'aktif',
-        'kaynak': 'kasa' if session.get('role') == 'kasa' else 'garson'
+        'kaynak': 'kasa' if session.get('role') == 'kasa' else 'garson',
+        'masa_acilis_ts': open_ts
     }
     
     orders.append(new_order)
@@ -672,7 +784,8 @@ def kasa_init():
     orders = cached_load('orders', load_orders, 10)
     tables = cached_load('tables', load_tables, 60)
     rehber = cached_load('rehber', load_rehber_masalar, 60)
-    return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber})
+    sessions = load_table_sessions()
+    return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber, 'table_sessions': sessions})
 
 @app.route('/api/tables', methods=['GET', 'POST'])
 def handle_tables():
@@ -686,6 +799,47 @@ def handle_tables():
         data = request.json
         save_tables(data)
         return jsonify({'success': True})
+
+@app.route('/api/tables-layout', methods=['GET', 'POST'])
+def tables_layout():
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    if request.method == 'GET':
+        area = request.args.get('area', 'salon')
+        layout = load_tables_layout(area)
+        tables = []
+        for table_id, pos in layout.items():
+            tables.append({
+                'table_id': int(table_id) if str(table_id).isdigit() else table_id,
+                'pos_x': pos.get('pos_x', 0),
+                'pos_y': pos.get('pos_y', 0),
+                'width': pos.get('width', 120),
+                'height': pos.get('height', 90),
+                'rotation': pos.get('rotation', 0),
+                'area': pos.get('area', area)
+            })
+        return jsonify(tables)
+    data = request.get_json() or {}
+    area = data.get('area', 'salon')
+    tables = data.get('tables')
+    if not isinstance(tables, list):
+        return jsonify({'success': False, 'message': 'Layout gecersiz.'}), 400
+    layout = {}
+    for item in tables:
+        table_id = item.get('table_id')
+        if table_id is None:
+            continue
+        key = str(table_id)
+        layout[key] = {
+            'pos_x': int(item.get('pos_x', 0)),
+            'pos_y': int(item.get('pos_y', 0)),
+            'width': int(item.get('width', 120)),
+            'height': int(item.get('height', 90)),
+            'rotation': int(item.get('rotation', 0)),
+            'area': area
+        }
+    save_tables_layout(area, layout)
+    return jsonify({'success': True})
 
 @app.route('/api/menu', methods=['GET', 'POST'])
 def handle_menu():
@@ -887,6 +1041,8 @@ def hesap_kapat(masa):
     if str(masa) in rehber_masalar:
         rehber_masalar[str(masa)] = False
         save_rehber_masalar(rehber_masalar)
+
+    finalize_table_session(masa, orders)
     
     response = {'success': True}
     if data.get('odeme_turu') == 'nakit':
@@ -1142,6 +1298,11 @@ def dashboard_data():
     populer_urunler = sorted(urun_satis.items(), key=lambda x: x[1]['adet'], reverse=True)[:5]
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
     populer_masalar = sorted(masa_kullanim.items(), key=lambda x: x[1], reverse=True)[:10]
+    day_key = business_day_key(now_tr()).isoformat()
+    table_usage = load_table_usage()
+    day_usage = table_usage.get(day_key, {})
+    longest_tables = sorted(day_usage.items(), key=lambda x: x[1], reverse=True)[:10]
+    longest_tables = [{'masa': k, 'sure_dk': int(max(1, round(v / 60)))} for k, v in longest_tables]
     
     toplam_gider = sum_expenses_for_date(now_tr().strftime('%Y-%m-%d'))
     toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
@@ -1154,7 +1315,8 @@ def dashboard_data():
         'toplam_ciro': net_ciro,
         'toplam_gider': toplam_gider,
         'karli_saatler': karli_saatler,
-        'masa_kullanim': populer_masalar
+        'masa_kullanim': populer_masalar,
+        'masa_sureleri': longest_tables
     })
 
 @app.route('/api/siparis-iptal/<int:masa>', methods=['POST'])
@@ -1169,6 +1331,7 @@ def siparis_iptal(masa):
         if order['masa'] == masa and order['durum'] == 'aktif':
             iptal_count += 1
     
+    finalize_table_session(masa, orders)
     orders = [o for o in orders if not (o['masa'] == masa and o['durum'] == 'aktif')]
     
     save_orders(orders)
