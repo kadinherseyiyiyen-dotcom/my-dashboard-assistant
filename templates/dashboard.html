@@ -3,533 +3,551 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerçek Zamanlı Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Ana Ekran</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            color: #2d3748;
+        body {
+            font-family: 'Poppins', 'Trebuchet MS', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 18% 18%, rgba(255,255,255,0.55), transparent 42%),
+                        radial-gradient(circle at 75% 10%, rgba(255,255,255,0.25), transparent 48%),
+                        linear-gradient(130deg, #ff9c2a 0%, #ffc68b 36%, #ffe7cf 60%, #ffffff 100%);
+            min-height: 100vh;
+            color: #3b1f1f;
+            overflow-x: hidden;
         }
-        .header { 
-            background: #fff;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem;
+        .topbar {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.1rem 2rem;
+            gap: 1.5rem;
         }
-        .header h1 {
-            font-size: 1.25rem;
+        .status-strip {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            font-size: 0.8rem;
+            color: rgba(59,31,31,0.9);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+        }
+        .status-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
+        }
+        .logout {
+            background: #ffffff;
+            border: 1px solid rgba(59,31,31,0.15);
+            color: #5a2a1f;
+            padding: 0.5rem 1.2rem;
+            border-radius: 999px;
             font-weight: 600;
-            color: #1a202c;
-        }
-        .btn {
-            padding: 0.5rem 0.75rem;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.4rem;
         }
-        .btn-danger { background: #e53e3e; color: white; }
-        .btn-danger:hover { background: #c53030; }
-        .container {
-            max-width: 1400px;
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 320px) minmax(640px, 900px);
+            gap: 2.5rem;
+            padding: 1rem 2.5rem 2.5rem;
+            max-width: 1300px;
             margin: 0 auto;
-            padding: 1rem;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-card.live {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .stat-card.orders {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            color: white;
-        }
-        .stat-card.revenue {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white;
-        }
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .stat-label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            opacity: 0.9;
-        }
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        .chart-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .chart-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1a202c;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-        .popular-items {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .popular-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .popular-item:last-child {
-            border-bottom: none;
-        }
-        .item-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .item-rank {
-            background: #3182ce;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            font-size: 0.75rem;
-            font-weight: bold;
+            min-height: calc(100vh - 90px);
         }
-        .item-stats {
-            text-align: right;
-            font-size: 0.875rem;
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-self: center;
         }
-        .item-count {
+        .date-block {
+            font-size: 1rem;
+            color: rgba(59,31,31,0.85);
+            margin-bottom: 0.35rem;
+        }
+        .time-block {
+            font-size: 3.6rem;
             font-weight: 700;
-            color: #38a169;
+            letter-spacing: 0.02em;
+            margin-top: -8px;
         }
-        .live-indicator {
+        .fx-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,168,93,0.4);
+            border-radius: 18px;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 12px 24px rgba(255, 144, 51, 0.18);
+        }
+        .fx-card h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #7a3619;
+        }
+        .fx-live {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            font-size: 0.75rem;
-            color: #38a169;
-            margin-left: auto;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            color: #b91c1c;
+            letter-spacing: 0.04em;
         }
-        .live-dot {
+        .fx-dot {
             width: 8px;
             height: 8px;
-            background: #38a169;
             border-radius: 50%;
-            animation: pulse 2s infinite;
+            background: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
         }
-        .analytics-grid {
+        .fx-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.6rem;
+            border-radius: 12px;
+            background: rgba(255, 244, 231, 0.9);
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #4b2b1f;
+        }
+        .fx-row:last-child { margin-bottom: 0; }
+        .weather-card {
+            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.18);
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin: 10px 0 14px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255,168,93,0.35);
+            color: #4b2b1f;
+            min-height: 52px;
+            max-width: 240px;
+            width: fit-content;
+        }
+        .weather-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.6);
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            place-items: center;
+            overflow: hidden;
+            flex: 0 0 36px;
         }
-        .hour-item, .table-item {
+        .weather-icon img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+        .weather-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .weather-temp {
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .weather-cond {
+            font-size: 12px;
+            color: #7a3619;
+        }
+        .weather-loc {
+            font-size: 12px;
+            color: #9a3412;
+            letter-spacing: 0.02em;
+        }
+        .density-card {
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,168,93,0.35);
+            border-radius: 18px;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 12px 24px rgba(255, 144, 51, 0.18);
+        }
+        .density-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .hour-item:last-child, .table-item:last-child {
-            border-bottom: none;
-        }
-        .hour-rank, .table-rank {
-            background: #f59e0b;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-        .hour-stats, .table-stats {
-            text-align: right;
-            font-size: 0.875rem;
-        }
-        .hour-revenue, .table-count {
+            font-size: 0.85rem;
             font-weight: 700;
-            color: #f59e0b;
+            color: #7a3619;
+            margin-bottom: 0.65rem;
         }
-        @media (max-width: 768px) {
-            .charts-grid, .analytics-grid {
-                grid-template-columns: 1fr;
-            }
-            .chart-container {
-                height: 250px;
-            }
+        .density-bar {
+            height: 10px;
+            border-radius: 999px;
+            background: #f1d7be;
+            overflow: hidden;
+        }
+        .density-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffb347, #ff7a1a);
+            transition: width 0.4s ease;
+        }
+        .density-meta {
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #8a4b12;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(170px, 1fr));
+            gap: 1.4rem;
+            max-width: 1180px;
+            margin: 0 auto;
+            margin-top: 72px;
+            justify-content: center;
+            align-content: center;
+            width: 100%;
+            justify-items: stretch;
+        }
+        .tile {
+            background: linear-gradient(145deg, #3f2157 0%, #4a2666 100%);
+            border-radius: 22px;
+            padding: 1.6rem;
+            min-height: 185px;
+            box-shadow: 0 18px 30px rgba(45, 18, 50, 0.22);
+            border: 1px solid rgba(255,255,255,0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            color: #fff;
+        }
+        .tile:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 22px 36px rgba(45, 18, 50, 0.32);
+        }
+        .tile a {
+            color: inherit;
+            text-decoration: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+        .tile-icon {
+            font-size: 2.5rem;
+        }
+        .tile-title {
+            font-size: 1.12rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .tile-desc {
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.8);
+        }
+        .tile.highlight {
+            background: linear-gradient(135deg, #ff6b3d 0%, #ff375f 100%);
+            box-shadow: 0 16px 30px rgba(255, 107, 61, 0.35);
+        }
+        .tile.highlight .tile-desc { color: rgba(255,255,255,0.9); }
+        .settings-btn {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            background: linear-gradient(135deg, #ff8a1f, #ff6a00);
+            border: none;
+            color: #fff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 14px 28px rgba(255, 122, 37, 0.35);
+        }
+        @media (max-width: 1200px) {
+            .grid { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
+        }
+        @media (max-width: 960px) {
+            .layout { grid-template-columns: 1fr; }
+            .left-panel { flex-direction: row; flex-wrap: wrap; }
+            .fx-card, .density-card { flex: 1; min-width: 240px; }
+            .grid { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+        }
+        @media (max-width: 640px) {
+            .topbar { flex-direction: column; gap: 0.75rem; }
+            .layout { padding: 1rem 1.2rem 2rem; }
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📊 Gerçek Zamanlı Dashboard</h1>
-        <div>
-            <span class="live-indicator">
-                <span class="live-dot"></span>
-                Canlı Veri
-            </span>
-            <a href="/kasa" class="btn btn-danger" style="margin-left: 1rem;">← Geri Dön</a>
+    <div class="topbar">
+        <div class="status-strip">
+            <div class="status-item"><span class="status-dot" id="server-dot"></span>Server ONLINE</div>
+            <div class="status-item"><span class="status-dot" id="internet-dot"></span>Internet <span id="internet-text">ONLINE</span></div>
+            <div class="status-item"><span>&#128100;</span>Y&#214;NET&#304;C&#304;</div>
+            <div class="status-item" id="time-top">--:--</div>
+        </div>
+        <a href="/logout" class="logout">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
+    <div class="layout">
+        <div class="left-panel">
+            <div>
+                <div class="date-block" id="date-block">--</div>
+                <div class="time-block" id="time-block">--:--</div>
+            </div>
+            <div class="fx-card">
+                <h4>G&#220;NCEL KURLAR <span class="fx-live"><span class="fx-dot"></span>CANLI</span></h4>
+                <div class="fx-row"><span>USD</span><span id="fx-usd">--</span></div>
+                <div class="fx-row"><span>EUR</span><span id="fx-eur">--</span></div>
+                <div class="fx-row"><span>GBP</span><span id="fx-gbp">--</span></div>
+            </div>
+            <div class="density-card">
+                <div class="density-header">
+                    <span>Yo&#287;unluk</span>
+                    <span id="density-text">--</span>
+                </div>
+                <div class="density-bar"><div class="density-fill" id="density-fill"></div></div>
+                <div class="density-meta">
+                    <span>Skor: <strong id="density-score">0</strong></span>
+                    <span>Aktif masa: <strong id="density-count">0</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="grid">
+            <div class="tile highlight">
+                <a href="/kasa">
+                    <div class="tile-icon">&#127869;</div>
+                    <div>
+                        <div class="tile-title">Sipari&#351;ler</div>
+                        <div class="tile-desc">Masalar, sipari&#351;, &#246;deme</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/istatistik">
+                    <div class="tile-icon">&#128202;</div>
+                    <div>
+                        <div class="tile-title">&#304;statistik</div>
+                        <div class="tile-desc">Ciro, garson performans&#305;</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/dashboard-analytics">
+                    <div class="tile-icon">&#128200;</div>
+                    <div>
+                        <div class="tile-title">Dashboard</div>
+                        <div class="tile-desc">Canl&#305; g&#246;sterge paneli</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/kasa?open=recentClosures">
+                    <div class="tile-icon">&#129534;</div>
+                    <div>
+                        <div class="tile-title">Son Kapat&#305;lanlar</div>
+                        <div class="tile-desc">Geri al / son i&#351;lemler</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/kasa?open=otopark">
+                    <div class="tile-icon">&#128663;</div>
+                    <div>
+                        <div class="tile-title">Otopark</div>
+                        <div class="tile-desc">Ara&#231; giri&#351;/&#231;&#305;k&#305;&#351;</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/tip-havuzu">
+                    <div class="tile-icon">&#128176;</div>
+                    <div>
+                        <div class="tile-title">Tip Havuzu</div>
+                        <div class="tile-desc">Tip da&#287;&#305;t&#305;m&#305;</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/vardiya">
+                    <div class="tile-icon">&#128101;</div>
+                    <div>
+                        <div class="tile-title">Vardiya</div>
+                        <div class="tile-desc">Vardiya takibi</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/komisyonlar">
+                    <div class="tile-icon">&#128184;</div>
+                    <div>
+                        <div class="tile-title">Komisyonlar</div>
+                        <div class="tile-desc">Komisyon &#246;zeti</div>
+                    </div>
+                </a>
+            </div>
+            <div class="tile">
+                <a href="/giderler">
+                    <div class="tile-icon">&#129534;</div>
+                    <div>
+                        <div class="tile-title">Giderler</div>
+                        <div class="tile-desc">Gider ekle / liste</div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card live">
-                <span class="stat-icon">🔴</span>
-                <div class="stat-number" id="live-time">--:--</div>
-                <div class="stat-label">Canlı Saat</div>
-            </div>
-            <div class="stat-card orders">
-                <span class="stat-icon">📝</span>
-                <div class="stat-number" id="total-orders">0</div>
-                <div class="stat-label">Bugün Toplam Sipariş</div>
-            </div>
-            <div class="stat-card revenue">
-                <span class="stat-icon">💰</span>
-                <div class="stat-number" id="total-revenue">0₺</div>
-                <div class="stat-label">Bugün Toplam Ciro</div>
-            </div>
-        </div>
-
-        <div class="charts-grid">
-            <div class="chart-card">
-                <h3 class="chart-title">📈 Saatlik Satış Grafiği</h3>
-                <div class="chart-container">
-                    <canvas id="salesChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="popular-items">
-                <h3 class="chart-title">🏆 En Popüler Ürünler</h3>
-                <div id="popular-list">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler yükleniyor...
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="analytics-grid">
-            <div class="chart-card">
-                <h3 class="chart-title">💰 En Karlı Saatler</h3>
-                <div id="profitable-hours">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler yükleniyor...
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chart-card">
-                <h3 class="chart-title">🎯 Müşteri Yoğunluk Haritası</h3>
-                <div id="table-usage">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler yükleniyor...
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-card">
-                <h3 class="chart-title">&#x23F1;&#xFE0F; En Uzun Sure Kullanilan Masalar</h3>
-                <div id="longest-tables">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler y??kleniyor...
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
+    <a href="/menu-yonetim" class="settings-btn">Ayarlar</a>
 
     <script>
-        let salesChart;
-        
-        function updateTime() {
+        function updateClock() {
             const now = new Date();
-            document.getElementById('live-time').textContent = now.toLocaleTimeString('tr-TR');
+            const time = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const date = now.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', weekday: 'long' });
+            const timeTop = document.getElementById('time-top');
+            const timeBlock = document.getElementById('time-block');
+            const dateBlock = document.getElementById('date-block');
+            if (timeTop) timeTop.textContent = time;
+            if (timeBlock) timeBlock.textContent = time;
+            if (dateBlock) dateBlock.textContent = date;
         }
-        
-        function loadDashboardData() {
-            fetch('/api/dashboard-data')
-                .then(response => response.json())
-                .then(data => {
-                    // İstatistik kartlarını güncelle
-                    document.getElementById('total-orders').textContent = data.toplam_siparis;
-                    document.getElementById('total-revenue').textContent = data.toplam_ciro + ' TL';
-                    
-                    // Saatlik satış grafiği
-                    updateSalesChart(data.saatlik_satis);
-                    
-                    // Popüler ürünler
-                    updatePopularItems(data.populer_urunler);
-                    
-                    // En karlı saatler
-                    updateProfitableHours(data.karli_saatler);
-                    
-                    // Masa kullanım analizi
-                    updateTableUsage(data.masa_kullanim);
-
-                    // En uzun sure kullanilan masalar
-                    updateLongestTables(data.masa_sureleri || []);
-                })
-                .catch(error => {
-                    console.error('Dashboard veri yükleme hatası:', error);
-                });
+        function updateStatus() {
+            const online = navigator.onLine;
+            const dot = document.getElementById('internet-dot');
+            const text = document.getElementById('internet-text');
+            if (dot) dot.classList.toggle('offline', !online);
+            if (text) text.textContent = online ? 'ONLINE' : 'OFFLINE';
         }
-        
-        function updateSalesChart(saatlikData) {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            
-            const labels = Object.keys(saatlikData);
-            const values = Object.values(saatlikData);
-            
-            if (salesChart) {
-                salesChart.destroy();
-            }
-            
-            salesChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Satis (TL)',
-                        data: values,
-                        borderColor: '#3182ce',
-                        backgroundColor: 'rgba(49, 130, 206, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#3182ce',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: '#e2e8f0'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value + ' TL';
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: '#e2e8f0'
-                            }
-                        }
-                    }
-                }
-            });
+        function updateFx() {
+            fetch('https://api.frankfurter.app/latest?from=USD&to=TRY')
+                .then(r => r.json())
+                .then(d => { const el = document.getElementById('fx-usd'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
+            fetch('https://api.frankfurter.app/latest?from=EUR&to=TRY')
+                .then(r => r.json())
+                .then(d => { const el = document.getElementById('fx-eur'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
+            fetch('https://api.frankfurter.app/latest?from=GBP&to=TRY')
+                .then(r => r.json())
+                .then(d => { const el = document.getElementById('fx-gbp'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
         }
-        
-        function updatePopularItems(populerUrunler) {
-            const container = document.getElementById('popular-list');
-            
-            if (populerUrunler.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz satış verisi yok</div>';
-                return;
-            }
-            
-            let html = '';
-            populerUrunler.forEach((item, index) => {
-                const [name, stats] = item;
-                html += `
-                    <div class="popular-item">
-                        <div class="item-info">
-                            <div class="item-rank">${index + 1}</div>
-                            <div>
-                                <div style="font-weight: 600; color: #1a202c;">${name}</div>
-                                <div style="font-size: 0.75rem; color: #718096;">${stats.tutar}₺ toplam</div>
-                            </div>
-                        </div>
-                        <div class="item-stats">
-                            <div class="item-count">${stats.adet} adet</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        function updateProfitableHours(karliSaatler) {
-            const container = document.getElementById('profitable-hours');
-            
-            if (karliSaatler.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz satış verisi yok</div>';
-                return;
-            }
-            
-            let html = '';
-            karliSaatler.forEach((item, index) => {
-                const [saat, tutar] = item;
-                html += `
-                    <div class="hour-item">
-                        <div class="item-info">
-                            <div class="hour-rank">${index + 1}</div>
-                            <div>
-                                <div style="font-weight: 600; color: #1a202c;">${saat}</div>
-                                <div style="font-size: 0.75rem; color: #718096;">En karlı saat</div>
-                            </div>
-                        </div>
-                        <div class="hour-stats">
-                            <div class="hour-revenue">${tutar}₺</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        function updateTableUsage(masaKullanim) {
-            const container = document.getElementById('table-usage');
-            
-            if (masaKullanim.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
-                return;
-            }
-            
-            let html = '';
-            masaKullanim.forEach((item, index) => {
-                const [masaNo, kullanim] = item;
-                if (kullanim > 0) {
-                    html += `
-                        <div class="table-item">
-                            <div class="item-info">
-                                <div class="table-rank">${index + 1}</div>
-                                <div>
-                                    <div style="font-weight: 600; color: #1a202c;">Masa ${masaNo}</div>
-                                    <div style="font-size: 0.75rem; color: #718096;">Son 7 gün</div>
-                                </div>
-                            </div>
-                            <div class="table-stats">
-                                <div class="table-count">${kullanim} kez</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            
-            if (html === '') {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
+        function ensureWeatherCard() {
+            var panel = document.querySelector('.left-panel');
+            if (!panel) return null;
+            var existing = panel.querySelector('.weather-card');
+            if (existing) return existing;
+            var dateBlock = panel.querySelector('#date-block');
+            var fxCard = panel.querySelector('.fx-card');
+            if (!fxCard) return null;
+            var card = document.createElement('div');
+            card.className = 'weather-card';
+            card.style.display = 'none';
+            if (dateBlock && dateBlock.parentElement) {
+                dateBlock.parentElement.insertAdjacentElement('afterend', card);
             } else {
-                container.innerHTML = html;
+                fxCard.insertAdjacentElement('beforebegin', card);
             }
+            return card;
         }
-
-        function updateLongestTables(list) {
-            const container = document.getElementById('longest-tables');
-            if (!container) return;
-            if (!list || list.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Veri yok</div>';
+        function renderWeather(data) {
+            var card = ensureWeatherCard();
+            if (!card) return;
+            if (!data || data.success === false) {
+                card.style.display = 'none';
                 return;
             }
-            let html = '';
-            list.forEach((item, index) => {
-                html += `
-                    <div class="table-item">
-                        <div class="item-info">
-                            <div class="table-rank">${index + 1}</div>
-                            <div>
-                                <div style="font-weight: 600; color: #1a202c;">Masa ${item.masa}</div>
-                                <div style="font-size: 0.75rem; color: #718096;">Bugun toplam</div>
-                            </div>
-                        </div>
-                        <div class="table-stats">
-                            <div class="table-count">${item.sure_dk} dk</div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
+            var temp = data.temp;
+            var condition = data.condition || '';
+            var icon = data.icon || '';
+            var location = data.location || 'Şişli';
+            if (temp === null || temp === undefined) {
+                card.style.display = 'none';
+                return;
+            }
+            var iconUrl = icon ? (icon.startsWith('http') ? icon : ('https:' + icon)) : '';
+            card.innerHTML = ''
+                + '<div class="weather-icon">' + (iconUrl ? '<img src="' + iconUrl + '" alt="">' : '&#9729;') + '</div>'
+                + '<div class="weather-info">'
+                + '<div class="weather-temp">' + Math.round(temp) + '&#176;C</div>'
+                + '<div class="weather-cond">' + condition + '</div>'
+                + '<div class="weather-loc">' + location + '</div>'
+                + '</div>';
+            card.style.display = 'flex';
         }
-
-
-        
-        // Sayfa yüklendiğinde
-        updateTime();
-        loadDashboardData();
-        
-        // Her saniye saati güncelle
-        setInterval(updateTime, 1000);
-        
-        // Her 10 saniyede dashboard verilerini güncelle
-        setInterval(loadDashboardData, 10000);
+        function updateWeather() {
+            fetch('/api/weather')
+                .then(r => r.json())
+                .then(renderWeather)
+                .catch(() => {});
+        }
+        function computeDensity(activeCount) {
+            var score = 0;
+            var label = 'D\u00fc\u015f\u00fck';
+            if (activeCount < 7) {
+                score = Math.round((activeCount / 7) * 50);
+                label = 'D\u00fc\u015f\u00fck';
+            } else if (activeCount < 10) {
+                score = 50 + Math.round(((activeCount - 7) / 3) * 25);
+                label = 'Art\u0131yor';
+            } else if (activeCount < 15) {
+                score = 75 + Math.round(((activeCount - 10) / 5) * 25);
+                label = 'Yo\u011fun';
+            } else {
+                score = 100;
+                label = 'Kritik';
+            }
+            return { score: Math.min(100, Math.max(0, score)), label: label };
+        }
+        function updateDensity() {
+            fetch('/api/kasa-init')
+                .then(r => r.json())
+                .then(data => {
+                    var orders = (data && data.orders) || [];
+                    var activeSet = new Set();
+                    orders.forEach(function (o) {
+                        if (o && o.durum === 'aktif') {
+                            activeSet.add(String(o.masa));
+                        }
+                    });
+                    var activeCount = activeSet.size;
+                    var result = computeDensity(activeCount);
+                    var textEl = document.getElementById('density-text');
+                    var scoreEl = document.getElementById('density-score');
+                    var countEl = document.getElementById('density-count');
+                    var fillEl = document.getElementById('density-fill');
+                    if (textEl) textEl.textContent = result.label;
+                    if (scoreEl) scoreEl.textContent = result.score;
+                    if (countEl) countEl.textContent = activeCount;
+                    if (fillEl) fillEl.style.width = result.score + '%';
+                })
+                .catch(() => {});
+        }
+        updateClock();
+        updateStatus();
+        updateFx();
+        updateDensity();
+        updateWeather();
+        setInterval(updateClock, 1000);
+        setInterval(updateFx, 600000);
+        setInterval(updateDensity, 15000);
+        setInterval(updateWeather, 600000);
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
     </script>
 </body>
 </html>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>G&#252;nl&#252;k Giderler</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -112,6 +113,11 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h1>G&#252;nl&#252;k Giderler</h1>
         <div>

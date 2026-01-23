@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vardiya Takibi</title>
     <link rel="stylesheet" href="/static/vardiya.modern.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="container">
         <div class="page-header">
             <div class="page-title">
@@ -36,29 +42,39 @@
                 </div>
             </div>
             <div class="status-legend">
-                <div class="status-pill s-calisti">C</div>
-                <span>Calisti</span>
-                <div class="status-pill s-gec">G</div>
-                <span>Gec Geldi</span>
-                <div class="status-pill s-izinli">I</div>
-                <span>Izinli</span>
-                <div class="status-pill s-mazeretli">M</div>
-                <span>Mazeretli</span>
-                <div class="status-pill s-gelmedi">X</div>
-                <span>Gelmedi</span>
-                <span class="legend-info">Tikla: Durum sec</span>
+                <div class="legend-item">
+                    <div class="status-pill s-calisti">&#9989;</div>
+                    <span>&#199;al&#305;&#351;t&#305;</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-pill s-gec">&#9200;</div>
+                    <span>Ge&#231; Geldi</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-pill s-izinli">&#128309;</div>
+                    <span>&#304;zinli</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-pill s-mazeretli">&#128995;</div>
+                    <span>Mazeretli</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-pill s-gelmedi">&#10060;</div>
+                    <span>Gelmedi</span>
+                </div>
+                <span class="legend-info">H&#252;creye t&#305;kla &#8594; durum se&#231;. Ge&#231; geldi &#8594; saat sorulur.</span>
             </div>
         </div>
 
         <div class="card table-card">
             <div class="card-title">Vardiya Takibi</div>
             <div class="table-wrap">
-                <table id="month-table">
+                <table id="month-table" class="attendance-table">
                     <thead id="month-head"></thead>
                     <tbody id="month-body"></tbody>
                 </table>
             </div>
-            <div class="note">Bir gune tikla: Calisti/Gec Geldi/Izinli/Mazeretli/Gelmedi sec. Gec geldi secilirse saat sorulur.</div>
+            <div class="note">Bir g&#252;ne t&#305;kla: &#199;al&#305;&#351;t&#305;/Ge&#231; Geldi/&#304;zinli/Mazeretli/Gelmedi se&#231;. Ge&#231; geldi se&#231;ilirse saat sorulur.</div>
         </div>
     </div>
 
@@ -95,12 +111,12 @@
         }
 
         function statusCode(r) {
-            if (r.status === 'calisti') return { code: 'C', cls: 's-calisti' };
-            if (r.status === 'gec_geldi') return { code: r.late_time ? `G(${r.late_time})` : 'G', cls: 's-gec' };
-            if (r.status === 'izinli') return { code: 'I', cls: 's-izinli' };
-            if (r.status === 'mazeretli') return { code: 'M', cls: 's-mazeretli' };
-            if (r.status === 'gelmedi') return { code: 'X', cls: 's-gelmedi' };
-            return { code: '', cls: '' };
+            if (r.status === 'calisti') return { icon: '\u2705', cls: 's-calisti' };
+            if (r.status === 'gec_geldi') return { icon: '\u23F0', cls: 's-gec' };
+            if (r.status === 'izinli') return { icon: '\uD83D\uDD35', cls: 's-izinli' };
+            if (r.status === 'mazeretli') return { icon: '\uD83D\uDFE3', cls: 's-mazeretli' };
+            if (r.status === 'gelmedi') return { icon: '\u274C', cls: 's-gelmedi' };
+            return { icon: '', cls: '' };
         }
 
         function statusLabel(r) {
@@ -145,19 +161,30 @@
                     if (isToday) classNames.push('is-today');
                     return `<th class="${classNames.join(' ')}">${day}</th>`;
                 }).join('') +
-                `<th class="day-head total-head">Toplam Gun</th>`;
+                `<th class="day-head summary-head">&#9989;</th>` +
+                `<th class="day-head summary-head">&#128309;</th>` +
+                `<th class="day-head summary-head">&#10060;</th>` +
+                `<th class="day-head total-head">Toplam G&#252;n</th>`;
             head.appendChild(headRow);
 
             list.forEach(name => {
                 let total = 0;
+                let calistiCount = 0;
+                let izinliCount = 0;
+                let gelmediCount = 0;
                 const row = document.createElement('tr');
                 let cells = `<td class="name-cell">${name}</td>`;
                 for (let d = 1; d <= totalDays; d++) {
                     const dayStr = String(d).padStart(2, '0');
                     const dateKey = `${month}-${dayStr}`;
                     const r = (waiters[name] || {})[dateKey];
-                    if (r && r.status === 'calisti') total += 1;
-                    const info = r ? statusCode(r) : { code: '', cls: '' };
+                    if (r && r.status === 'calisti') {
+                        total += 1;
+                        calistiCount += 1;
+                    }
+                    if (r && r.status === 'izinli') izinliCount += 1;
+                    if (r && r.status === 'gelmedi') gelmediCount += 1;
+                    const info = r ? statusCode(r) : { icon: '', cls: '' };
                     const hint = statusLabel(r);
                     const dateObj = new Date(y, m - 1, d);
                     const dayOfWeek = dateObj.getDay();
@@ -166,12 +193,15 @@
                     const classNames = ['cell', info.cls];
                     if (isWeekend) classNames.push('is-weekend');
                     if (isToday) classNames.push('is-today');
-                    if (!info.code) classNames.push('is-empty');
-                    cells += `<td class="${classNames.join(' ')}" data-w="${name}" data-date="${dateKey}" title="${hint ? hint : 'Tikla: Durum sec'}">` +
+                    if (!info.icon) classNames.push('is-empty');
+                    cells += `<td class="${classNames.join(' ')}" data-w="${name}" data-date="${dateKey}" title="${hint ? hint : 'T\u0131kla: Durum se\u00e7'}">` +
                     `<div class="cell-wrap">` +
-                    `<div class="shift-cell ${info.cls}"></div>` +
+                    `<div class="shift-cell ${info.cls}">${info.icon || ''}</div>` +
                     `</div></td>`;
                 }
+                cells += `<td class="summary-cell">${calistiCount}</td>`;
+                cells += `<td class="summary-cell">${izinliCount}</td>`;
+                cells += `<td class="summary-cell">${gelmediCount}</td>`;
                 cells += `<td class="total-cell">${total}</td>`;
                 row.innerHTML = cells;
                 body.appendChild(row);

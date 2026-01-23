@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İstatistikler</title>
+    <title>&#304;statistikler</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
@@ -242,6 +243,14 @@
             .date-selector {
                 flex-direction: column;
                 align-items: stretch;
+            }
+            .date-selector label {
+                width: 100%;
+                font-size: 0.9rem;
+            }
+            .date-selector button {
+                width: 100%;
+                justify-content: center;
             }
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -597,6 +606,11 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h1>📊 İstatistikler</h1>
         <a href="/kasa" class="btn btn-danger">← Geri Dön</a>
@@ -604,11 +618,11 @@
 
     <div class="container">
         <div class="date-selector">
-            <label for="tarih-sec">📅 Tarih Seçiniz:</label>
+            <label for="tarih-sec">&#128197; Tarih Se&#231;iniz:</label>
             <input type="date" id="tarih-sec">
-            <button class="btn btn-primary" onclick="istatistikYukle()">🔄 Güncelle</button>
-            <button class="btn btn-secondary" onclick="bugunuSec()">📆 Bugün</button>
-            <label for="staff-range-start">Tarih Araligi:</label>
+            <button class="btn btn-primary" onclick="istatistikYukle()">&#128260; G&#252;ncelle</button>
+            <button class="btn btn-secondary" onclick="bugunuSec()">&#128198; Bug&#252;n</button>
+            <label for="staff-range-start">Tarih Aral&#305;&#287;&#305;:</label>
             <input type="date" id="staff-range-start">
             <input type="date" id="staff-range-end">
         </div>
@@ -728,8 +742,8 @@
             document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
             const rangeStart = document.getElementById('staff-range-start');
             const rangeEnd = document.getElementById('staff-range-end');
-            if (rangeStart) rangeStart.value = '';
-            if (rangeEnd) rangeEnd.value = '';
+            if (rangeStart) rangeStart.value = `${yil}-${ay}-${gun}`;
+            if (rangeEnd) rangeEnd.value = `${yil}-${ay}-${gun}`;
             istatistikYukle();
         }
 

@@ -10,12 +10,40 @@
       Timeline.updateDensity({ label, score })
   */
 
+  var analogRunning = false;
   function updateLiveClock(clockId) {
     var now = new Date();
     var clock = document.getElementById(clockId);
-    if (clock) {
-      clock.textContent = now.toLocaleTimeString('tr-TR');
+    if (!clock) return;
+    if (clock.classList.contains('clock-face')) {
+      startAnalogClock(clock);
+      var digital = document.getElementById('clock-digital');
+      if (digital) {
+        digital.textContent = now.toLocaleTimeString('tr-TR');
+      }
+      return;
     }
+    clock.textContent = now.toLocaleTimeString('tr-TR');
+  }
+
+  function startAnalogClock(clock) {
+    if (analogRunning) return;
+    analogRunning = true;
+    var hourHand = clock.querySelector('[data-hand="hour"]');
+    var minuteHand = clock.querySelector('[data-hand="minute"]');
+    var secondHand = clock.querySelector('[data-hand="second"]');
+    function tick() {
+      var now = new Date();
+      var ms = now.getMilliseconds();
+      var seconds = now.getSeconds() + ms / 1000;
+      var minutes = now.getMinutes() + seconds / 60;
+      var hours = (now.getHours() % 12) + minutes / 60;
+      if (hourHand) hourHand.style.transform = 'translate(-50%, -100%) rotate(' + (hours * 30) + 'deg)';
+      if (minuteHand) minuteHand.style.transform = 'translate(-50%, -100%) rotate(' + (minutes * 6) + 'deg)';
+      if (secondHand) secondHand.style.transform = 'translate(-50%, -100%) rotate(' + (seconds * 6) + 'deg)';
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   function buildLabels(opts) {

@@ -378,6 +378,11 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h2>&#128241; WhatsApp Sipari&#351; Giri&#351;i</h2>
         <div class="header-actions">
@@ -389,15 +394,8 @@
     <div class="container"><div class="form-section">
             <div class="form-row full-row">
                 <div class="form-group">
-                    <label>Masa Se&#231;imi:</label>
-                    <div class="view-toggle">
-                        <button class="btn btn-secondary" type="button" id="view-grid-btn">Grid</button>
-                        <button class="btn btn-secondary" type="button" id="view-layout-btn">Harita</button>
-                        <label class="layout-edit-toggle"><input type="checkbox" id="layout-edit-toggle"> Edit Mode</label>
-                        <button class="btn btn-success" type="button" id="layout-save-btn" style="display:none;">Kaydet</button>
-                    </div>
-                    <div class="tables-grid" id="tablesGrid">Yukleniyor...</div>
-                    <div class="layout-canvas layout-hidden" id="layoutCanvas">Yukleniyor...</div>
+                    <label>Se&#231;ili Masa:</label>
+                    <div id="secili-masa" style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.75rem; font-weight: 700; color: #ff8c00;">--</div>
                 </div>
             </div>
             <div class="form-row" style="margin-top: 1rem;">
@@ -410,10 +408,6 @@
                 <div class="form-group">
                     <label>Sipari&#351; Zaman&#305;:</label>
                     <input type="time" id="siparis-zaman" value="">
-                </div>
-                <div class="form-group">
-                    <label>Se&#231;ili Masa:</label>
-                    <input type="text" id="secili-masa" readonly style="background: #f7fafc; font-weight: bold; color: #ff8c00;" placeholder="Masa se&#231;iniz">
                 </div>
             </div>
         </div>
@@ -439,7 +433,7 @@
                     </div>
                 </div>
                 <div class="menu-section">
-                    <h3>?ark?teri Men?s?</h3>
+                    <h3>&#350;ark&#252;teri Men&#252;s&#252;</h3>
                     <div class="menu-grid" id="menuGridSarkuteri">
                     </div>
                 </div>
@@ -485,6 +479,11 @@
         let tablesCache = {};
         let tableSessions = {};
         let staffList = [];
+
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
 
         function notify(message) {
             if (window.UI && UI.Toast && UI.Toast.show) {
@@ -718,11 +717,15 @@
 
         function selectMasa(masaNo, el) {
             const card = el || document.querySelector(`.table-card[data-masa="${masaNo}"]`);
-            if (!card) return;
-            document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            secilenMasa = parseInt(card.dataset.masa);
-            document.getElementById('secili-masa').value = card.querySelector('.table-name').textContent;
+            if (card) {
+                document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+            secilenMasa = parseInt(masaNo, 10);
+            const display = document.getElementById('secili-masa');
+            if (display) {
+                display.textContent = tablesCache[secilenMasa] || ('Masa ' + secilenMasa);
+            }
             mevcutSiparisleriGoster();
         }
 
@@ -853,9 +856,7 @@
                     notify('Siparis kaydedildi.');
                     siparisTemizle();
                     loadAktifSiparisler();
-                    document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
-                    document.getElementById('secili-masa').value = '';
-                    secilenMasa = null;
+                    // secilen masa sabit kalsin
                 } else {
                     notify('Hata: ' + result.message);
                 }
@@ -885,7 +886,15 @@
             if (timeInput) {
                 timeInput.value = new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
             }
-            if (window.LayoutView) {
+            const tableParam = getQueryParam('table_id') || getQueryParam('table');
+            if (!tableParam) {
+                alert('Masa secilmedi. Ana ekrana yonlendiriliyorsunuz.');
+                window.location.href = '/kasa';
+                return;
+            }
+            selectMasa(parseInt(tableParam, 10));
+            if (window.APP && APP.emit) APP.emit('table:selected', { tableId: secilenMasa });
+            if (window.LayoutView && document.getElementById('tablesGrid')) {
                 layoutViewInstance = LayoutView.init({
                     gridId: 'tablesGrid',
                     canvasId: 'layoutCanvas',

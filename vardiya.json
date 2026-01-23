@@ -27,44 +27,8 @@
     "note": ""
   },
   {
-    "date": "2026-01-17",
-    "waiter": "ahmet",
-    "status": "calisti",
-    "late_time": "",
-    "start_time": null,
-    "end_time": null,
-    "note": ""
-  },
-  {
-    "date": "2026-01-18",
-    "waiter": "ahmet",
-    "status": "calisti",
-    "late_time": "",
-    "start_time": null,
-    "end_time": null,
-    "note": ""
-  },
-  {
     "date": "2026-01-24",
     "waiter": "ahmet",
-    "status": "calisti",
-    "late_time": "",
-    "start_time": null,
-    "end_time": null,
-    "note": ""
-  },
-  {
-    "date": "2026-01-17",
-    "waiter": "selim",
-    "status": "calisti",
-    "late_time": "",
-    "start_time": null,
-    "end_time": null,
-    "note": ""
-  },
-  {
-    "date": "2026-01-18",
-    "waiter": "burak",
     "status": "calisti",
     "late_time": "",
     "start_time": null,
@@ -111,6 +75,15 @@
     "date": "2026-01-22",
     "waiter": "selim",
     "status": "gelmedi",
+    "late_time": "",
+    "start_time": null,
+    "end_time": null,
+    "note": ""
+  },
+  {
+    "date": "2026-01-25",
+    "waiter": "ahmet",
+    "status": "izinli",
     "late_time": "",
     "start_time": null,
     "end_time": null,

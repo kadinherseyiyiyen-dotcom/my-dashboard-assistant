@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menü Ayarları</title>
+    <title>Men&#252; Ayarlar&#305;</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         :root {
             --bg: #f6f7fb;
@@ -298,6 +299,11 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h1>Menü Ayarları</h1>
         <div class="header-actions">
@@ -505,7 +511,11 @@
                     <button class="btn-delete" data-id="${item.id}" data-cat="${item.category}">Sil</button>
                 `;
                 row.querySelector('select').value = item.category;
-                row.querySelectorAll('input, select').forEach(el => {
+                row.querySelectorAll('input').forEach(el => {
+                    el.addEventListener('input', handleRowChange);
+                    el.addEventListener('change', handleRowChange);
+                });
+                row.querySelectorAll('select').forEach(el => {
                     el.addEventListener('change', handleRowChange);
                 });
                 row.querySelector('.btn-delete').addEventListener('click', handleDelete);

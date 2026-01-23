@@ -15,12 +15,12 @@
     if (!data || typeof data.usd !== 'number' || typeof data.eur !== 'number') {
       usdEl.textContent = 'Kur alinamadi';
       eurEl.textContent = '--';
-      liveEl.innerHTML = '<span class="live-dot">&#9679;</span> Canl&#305;';
+      liveEl.innerHTML = '<span class="fx-dot">&#9679;</span> Canl\u0131';
       return;
     }
     usdEl.textContent = data.usd.toFixed(2);
     eurEl.textContent = data.eur.toFixed(2);
-    liveEl.innerHTML = '<span class="live-dot">&#9679;</span> Canl&#305;';
+    liveEl.innerHTML = '<span class="fx-dot">&#9679;</span> Canl\u0131';
   }
 
   global.UI = global.UI || {};

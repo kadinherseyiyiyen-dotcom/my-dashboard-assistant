@@ -3,90 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş - Kahvaltı Salonu</title>
+    <title>Giri&#351; - Kahvalt&#305; Salonu</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        body {
+            font-family: 'Poppins', 'Trebuchet MS', 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at 18% 18%, rgba(255,255,255,0.55), transparent 42%),
+                        radial-gradient(circle at 75% 10%, rgba(255,255,255,0.25), transparent 48%),
+                        linear-gradient(130deg, #ff9c2a 0%, #ffc68b 36%, #ffe7cf 60%, #ffffff 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            color: #3b1f1f;
         }
-        .login-container { 
-            background: rgba(255, 255, 255, 0.95);
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            max-width: 380px;
-            width: 100%;
-            backdrop-filter: blur(10px);
-            text-align: center;
+        .login-container {
+            width: min(560px, 100%);
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255, 172, 94, 0.35);
+            border-radius: 28px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 30px 80px rgba(255, 140, 51, 0.25);
+            backdrop-filter: blur(18px);
         }
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         .role-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+            width: 84px;
+            height: 84px;
+            margin: 0 auto 1rem;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #fff7ed, #ffd6a8);
+            display: grid;
+            place-items: center;
+            color: #9a3412;
+            font-size: 2.2rem;
+            box-shadow: inset 0 0 10px rgba(255, 140, 51, 0.18);
         }
-        h2 { 
-            color: #1a202c;
-            margin-bottom: 0.5rem;
-            font-size: 1.75rem;
+        h2 {
+            color: #3b1f1f;
+            margin-bottom: 0.3rem;
+            font-size: 1.6rem;
             font-weight: 700;
+            letter-spacing: 0.02em;
         }
         .role-info {
-            background: linear-gradient(135deg, #e6fffa, #f0fff4);
-            padding: 1rem;
-            border-radius: 12px;
+            background: rgba(255, 244, 230, 0.9);
+            padding: 0.75rem 1rem;
+            border-radius: 14px;
             margin-bottom: 1.5rem;
             text-align: center;
-            color: #2d3748;
+            color: #7a3619;
             font-size: 0.9rem;
-            border: 1px solid rgba(72, 187, 120, 0.2);
+            border: 1px solid rgba(255, 172, 94, 0.35);
         }
-        .form-group { 
-            margin-bottom: 1.5rem; 
+        .form-group {
+            margin-bottom: 1rem;
         }
-        label { 
-            display: block; 
-            margin-bottom: 0.5rem; 
-            color: #2d3748;
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #6b3b1f;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-align: left;
         }
-        input, select { 
-            width: 100%; 
-            padding: 0.875rem 1rem; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 12px; 
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f7fafc;
-        }
-        input:focus, select:focus { 
-            outline: none;
-            border-color: #4299e1;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-        }
-        .btn { 
+        input, select {
             width: 100%;
-            padding: 1rem; 
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(255, 172, 94, 0.45);
+            border-radius: 14px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.9);
+            color: #3b1f1f;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff8a1f;
+            box-shadow: 0 0 0 3px rgba(255, 138, 31, 0.2);
+        }
+        .btn {
+            width: 100%;
+            padding: 1rem;
             font-size: 1.1rem;
             font-weight: 600;
-            border: none; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #fff;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
             position: relative;
             overflow: hidden;
         }
@@ -100,25 +110,26 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.6s;
         }
-        .btn:hover::before {
-            left: 100%;
-        }
+        .btn:hover::before { left: 100%; }
         .btn-primary {
-            background: linear-gradient(135deg, #4299e1, #3182ce);
-            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.3);
+            background: linear-gradient(135deg, #ff8a1f, #ff6a00);
+            box-shadow: 0 12px 28px rgba(255, 122, 37, 0.3);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(66, 153, 225, 0.4);
+            box-shadow: 0 16px 38px rgba(255, 122, 37, 0.4);
         }
         .btn-secondary {
-            background: linear-gradient(135deg, #a0aec0, #718096);
-            margin-top: 1rem;
-            box-shadow: 0 8px 25px rgba(160, 174, 192, 0.3);
+            background: rgba(255,255,255,0.12);
+            margin-top: 0.75rem;
+            box-shadow: none;
+            display: inline-flex;
+            justify-content: center;
+            width: 100%;
         }
         .btn-secondary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(160, 174, 192, 0.4);
+            box-shadow: 0 12px 35px rgba(255, 255, 255, 0.15);
         }
         .error {
             color: #e53e3e;
@@ -130,72 +141,137 @@
             border-radius: 8px;
             font-size: 0.9rem;
         }
+        .pin-display {
+            margin: 0.75rem 0 1.25rem;
+        }
+        .pin-display input {
+            text-align: center;
+            letter-spacing: 0.3rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.9);
+            color: #3b1f1f;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+        }
+        .key {
+            height: 58px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 172, 94, 0.5);
+            background: rgba(255,255,255,0.9);
+            color: #7a3619;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.2s ease;
+        }
+        .key:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 122, 37, 0.7);
+        }
+        .key.action {
+            background: rgba(255, 226, 196, 0.9);
+        }
         @media (max-width: 640px) {
-            .login-container {
-                padding: 2rem;
-            }
-            h2 {
-                font-size: 1.5rem;
-            }
+            .login-container { padding: 2rem 1.5rem; }
+            h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="header">
-            <div class="role-icon" id="role-icon">🔐</div>
-            <h2 id="login-title">Giriş</h2>
+            <div class="role-icon" id="role-icon">&#128274;</div>
+            <h2 id="login-title">Giri&#351;</h2>
         </div>
-        
-        <div class="role-info" id="role-info">Giriş bilgilerinizi giriniz</div>
-        
+
+        <div class="role-info" id="role-info">Giri&#351; bilgilerinizi giriniz</div>
+
         <form id="login-form">
             <div class="form-group" id="name-group" style="display: none;">
-                <label for="name">Garson Seçin:</label>
+                <label for="name">Garson Se&#231;in:</label>
                 <select id="name">
-                    <option value="WhatsApp Sipariş">WhatsApp Sipariş</option>
+                    <option value="WhatsApp Sipari&#351;">WhatsApp Sipari&#351;</option>
                 </select>
             </div>
-            
-            <div class="form-group">
-                <label for="password">Şifre:</label>
-                <input type="password" id="password" required placeholder="Şifrenizi giriniz">
+
+            <div class="form-group pin-display">
+                <label for="password">&#350;ifre:</label>
+                <input type="password" id="password" required placeholder="&#350;ifrenizi giriniz" inputmode="numeric">
             </div>
-            
-            <button type="submit" class="btn btn-primary">Giriş Yap</button>
-            <a href="/" class="btn btn-secondary">← Ana Sayfa</a>
+
+            <div class="keypad" id="keypad">
+                <button type="button" class="key" data-key="1">1</button>
+                <button type="button" class="key" data-key="2">2</button>
+                <button type="button" class="key" data-key="3">3</button>
+                <button type="button" class="key" data-key="4">4</button>
+                <button type="button" class="key" data-key="5">5</button>
+                <button type="button" class="key" data-key="6">6</button>
+                <button type="button" class="key" data-key="7">7</button>
+                <button type="button" class="key" data-key="8">8</button>
+                <button type="button" class="key" data-key="9">9</button>
+                <button type="button" class="key action" data-action="clear">C</button>
+                <button type="button" class="key" data-key="0">0</button>
+                <button type="button" class="key action" data-action="back">&#x232B;</button>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Giri&#351; Yap</button>
+            <a href="/" class="btn btn-secondary">&#8592; Ana Sayfa</a>
         </form>
-        
+
         <div class="error" id="error-message"></div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const role = urlParams.get('role');
-        
+
         const loginTitle = document.getElementById('login-title');
         const roleInfo = document.getElementById('role-info');
         const roleIcon = document.getElementById('role-icon');
         const nameGroup = document.getElementById('name-group');
-        
+
         if (role === 'garson') {
-            loginTitle.textContent = 'Garson Girişi';
-            roleIcon.textContent = '👨🍳';
-            roleInfo.textContent = 'Garson paneline erişim için şifrenizi girin';
+            loginTitle.textContent = 'Garson Giri\u015fi';
+            roleIcon.textContent = '\uD83D\uDC68\u200D\uD83C\uDF73';
+            roleInfo.textContent = 'Garson paneline eri\u015fim i\u00e7in \u015fifrenizi girin';
             nameGroup.style.display = 'block';
         } else if (role === 'kasa') {
-            loginTitle.textContent = 'Kasa Girişi';
-            roleIcon.textContent = '💼';
-            roleInfo.textContent = 'Kasa paneline erişim için şifrenizi girin';
+            loginTitle.textContent = 'Kasa Giri\u015fi';
+            roleIcon.textContent = '\uD83D\uDCBC';
+            roleInfo.textContent = 'Kasa paneline eri\u015fim i\u00e7in \u015fifrenizi girin';
         }
-        
+
+        const keypad = document.getElementById('keypad');
+        const passwordInput = document.getElementById('password');
+        if (keypad && passwordInput) {
+            keypad.addEventListener('click', function (event) {
+                const btn = event.target.closest('button');
+                if (!btn) return;
+                const key = btn.getAttribute('data-key');
+                const action = btn.getAttribute('data-action');
+                if (key) {
+                    passwordInput.value = passwordInput.value + key;
+                } else if (action === 'clear') {
+                    passwordInput.value = '';
+                } else if (action === 'back') {
+                    passwordInput.value = passwordInput.value.slice(0, -1);
+                }
+                passwordInput.focus();
+            });
+        }
+
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const password = document.getElementById('password').value;
             const name = document.getElementById('name').value;
             const errorDiv = document.getElementById('error-message');
-            
+
             fetch('/auth', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},

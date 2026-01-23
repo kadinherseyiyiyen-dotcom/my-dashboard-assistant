@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tip Havuzu</title>
     <link rel="stylesheet" href="/static/tip.modern.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="container">
         <div class="page-header">
             <div class="page-title">

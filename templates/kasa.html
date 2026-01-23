@@ -11,10 +11,16 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
+            background: radial-gradient(circle at 18% 18%, rgba(255,255,255,0.55), transparent 42%),
+                        radial-gradient(circle at 75% 10%, rgba(255,255,255,0.25), transparent 48%),
+                        linear-gradient(130deg, #ff9c2a 0%, #ffc68b 36%, #ffe7cf 60%, #ffffff 100%);
             color: #2d3748;
             line-height: 1.6;
             overflow-x: hidden;
+        }
+        .page-actions {
+            top: 20px;
+            right: 20px;
         }
         .header { 
             background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
@@ -68,7 +74,52 @@
             color: #1f2937;
             font-size: 1rem;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
+        .clock-face {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 3px solid #111827;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f8fafc 70%);
+            box-shadow: inset 0 0 8px rgba(15, 23, 42, 0.12);
+        }
+        .clock-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #111827;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translate(0, -22px) rotate(calc(-1 * var(--angle)));
+        }
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: #111827;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        .clock-hand {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2px;
+            background: #111827;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(0deg);
+            border-radius: 999px;
+        }
+        .clock-hand.hour { height: 16px; width: 3px; }
+        .clock-hand.minute { height: 22px; }
+        .clock-hand.second { height: 24px; background: #ef4444; width: 1px; }
         .timeline-track {
             position: relative;
             height: 42px;
@@ -173,7 +224,7 @@
             align-items: center;
             gap: 6px;
         }
-        .live-dot {
+        .fx-dot {
             color: #ef4444;
             font-size: 0.65rem;
         }
@@ -218,6 +269,91 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 1rem;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .kasa-layout {
+            width: 100%;
+            max-width: none;
+            padding: 8px 12px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .summary-bar {
+            position: sticky;
+            top: 70px;
+            z-index: 40;
+            background: rgba(248, 250, 252, 0.95);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin: 6px 0 8px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .summary-bar .live-timeline {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+        }
+        .summary-bar .timeline-track,
+        .summary-bar .timeline-now {
+            display: none;
+        }
+        .summary-bar .density-wrap {
+            min-width: 220px;
+        }
+        .summary-bar .density-bar {
+            width: 220px;
+        }
+        .summary-bar .fx-card {
+            width: auto;
+            flex: 0 0 auto;
+        }
+        .summary-bar .fx-panel {
+            background: #ffffff;
+        }
+        .tables-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 56px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        }
+        .tables-toolbar {
+            position: static;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.96);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .tables-body {
+            flex: 1;
+            overflow: auto;
+        }
+        .tables-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            padding: 12px;
+            gap: 10px;
+        }
+        .layout-canvas {
+            height: 100%;
+            min-height: 100%;
+            margin: 0;
         }
         .stats-grid {
             display: grid;
@@ -354,6 +490,19 @@
         }
         .table-card.map-card.editable {
             cursor: move;
+        }
+        .bill-request-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #facc15;
+            color: #78350f;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 999px;
+            box-shadow: 0 6px 14px rgba(250, 204, 21, 0.35);
+            letter-spacing: 0.02em;
         }
         .table-card .table-meta {
             display: flex;
@@ -620,6 +769,161 @@
         .payment-main-btn.print:hover {
             background: #eef2f7;
         }
+        .cash-change-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .cash-change-btn {
+            color: #1f2937 !important;
+            min-width: 140px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .order-add-btn {
+            min-width: 160px;
+            color: #1f2937 !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        .cash-change-modal .modal-content {
+            max-width: 420px;
+        }
+        .cash-change-total {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        .cash-change-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 0.35rem;
+        }
+        .cash-change-input {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 1rem;
+        }
+        .cash-change-result {
+            margin-top: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+        .cash-change-result.positive { color: #16a34a; }
+        .cash-change-result.negative { color: #dc2626; }
+        .cash-change-note {
+            margin-top: 0.25rem;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .recent-closures-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .recent-closures-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 360px;
+            background: #ffffff;
+            box-shadow: -20px 0 40px rgba(15, 23, 42, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.2s ease;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+        }
+        .recent-closures-panel.open {
+            transform: translateX(0);
+        }
+        .recent-closures-panel.open + .recent-closures-backdrop {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .recent-closures-header {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .recent-closures-header .btn.btn-secondary {
+            background: #f1f5f9 !important;
+            color: #1f2937 !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none;
+        }
+        .recent-closures-title {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        .recent-closures-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .recent-closures-list {
+            padding: 12px 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: auto;
+        }
+        .recent-closures-list[data-loading="true"] {
+            opacity: 0.6;
+        }
+        .recent-row {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .recent-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .recent-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .recent-amount {
+            font-weight: 700;
+            color: #0f172a;
+            justify-self: end;
+        }
+        .recent-reopen {
+            grid-column: 2 / 3;
+            justify-self: end;
+            background: #f1f5f9 !important;
+            color: #1f2937 !important;
+        }
+        .recent-closures-empty {
+            padding: 16px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
         .bill-preview-box {
             background: #0f172a;
             color: #f8fafc;
@@ -641,6 +945,26 @@
             background: #e2e8f0;
             color: #1f2937;
             border: 1px solid #cbd5f5;
+        }
+        .bill-preview-actions .bill-preview-cancel {
+            background: #e2e8f0 !important;
+            color: #1f2937 !important;
+        }
+        .live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #ef4444;
+        }
+        .live-dot::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
         }
         .bill-total {
             background: #ffffff;
@@ -1008,10 +1332,14 @@
         }
 
         .container{
-          width: 100%;
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 12px;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+        .kasa-layout{
+            max-width: none;
+            padding: 8px 12px 12px;
         }
 
         .stats-grid{
@@ -1077,9 +1405,9 @@
         }
 
         .tables-grid{
-          padding: 14px;
-          gap: 12px;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            padding: 12px;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         }
 
         .table-card{
@@ -1216,6 +1544,22 @@
           .top-row {
             flex-direction: column;
           }
+          .summary-bar {
+            position: static;
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .summary-bar .live-timeline {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+          }
+          .summary-bar .density-bar {
+            width: 100%;
+          }
+          .tables-toolbar {
+            position: static;
+          }
           .now-card,
           .fx-card {
             width: 100%;
@@ -1229,13 +1573,19 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h1>&#128188; Kasa Paneli</h1>
         <div class="header-actions">
             <span class="time-display" id="current-time"></span>
             <a href="/komisyonlar" class="btn btn-primary">&#128176; Komisyonlar</a>
+            <button class="btn btn-primary" id="recent-closures-btn" onclick="UI.RecentClosuresPanel.open()">&#128424; Son Kapat&#305;lanlar</button>
             <button class="btn btn-primary" onclick="otoparkGideri()">&#128663; Otopark</button>
-            <a href="/dashboard" class="btn btn-primary">&#128202; Dashboard</a>
+            <a href="/dashboard-analytics" class="btn btn-primary">&#128202; Dashboard <span class="live-dot">Canl&#305;</span></a>
             <a href="/istatistik" class="btn btn-primary">&#128202; &#304;statistik</a>
             <a href="/tip-havuzu" class="btn btn-primary">&#128184; Tip Havuzu</a>
             <a href="/giderler" class="btn btn-primary">Giderler</a>
@@ -1246,47 +1596,9 @@
         </div>
     </div>
 
-    <div class="container">
-        <div class="top-row">
-            <div class="live-timeline now-card">
-                <div class="live-time">&#350;u an: <span id="live-clock">--:--:--</span></div>
-                <div class="timeline-track">
-                    <div class="timeline-inner" id="timeline-inner"></div>
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-now">&#350;&#304;MD&#304;</div>
-                </div>
-                <div class="density-wrap">
-                    <div class="density-label">Yo&#287;unluk: <span id="density-text">Normal</span></div>
-                    <div class="density-bar"><div class="density-fill" id="density-fill"></div></div>
-                    <div class="density-status" id="density-score">Skor: 0</div>
-                </div>
-            </div>
-            <div class="fx-card">
-                <div class="fx-panel">
-                    <div class="fx-title">Kur</div>
-                    <div class="fx-live" id="fx-live"><span class="live-dot">&#9679;</span> Canl&#305;</div>
-                    <div class="fx-row"><span>USD/TRY</span><strong id="fx-usd">--</strong></div>
-                    <div class="fx-row"><span>EUR/TRY</span><strong id="fx-eur">--</strong></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card aktif-masa">
-                <span class="stat-icon">&#127869;</span>
-                <div class="stat-number" id="aktif-masa-sayisi">0</div>
-                <div class="stat-label">Aktif Masa</div>
-            </div>
-            <a href="/siparis-gir" class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 1.5rem; --gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128241;</div>
-                    <div style="font-size: 1rem; font-weight: 700;">Yeni Sipari&#351;</div>
-                </div>
-            </a>
-        </div>
-
-        <div class="section">
-            <div class="section-header">
+    <div class="container kasa-layout">
+        <div class="section tables-section">
+            <div class="section-header tables-toolbar">
                 <div class="layout-toolbar">
                     <div class="layout-group">
                         <button class="btn btn-secondary" id="view-grid-btn">Grid</button>
@@ -1301,8 +1613,10 @@
                 <button class="btn btn-primary" onclick="masaTransfer()">&#128260; Masa Transfer</button>
                 <button class="btn btn-secondary" onclick="masaYonetimi()">&#9881; Masa Ayarlar&#305;</button>
             </div>
-            <div class="tables-grid" id="masalar-grid"></div>
-            <div class="layout-canvas layout-hidden" id="layoutCanvas"></div>
+            <div class="tables-body">
+                <div class="tables-grid" id="masalar-grid"></div>
+                <div class="layout-canvas layout-hidden" id="layoutCanvas"></div>
+            </div>
         </div>
 
     </div>
@@ -1364,11 +1678,44 @@
                 <div class="bill-lang-hint" id="bill-lang-hint">Lutfen dil secin</div>
             </div>
             <div class="bill-preview-actions">
-                <button class="btn btn-secondary" onclick="UI.BillPreviewModal.close()">&#304;ptal</button>
+                <button class="btn btn-secondary bill-preview-cancel" onclick="UI.BillPreviewModal.close()">&#304;ptal</button>
                 <button class="btn btn-success" id="bill-preview-confirm">Onayla ve Yazd&#305;r</button>
             </div>
         </div>
     </div>
+    <div id="cash-change-modal" class="modal cash-change-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Para &#220;st&#252; Hesapla</h3>
+                <button class="close-btn" onclick="UI.CashChangeModal.close()">&times;</button>
+            </div>
+            <div class="cash-change-label">&#214;denecek Tutar</div>
+            <div class="cash-change-total" id="cash-change-total">0 TL</div>
+            <div class="cash-change-label">M&#252;&#351;terinin Verdi&#287;i Tutar</div>
+            <input type="number" min="0" step="0.01" class="cash-change-input" id="cash-change-input" placeholder="0.00">
+            <div class="cash-change-result" id="cash-change-result">Para &#220;st&#252;: 0 TL</div>
+            <div class="cash-change-note" id="cash-change-note"></div>
+            <div class="bill-preview-actions">
+                <button class="btn btn-secondary bill-preview-cancel" onclick="UI.CashChangeModal.close()">Kapat</button>
+                <button class="btn btn-success" id="cash-change-confirm">Bu Tutarla Nakit &#214;de</button>
+            </div>
+        </div>
+    </div>
+    <div id="recent-closures-panel" class="recent-closures-panel">
+        <div class="recent-closures-header">
+            <div>
+                <div class="recent-closures-title">Son Kapat&#305;lanlar</div>
+                <div class="recent-closures-sub">Son 20 i&#351;lem</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-secondary" id="recent-closures-refresh">&#128260;</button>
+                <button class="btn btn-secondary" onclick="UI.RecentClosuresPanel.close()">&times;</button>
+            </div>
+        </div>
+        <div class="recent-closures-list" id="recent-closures-list"></div>
+        <div class="recent-closures-empty" id="recent-closures-empty" style="display:none;">Hen&#252;z kapat&#305;lan i&#351;lem yok.</div>
+    </div>
+    <div class="recent-closures-backdrop"></div>
     <div id="discount-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1425,6 +1772,7 @@
     <script src="{{ url_for('static', filename='ui/paymentModal.js') }}"></script>
     <script src="{{ url_for('static', filename='ui/billPreviewModal.js') }}"></script>
     <script src="{{ url_for('static', filename='ui/discountModal.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/recentClosuresPanel.js') }}"></script>
     <script>
         window.APP = window.APP || {};
         window.APP.state = window.APP.state || {
@@ -1448,6 +1796,7 @@
         let hesapInFlight = {};
         let tables = {};
         let rehberMasalar = {};
+        let billRequests = {};
         let tableSessions = {};
         let currentBill = null;
         let layoutViewInstance = null;
@@ -1522,10 +1871,12 @@
                     allOrders = orders;
                     tables = data.tables || {};
                     rehberMasalar = data.rehber || {};
+                    billRequests = data.bill_requests || {};
                     tableSessions = data.table_sessions || {};
                     APP.state.orders = orders;
                     APP.state.tables = tables;
                     APP.state.rehberMasalar = rehberMasalar;
+                    APP.state.billRequests = billRequests;
                     APP.state.tableSessions = tableSessions;
                     masalariGuncelle(orders);
                     istatistikleriGuncelle(orders);
@@ -1615,6 +1966,36 @@
             }
         }
 
+        function minutesSince(isoString) {
+            if (!isoString) return '';
+            const dt = new Date(isoString);
+            if (Number.isNaN(dt.getTime())) return '';
+            const diff = Math.max(0, Math.floor((Date.now() - dt.getTime()) / 60000));
+            return diff + ' dk once';
+        }
+
+        function toggleBillRequested(masa, currentlyRequested) {
+            if (!window.UI || !UI.Api) return;
+            const nextValue = !currentlyRequested;
+            UI.Api.setBillRequested(masa, nextValue).then(data => {
+                if (nextValue) {
+                    if (window.APP && APP.emit) APP.emit('toast:show', { type: 'success', message: `Masa ${masa}: Hesap istendi olarak isaretlendi` });
+                } else {
+                    if (window.APP && APP.emit) APP.emit('toast:show', { type: 'success', message: `Masa ${masa}: Hesap istegi kaldirildi` });
+                }
+                billRequests = data && data.bill_requested ? { ...billRequests, [String(masa)]: { value: true, at: data.bill_requested_at } } : (() => {
+                    const next = { ...billRequests };
+                    delete next[String(masa)];
+                    return next;
+                })();
+                if (APP && APP.state) APP.state.billRequests = billRequests;
+                yenile();
+                masaDetay(masa);
+            }).catch(err => {
+                alert('Hata: ' + (err && err.message ? err.message : 'Islem basarisiz.'));
+            });
+        }
+
         function getTableOpenMinutes(masaData, masa) {
             if (window.UI && UI.TableCard && UI.TableCard.getOpenMinutes) {
                 return UI.TableCard.getOpenMinutes(masaData, masa, tableSessions);
@@ -1641,6 +2022,7 @@
                 isMap: !!isMap,
                 tables: tables,
                 rehberMasalar: rehberMasalar,
+                billRequests: billRequests,
                 tableSessions: tableSessions,
                 onClick: masaDetay
             });
@@ -1661,6 +2043,7 @@
                 isMap: false,
                 tables: tables,
                 rehberMasalar: rehberMasalar,
+                billRequests: billRequests,
                 tableSessions: tableSessions,
                 onClick: masaDetay
             });
@@ -1684,6 +2067,7 @@
                 aktifMasalar: aktifMasalar,
                 tables: tables,
                 rehberMasalar: rehberMasalar,
+                billRequests: billRequests,
                 tableSessions: tableSessions
             });
         }
@@ -1714,6 +2098,13 @@
             if (hesapInFlight[masa]) return;
             hesapInFlight[masa] = true;
             mevcutMasa = masa;
+            const masaData = (window.APP && APP.state && APP.state.masaData) ? APP.state.masaData : {};
+            if (!masaData[masa]) {
+                hesapInFlight[masa] = false;
+                if (window.APP && APP.emit) APP.emit('table:selected', { tableId: masa });
+                window.location.href = `/siparis-gir?table_id=${masa}`;
+                return;
+            }
             fetch(`/api/hesap/${masa}`)
                 .then(response => response.json())
                 .then(data => {
@@ -1779,6 +2170,22 @@
                     const statusText = discountAmount > 0 && discountInfo
                         ? `${discountName} indirimi: ${valueLabel} (\u2212${formatMoney(discountAmount)})`
                         : '&#304;ndirim yok';
+                    const billRequestInfo = billRequests[String(masa)];
+                    const billRequested = billRequestInfo && billRequestInfo.value;
+                    const billRequestText = billRequested && billRequestInfo.at ? `Hesap istendi: ${minutesSince(billRequestInfo.at)}` : '';
+                    const billRequestBlock = `
+                        <div class="discount-section" style="margin-bottom: 0.75rem;">
+                            <div class="discount-header">
+                                <div class="discount-title">Hesap Istendi</div>
+                                <div class="discount-actions">
+                                    <button class="btn btn-secondary" onclick="toggleBillRequested(${masa}, ${billRequested ? 'true' : 'false'})">
+                                        ${billRequested ? 'Isteği Kaldir' : 'Hesap Istendi'}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="discount-status">${billRequested ? billRequestText : 'Hesap istegi yok'}</div>
+                        </div>
+                    `;
                     const discountBlock = `
                         <div class="discount-section">
                             <div class="discount-header">
@@ -1793,7 +2200,7 @@
                             <div class="discount-status">${statusText}</div>
                         </div>
                     `;
-                    hesapHTML += discountBlock;
+                    hesapHTML += billRequestBlock + discountBlock;
 
                     hesapHTML += `
                         <div class="bill-total">
@@ -1807,9 +2214,17 @@
                             </div>
                             <div class="bill-total-note">Nakit &#304;ndirimi (%10): ${formatMoney(totalDue * 0.9)}</div>
                         </div>
-                        <div style="text-align: center; margin: 1rem 0;">
+                        <div class="cash-change-actions" style="margin: 1rem 0;">
+                            <button class="btn btn-secondary order-add-btn" onclick="openOrderEntryFromBill()">
+                                <span aria-hidden="true">&#10133;</span>
+                                <span>Sipari&#351; Ekle</span>
+                            </button>
                             <button class="btn" style="background: ${rehberMasalar[masa] ? '#16a34a' : '#64748b'} !important; color: white !important; padding: 0.75rem 1.5rem;" onclick="rehberToggle(${masa})">
                                 ${rehberMasalar[masa] ? '&#128101; Rehberli Masa' : '&#128100; Rehbersiz Masa'}
+                            </button>
+                            <button class="btn btn-secondary cash-change-btn" onclick="UI.CashChangeModal.open()">
+                                <span aria-hidden="true">&#128181;</span>
+                                <span>Para &#220;st&#252;</span>
                             </button>
                         </div>
                         <div class="payment-stack">
@@ -1967,6 +2382,11 @@
             });
         }
 
+        function openOrderEntryFromBill() {
+            if (!mevcutMasa) return;
+            window.location.href = `/siparis-gir?table_id=${mevcutMasa}`;
+        }
+
           function onPayCard() {
               if (!currentBill || !window.UI || !UI.Api) return;
               const total = Number(currentBill.total) || 0;
@@ -1977,8 +2397,105 @@
                   handlePaymentSuccess();
               }).catch(err => {
                   alert('Hata: ' + (err && err.message ? err.message : 'Odeme alinamadi.'));
-              });
+            });
           }
+
+          UI.CashChangeModal = (function () {
+            let totalAmount = 0;
+            let initDone = false;
+
+            function formatAmount(value) {
+              return typeof formatMoney === 'function' ? formatMoney(value) : (Number(value) || 0).toFixed(2) + ' TL';
+            }
+
+            function open() {
+              if (!currentBill) return;
+              totalAmount = Number(currentBill.total) || 0;
+              const modal = document.getElementById('cash-change-modal');
+              const totalEl = document.getElementById('cash-change-total');
+              const inputEl = document.getElementById('cash-change-input');
+              const resultEl = document.getElementById('cash-change-result');
+              const noteEl = document.getElementById('cash-change-note');
+              const confirmBtn = document.getElementById('cash-change-confirm');
+              if (!modal || !totalEl || !inputEl || !resultEl || !noteEl || !confirmBtn) return;
+              totalEl.textContent = formatAmount(totalAmount);
+              inputEl.value = '';
+              resultEl.textContent = 'Para Üstü: 0 TL';
+              resultEl.classList.remove('positive', 'negative');
+              noteEl.textContent = '';
+              confirmBtn.disabled = true;
+              modal.style.display = 'block';
+              if (window.APP && APP.emit) APP.emit('cashChange:open');
+              bindOnce();
+            }
+
+            function close() {
+              const modal = document.getElementById('cash-change-modal');
+              if (modal) modal.style.display = 'none';
+            }
+
+            function onInputChange(value) {
+              const inputEl = document.getElementById('cash-change-input');
+              const resultEl = document.getElementById('cash-change-result');
+              const noteEl = document.getElementById('cash-change-note');
+              const confirmBtn = document.getElementById('cash-change-confirm');
+              if (!resultEl || !noteEl || !confirmBtn) return;
+              const given = Math.max(0, Number(value || (inputEl ? inputEl.value : 0)) || 0);
+              const diff = Math.round((given - totalAmount) * 100) / 100;
+              if (diff < 0) {
+                resultEl.textContent = 'Para Üstü: 0 TL';
+                resultEl.classList.remove('positive');
+                resultEl.classList.add('negative');
+                noteEl.textContent = `Eksik tutar: ${formatAmount(Math.abs(diff))}`;
+                confirmBtn.disabled = true;
+              } else if (diff === 0) {
+                resultEl.textContent = 'Para Üstü: 0 TL';
+                resultEl.classList.remove('negative');
+                resultEl.classList.add('positive');
+                noteEl.textContent = 'Para üstü yok';
+                confirmBtn.disabled = false;
+              } else {
+                resultEl.textContent = `Para Üstü: ${formatAmount(diff)}`;
+                resultEl.classList.remove('negative');
+                resultEl.classList.add('positive');
+                noteEl.textContent = '';
+                confirmBtn.disabled = false;
+              }
+            }
+
+            function confirmCashPayment() {
+              const inputEl = document.getElementById('cash-change-input');
+              const given = Math.max(0, Number(inputEl ? inputEl.value : 0) || 0);
+              if (given < totalAmount) return;
+              if (window.APP && APP.emit) {
+                APP.emit('payment:cash:confirm', { givenAmount: given });
+              }
+              close();
+              onPayCash();
+            }
+
+            function bindOnce() {
+              if (initDone) return;
+              const inputEl = document.getElementById('cash-change-input');
+              const confirmBtn = document.getElementById('cash-change-confirm');
+              if (inputEl) {
+                inputEl.addEventListener('input', function (e) {
+                  onInputChange(e.target.value);
+                });
+              }
+              if (confirmBtn) {
+                confirmBtn.addEventListener('click', confirmCashPayment);
+              }
+              initDone = true;
+            }
+
+            return {
+              open,
+              close,
+              onInputChange,
+              confirmCashPayment
+            };
+          })();
 
           function toggleSplitArea() {
             const splitArea = document.getElementById('payment-split-area');
@@ -2316,6 +2833,13 @@ function otoparkGideri() {
             tableProgressInstance = UI.ProgressBorder.init(document);
         }
         yenile();
+        const openParam = new URLSearchParams(window.location.search).get('open');
+        if (openParam === 'recentClosures' && window.UI && UI.RecentClosuresPanel) {
+            UI.RecentClosuresPanel.open();
+        }
+        if (openParam === 'otopark') {
+            setTimeout(otoparkGideri, 200);
+        }
         
         const intervals = (window.CONFIG && CONFIG.intervals) || {};
         const clockMs = intervals.clockMs || 1000;

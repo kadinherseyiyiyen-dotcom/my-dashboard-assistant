@@ -20,9 +20,13 @@
         Api.getPayments(orderId) -> Promise<Object>
         Api.closeTablePayments(tableId, payments) -> Promise<Object>
         Api.getBillPreview(tableId, lang) -> Promise<Object>
-        Api.printBill(tableId) -> Promise<Object>
-        Api.applyDiscount(orderId, payload) -> Promise<Object>
-        Api.removeDiscount(orderId) -> Promise<Object>
+      Api.printBill(tableId) -> Promise<Object>
+      Api.applyDiscount(orderId, payload) -> Promise<Object>
+      Api.removeDiscount(orderId) -> Promise<Object>
+      Api.getRecentClosures(limit) -> Promise<Array>
+      Api.reopenOrder(orderId) -> Promise<Object>
+      Api.setBillRequested(tableId, value) -> Promise<Object>
+      Api.getWeather() -> Promise<Object>
   */
 
   function requestJson(url, method, body, opts) {
@@ -99,17 +103,24 @@
       }
     });
 
-    var activeWeight = cfg.activeTableWeight || 15;
-    var lastWeight = cfg.lastOrders5mWeight || 10;
-    var scoreRaw = (aktifMasa * activeWeight) + (son5dkSiparis * lastWeight);
-    var score = Math.min(100, Math.max(0, scoreRaw));
-    var label = 'Normal';
-    if (score >= (cfg.criticalThreshold || 100)) {
-      label = 'Kritik';
-    } else if (score >= (cfg.warnThreshold || 70)) {
+    var score = 0;
+    if (aktifMasa <= 0) {
+      score = 0;
+    } else if (aktifMasa < 7) {
+      score = (aktifMasa / 7) * 50;
+    } else if (aktifMasa < 10) {
+      score = 50 + ((aktifMasa - 7) / 3) * 25;
+    } else if (aktifMasa < 15) {
+      score = 75 + ((aktifMasa - 10) / 5) * 25;
+    } else {
+      score = 100;
+    }
+    score = Math.min(100, Math.max(0, Math.round(score)));
+    var label = 'Dusuk';
+    if (aktifMasa >= 10) {
+      label = 'Yogun';
+    } else if (aktifMasa >= 7) {
       label = 'Artiyor';
-    } else if (score < (cfg.lowThreshold || 50)) {
-      label = 'Dusuk';
     }
 
     return {
@@ -279,6 +290,45 @@
     });
   }
 
+  function getRecentClosures(limit) {
+    var url = '/api/orders/recent-closures';
+    if (limit) url += '?limit=' + encodeURIComponent(limit);
+    return requestJson(url, 'GET', null, {
+      errorMessage: 'Son kapatilanlar alinamadi.'
+    }).then(function (data) {
+      if (data && data.success === false) throw new Error(data.message || 'Yukleme hatasi');
+      return Array.isArray(data) ? data : (data && data.items ? data.items : []);
+    });
+  }
+
+  function reopenOrder(orderId) {
+    return requestJson('/api/orders/' + orderId + '/reopen', 'POST', {}, {
+      errorMessage: 'Siparis yeniden acilamadi.'
+    }).then(function (data) {
+      if (data && data.success === false) throw new Error(data.message || 'Islem hatasi');
+      return data;
+    });
+  }
+
+  function setBillRequested(tableId, value) {
+    return requestJson('/api/tables/' + tableId + '/bill-requested', 'POST', { value: !!value }, {
+      errorMessage: 'Hesap istegi guncellenemedi.'
+    }).then(function (data) {
+      if (data && data.success === false) throw new Error(data.message || 'Islem hatasi');
+      return data;
+    });
+  }
+
+  function getWeather() {
+    return requestJson('/api/weather', 'GET', null, {
+      cacheKey: 'weather_current',
+      errorMessage: 'Hava durumu alinamadi.'
+    }).then(function (data) {
+      if (data && data.success === false) throw new Error(data.message || 'Yukleme hatasi');
+      return data || {};
+    });
+  }
+
   function getMenu() {
     return requestJson('/api/menu', 'GET', null, {
       cacheKey: 'menu',
@@ -367,7 +417,11 @@
     getBillPreview: getBillPreview,
     printBill: printBill,
     applyDiscount: applyDiscount,
-    removeDiscount: removeDiscount
+    removeDiscount: removeDiscount,
+    getRecentClosures: getRecentClosures,
+    reopenOrder: reopenOrder,
+    setBillRequested: setBillRequested,
+    getWeather: getWeather
   };
   global.Api = global.UI.Api;
 })(window);

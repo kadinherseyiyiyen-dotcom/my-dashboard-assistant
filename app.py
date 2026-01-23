@@ -5,6 +5,8 @@ import time
 from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_UP
 import json
 import os
+import urllib.parse
+import urllib.request
 
 app = Flask(__name__)
 @app.route("/health")
@@ -35,6 +37,7 @@ if DATA_DIR and DATA_DIR not in ['.', './']:
 _DB_READY = False
 _DB_POOL = None
 _CACHE = {}
+_WEATHER_CACHE = {'ts': 0, 'data': None}
 ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '10'))
 MENU_CACHE_TTL = int(os.environ.get('MENU_CACHE_TTL', '60'))
 TABLES_CACHE_TTL = int(os.environ.get('TABLES_CACHE_TTL', '60'))
@@ -195,6 +198,7 @@ REHBER_FILE = 'rehber_masalar.json'
 TABLES_LAYOUT_FILE = 'tables_layout.json'
 TABLE_SESSIONS_FILE = 'table_sessions.json'
 TABLE_USAGE_FILE = 'table_usage.json'
+TABLE_BILL_REQUEST_FILE = 'table_bill_requests.json'
 ATTENDANCE_FILE = 'vardiya.json'
 ATTENDANCE_CONFIG_FILE = 'vardiya_config.json'
 EMPLOYEES_FILE = 'calisanlar.json'
@@ -207,6 +211,9 @@ OTOPARK_CONFIG_FILE = 'otopark_config.json'
 TABLE_DISCOUNTS_FILE = 'table_discounts.json'
 STAFF_CACHE_TTL = int(os.environ.get('STAFF_CACHE_TTL', '60'))
 PRINTER_NAME = os.environ.get('PRINTER_NAME')
+WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '55d81da9d6c54f39ae3222425262301')
+WEATHER_LOCATION = os.environ.get('WEATHER_LOCATION', 'Istanbul Sisli')
+WEATHER_TTL = int(os.environ.get('WEATHER_TTL', '600'))
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
@@ -338,6 +345,9 @@ def init_data():
         tables = {str(i): f"Masa {i}" for i in range(1, 26)}
         save_json_storage(TABLES_FILE, tables)
 
+    if not storage_has_key(TABLE_BILL_REQUEST_FILE):
+        save_json_storage(TABLE_BILL_REQUEST_FILE, {})
+
     init_staff_storage()
 
 
@@ -355,6 +365,20 @@ def save_payments(payments):
     save_json_storage(PAYMENTS_FILE, payments)
     invalidate_cache('payments')
 
+def parse_closed_datetime(order):
+    date_str = order.get('kapanma_tarih') or order.get('tarih') or ''
+    time_str = order.get('kapanma_zamani') or order.get('zaman') or '00:00'
+    try:
+        if '.' in date_str:
+            gun, ay, yil = date_str.split('.')
+            return datetime(int(yil), int(ay), int(gun), int(time_str.split(':')[0]), int(time_str.split(':')[1] or 0))
+        if '-' in date_str:
+            yil, ay, gun = date_str.split('-')
+            return datetime(int(yil), int(ay), int(gun), int(time_str.split(':')[0]), int(time_str.split(':')[1] or 0))
+    except Exception:
+        return None
+    return None
+
 def load_table_discounts():
     return load_json_storage(TABLE_DISCOUNTS_FILE, {})
 
@@ -363,6 +387,37 @@ def save_table_discounts(discounts):
 
 def load_menu():
     return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
+
+def fetch_weather():
+    now_ts = time.time()
+    cached = _WEATHER_CACHE.get('data')
+    if cached and now_ts - _WEATHER_CACHE.get('ts', 0) < WEATHER_TTL:
+        return cached
+    if not WEATHER_API_KEY:
+        return None
+    params = urllib.parse.urlencode({
+        'key': WEATHER_API_KEY,
+        'q': WEATHER_LOCATION,
+        'lang': 'tr'
+    })
+    url = f'https://api.weatherapi.com/v1/current.json?{params}'
+    try:
+        with urllib.request.urlopen(url, timeout=8) as resp:
+            raw = resp.read().decode('utf-8')
+            payload = json.loads(raw)
+    except Exception:
+        return cached
+    current = payload.get('current') or {}
+    condition = current.get('condition') or {}
+    data = {
+        'temp': current.get('temp_c'),
+        'condition': condition.get('text') or '',
+        'icon': condition.get('icon') or '',
+        'location': WEATHER_LOCATION
+    }
+    _WEATHER_CACHE['ts'] = now_ts
+    _WEATHER_CACHE['data'] = data
+    return data
 
 def normalize_payment_type(value):
     val = (value or '').strip().lower()
@@ -553,6 +608,12 @@ def load_rehber_masalar():
 def save_rehber_masalar(rehber_masalar):
     save_json_storage(REHBER_FILE, rehber_masalar)
     invalidate_cache('rehber')
+
+def load_bill_requests():
+    return load_json_storage(TABLE_BILL_REQUEST_FILE, {})
+
+def save_bill_requests(data):
+    save_json_storage(TABLE_BILL_REQUEST_FILE, data)
 
 def load_staff():
     return cached_load('staff', lambda: load_json_storage(STAFF_FILE, []), STAFF_CACHE_TTL)
@@ -942,6 +1003,8 @@ def build_bill_text(payload, width=32, lang='tr'):
             'nar suyu': 'Pomegranate Juice'
         }
         raw = (name or '').strip().lower()
+        while raw and not raw[0].isalnum():
+            raw = raw[1:]
         key = (raw.replace('\u0131', 'i')
                   .replace('\u011f', 'g')
                   .replace('\u015f', 's')
@@ -971,26 +1034,13 @@ def build_bill_text(payload, width=32, lang='tr'):
         lines.append(label.ljust(width - len(amount)) + amount)
     lines.append(sep)
     subtotal_text = f"{payload.get('subtotal', payload['total']):.0f} TL"
-    discount_amount = float(payload.get('discount_amount') or 0)
     total_due = float(payload.get('total_due') or payload['total'])
     total_text = f"{total_due:.0f} TL"
     if lang == 'en':
         lines.append('Subtotal:'.ljust(width - len(subtotal_text)) + subtotal_text)
-        if discount_amount > 0:
-            dtype = (payload.get('discount') or {}).get('type')
-            dvalue = (payload.get('discount') or {}).get('value')
-            tag = f" ({int(dvalue)}%)" if dtype == 'percent' and dvalue is not None else ''
-            d_text = f"-{discount_amount:.0f} TL"
-            lines.append(('Discount' + tag + ':').ljust(width - len(d_text)) + d_text)
         lines.append('Total:'.ljust(width - len(total_text)) + total_text)
     else:
         lines.append('Ara Toplam:'.ljust(width - len(subtotal_text)) + subtotal_text)
-        if discount_amount > 0:
-            dtype = (payload.get('discount') or {}).get('type')
-            dvalue = (payload.get('discount') or {}).get('value')
-            tag = f" (%{int(dvalue)})" if dtype == 'percent' and dvalue is not None else ''
-            d_text = f"-{discount_amount:.0f} TL"
-            lines.append(('İndirim' + tag + ':').ljust(width - len(d_text)) + d_text)
         lines.append('Ödenecek:'.ljust(width - len(total_text)) + total_text)
     lines.append('')
     if lang == 'en':
@@ -1067,7 +1117,7 @@ def auth():
     elif role == 'kasa' and password == load_config().get('kasa_sifre', 'kasa123'):
         session['role'] = 'kasa'
         session['user'] = 'Kasiyer'
-        return jsonify({'success': True, 'redirect': '/kasa'})
+        return jsonify({'success': True, 'redirect': '/dashboard'})
     else:
         return jsonify({'success': False, 'message': 'Hatalı şifre!'})
 
@@ -1291,6 +1341,12 @@ def dashboard():
     if session.get('role') != 'kasa':
         return redirect(url_for('login'))
     return render_template('dashboard.html')
+
+@app.route('/dashboard-analytics')
+def dashboard_analytics():
+    if session.get('role') != 'kasa':
+        return redirect(url_for('login'))
+    return render_template('dashboard_analytics.html')
 
 @app.route('/api/siparis', methods=['POST'])
 def siparis_ekle():
@@ -1563,7 +1619,14 @@ def kasa_init():
     tables = cached_load('tables', load_tables, 60)
     rehber = cached_load('rehber', load_rehber_masalar, 60)
     sessions = load_table_sessions()
-    return jsonify({'orders': orders, 'tables': tables, 'rehber': rehber, 'table_sessions': sessions})
+    bill_requests = load_bill_requests()
+    return jsonify({
+        'orders': orders,
+        'tables': tables,
+        'rehber': rehber,
+        'table_sessions': sessions,
+        'bill_requests': bill_requests
+    })
 
 @app.route('/api/tables', methods=['GET', 'POST'])
 def handle_tables():
@@ -1633,6 +1696,18 @@ def handle_menu():
         save_json_storage(MENU_FILE, data)
         invalidate_cache('menu')
         return jsonify({'success': True})
+
+@app.route('/api/weather')
+def api_weather():
+    data = fetch_weather()
+    if not data:
+        return jsonify({'success': False, 'message': 'Weather not available'}), 503
+    return jsonify({
+        'temp': data.get('temp'),
+        'condition': data.get('condition'),
+        'icon': data.get('icon'),
+        'location': data.get('location') or WEATHER_LOCATION
+    })
 
 @app.route('/api/giderler', methods=['GET', 'POST'])
 def giderler_api():
@@ -1895,6 +1970,10 @@ def order_payments(order_id):
 
     save_orders(orders)
 
+    bill_requests = load_bill_requests()
+    bill_requests.pop(str(order.get('masa')), None)
+    save_bill_requests(bill_requests)
+
     payments_store = load_payments()
     for payment in result['payments']:
         payments_store.append({
@@ -1991,6 +2070,112 @@ def order_discount(order_id):
     amount = compute_discount_amount(subtotal, discount)
     return jsonify({'success': True, 'discount': discount, 'discount_amount': amount})
 
+@app.route('/api/orders/recent-closures')
+def recent_closures():
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    try:
+        limit = int(request.args.get('limit') or 20)
+    except Exception:
+        limit = 20
+    limit = max(1, min(50, limit))
+    orders = load_orders()
+    tables = load_tables()
+    items = []
+    for order in orders:
+        if order.get('durum') != 'kapali':
+            continue
+        dt = parse_closed_datetime(order)
+        if not dt:
+            continue
+        payment_label = ''
+        ot = order.get('odeme_turu')
+        if ot == 'nakit':
+            payment_label = 'Nakit'
+        elif ot == 'kart':
+            payment_label = 'Kart'
+        elif ot == 'split':
+            payment_label = 'Parcali'
+        items.append({
+            'order_id': order.get('id'),
+            'table_id': order.get('masa'),
+            'table_name': tables.get(str(order.get('masa'))) or f"Masa {order.get('masa')}",
+            'closed_at': dt.isoformat(),
+            'closed_time': dt.strftime('%H:%M'),
+            'total': order.get('indirimli_tutar') or order.get('paid_total') or order.get('toplam') or 0,
+            'total_text': f"\u20ba{float(order.get('indirimli_tutar') or order.get('paid_total') or order.get('toplam') or 0):.2f}",
+            'payment_label': payment_label or '-',
+            'staff_name': order.get('garson') or 'Bilinmiyor'
+        })
+    items.sort(key=lambda x: x.get('closed_at') or '', reverse=True)
+    return jsonify(items[:limit])
+
+@app.route('/api/orders/<int:order_id>/reopen', methods=['POST'])
+def reopen_order(order_id):
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    orders = load_orders()
+    order = next((o for o in orders if str(o.get('id')) == str(order_id)), None)
+    if not order:
+        return jsonify({'success': False, 'message': 'Siparis bulunamadi.'}), 404
+    if order.get('durum') != 'kapali':
+        return jsonify({'success': False, 'message': 'Siparis zaten acik.'}), 409
+    table_id = order.get('masa')
+    if any(o.get('durum') == 'aktif' and str(o.get('masa')) == str(table_id) for o in orders):
+        return jsonify({'success': False, 'message': 'Masa zaten acik.'}), 409
+
+    order['durum'] = 'aktif'
+    order['kapanma_zamani'] = None
+    order['kapanma_tarih'] = None
+    order['is_paid'] = False
+    order['paid_total'] = 0
+    order['paid_at'] = None
+    order['odeme_turu'] = None
+    order['odeme_breakdown'] = {}
+    order['indirimli_tutar'] = order.get('toplam', 0)
+    order['indirim'] = 0
+
+    sessions = load_table_sessions()
+    if str(table_id) not in sessions:
+        sessions[str(table_id)] = order.get('masa_acilis_ts') or now_tr().isoformat()
+        save_table_sessions(sessions)
+
+    payments_store = load_payments()
+    for payment in payments_store:
+        if str(payment.get('order_id')) == str(order_id):
+            payment['status'] = 'void'
+            payment['voided_at'] = now_tr().isoformat()
+            payment['void_reason'] = 'reopened'
+    save_payments(payments_store)
+    save_orders(orders)
+    return jsonify({'success': True, 'order_id': order_id, 'table_id': table_id})
+
+@app.route('/api/tables/<int:table_id>/bill-requested', methods=['POST'])
+def set_bill_requested(table_id):
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    data = request.json or {}
+    value = bool(data.get('value'))
+    orders = load_orders()
+    if value:
+        if not any(o.get('durum') == 'aktif' and str(o.get('masa')) == str(table_id) for o in orders):
+            return jsonify({'success': False, 'message': 'Aktif siparis yok.'}), 400
+    bill_requests = load_bill_requests()
+    if value:
+        bill_requests[str(table_id)] = {
+            'value': True,
+            'at': now_tr().isoformat()
+        }
+    else:
+        bill_requests.pop(str(table_id), None)
+    save_bill_requests(bill_requests)
+    return jsonify({
+        'success': True,
+        'table_id': table_id,
+        'bill_requested': value,
+        'bill_requested_at': bill_requests.get(str(table_id), {}).get('at')
+    })
+
 @app.route('/api/hesap_kapat/<int:masa>', methods=['POST'])
 
 def hesap_kapat(masa):
@@ -2061,6 +2246,10 @@ def hesap_kapat(masa):
                 order['discount_applied_at'] = table_discount.get('applied_at')
                 order['discount_amount'] = discount_shares.get(order['id'], 0)
 
+        bill_requests = load_bill_requests()
+        bill_requests.pop(str(masa), None)
+        save_bill_requests(bill_requests)
+
         for payment in result['payments']:
             for idx, order in enumerate(masa_orders):
                 payment_amount = breakdowns.get(order['id'], {}).get(payment['type'], 0)
@@ -2118,6 +2307,7 @@ def hesap_kapat(masa):
         response['indirimli_tutar'] = int(discounted_subtotal * 0.9)
     return jsonify(response)
 
+@app.route('/api/masa-transfer', methods=['POST'])
 def masa_transfer():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
@@ -2175,8 +2365,17 @@ def get_komisyonlar_tarih():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     
     tarih = request.args.get('tarih')
+    start_param = request.args.get('start')
+    end_param = request.args.get('end')
     orders = load_orders()
     
+    start_date = to_iso_date(start_param) if start_param else None
+    end_date = to_iso_date(end_param) if end_param else None
+    if start_date and not end_date:
+        end_date = start_date
+    if end_date and not start_date:
+        start_date = end_date
+
     if not tarih:
         bugun_iso = now_tr().strftime('%Y-%m-%d')
         bugun_tr = now_tr().strftime('%d.%m.%Y')
@@ -2197,8 +2396,16 @@ def get_komisyonlar_tarih():
             continue
         
         order_tarih = order.get('tarih', '')
+        order_iso = to_iso_date(order_tarih)
         kapanma_tarih = order.get('kapanma_tarih', '')
+        kapanma_iso = to_iso_date(kapanma_tarih)
         
+        if start_date and end_date:
+            for iso_val in (order_iso, kapanma_iso):
+                if iso_val and start_date <= iso_val <= end_date:
+                    tarih_orders.append(order)
+                    break
+            continue
         if (order_tarih == tarih or order_tarih == tarih_iso or
             kapanma_tarih == tarih or kapanma_tarih == tarih_iso):
             tarih_orders.append(order)
@@ -2393,9 +2600,11 @@ def dashboard_data():
     populer_urunler = sorted(urun_satis.items(), key=lambda x: x[1]['adet'], reverse=True)[:5]
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
     populer_masalar = sorted(masa_kullanim.items(), key=lambda x: x[1], reverse=True)[:10]
-    day_key = bugun_iso
+    day_key = business_day_key(now_tr()).isoformat()
     table_usage = load_table_usage()
     day_usage = table_usage.get(day_key, {})
+    if not day_usage and day_key != bugun_iso:
+        day_usage = table_usage.get(bugun_iso, {})
     longest_tables = sorted(day_usage.items(), key=lambda x: x[1], reverse=True)[:10]
     longest_tables = [{'masa': k, 'sure_dk': int(max(1, round(v / 60)))} for k, v in longest_tables]
     

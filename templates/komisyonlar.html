@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Komisyon Takibi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -155,6 +156,11 @@
     </style>
 </head>
 <body>
+    <div class="page-actions">
+        <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
+        <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+
     <div class="header">
         <h1>💰 Komisyon Takibi</h1>
         <div class="header-actions">
@@ -167,6 +173,9 @@
         <div class="date-selector" style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <label for="tarih-sec" style="font-weight: 600; color: #1a202c;">📅 Tarih Seçiniz:</label>
             <input type="date" id="tarih-sec" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.875rem;">
+            <label for="komisyon-range-start" style="font-weight: 600; color: #1a202c;">Tarih Aral&#305;&#287;&#305;:</label>
+            <input type="date" id="komisyon-range-start" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.875rem;">
+            <input type="date" id="komisyon-range-end" style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.875rem;">
             <button class="btn" style="background: #3182ce; color: white; padding: 0.75rem 1rem;" onclick="komisyonlariYukle()">🔄 Güncelle</button>
             <button class="btn" style="background: #718096; color: white; padding: 0.75rem 1rem;" onclick="bugunuSec()">📆 Bugün</button>
         </div>
@@ -184,7 +193,7 @@
                 </div>
                 <div class="summary-item">
                     <h3 id="komisyon-sayisi">0</h3>
-                    <p>Komisyon Sayısı</p>
+                    <p>Rehber Sayısı</p>
                 </div>
             </div>
         </div>
@@ -209,6 +218,10 @@
             const ay = String(bugun.getMonth() + 1).padStart(2, '0');
             const gun = String(bugun.getDate()).padStart(2, '0');
             document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
+            const rangeStart = document.getElementById('komisyon-range-start');
+            const rangeEnd = document.getElementById('komisyon-range-end');
+            if (rangeStart) rangeStart.value = `${yil}-${ay}-${gun}`;
+            if (rangeEnd) rangeEnd.value = `${yil}-${ay}-${gun}`;
             komisyonlariYukle();
         }
 
@@ -223,7 +236,15 @@
             const [yil, ay, gun] = secilenTarih.split('-');
             const formatliTarih = `${gun}.${ay}.${yil}`;
 
-            fetch(`/api/komisyonlar-tarih?tarih=${formatliTarih}`)
+            const rangeStart = document.getElementById('komisyon-range-start');
+            const rangeEnd = document.getElementById('komisyon-range-end');
+            const startVal = rangeStart ? rangeStart.value : '';
+            const endVal = rangeEnd ? rangeEnd.value : '';
+            const url = (startVal && endVal)
+                ? `/api/komisyonlar-tarih?start=${startVal}&end=${endVal}`
+                : `/api/komisyonlar-tarih?tarih=${formatliTarih}`;
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success === false) {

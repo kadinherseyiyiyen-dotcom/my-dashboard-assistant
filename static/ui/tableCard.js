@@ -69,12 +69,14 @@
       };
     }
     var rehberIcon = opts.rehberMasalar && opts.rehberMasalar[index] ? '*' : '';
+    var billRequested = opts.billRequests && opts.billRequests[String(index)] && opts.billRequests[String(index)].value;
     var tableName = opts.tables && opts.tables[index] ? opts.tables[index] : 'Masa ' + index;
     var garsonName = data ? getGarsonName(data) : '';
     var nameText = tableName + (garsonName ? ' - ' + garsonName : '');
     var sureText = sure ? sure + ' dk' : '--';
     div.innerHTML = ''
       + '<div class="table-progress" aria-hidden="true"></div>'
+      + (billRequested ? '<div class="bill-request-badge" title="Hesap istendi">\u2B50</div>' : '')
       + '<div class="table-name">' + nameText + (rehberIcon ? ' ' + rehberIcon : '') + '</div>'
       + '<div class="table-amount">' + totalText + '</div>'
       + '<div class="table-meta">'
@@ -90,6 +92,7 @@
     var sure = data ? getOpenMinutes(masaData, index, opts.tableSessions) : 0;
     var sureText = sure ? sure + ' dk' : '--';
     var rehberIcon = opts.rehberMasalar && opts.rehberMasalar[index] ? '*' : '';
+    var billRequested = opts.billRequests && opts.billRequests[String(index)] && opts.billRequests[String(index)].value;
     var tableName = opts.tables && opts.tables[index] ? opts.tables[index] : 'Masa ' + index;
     var garsonName = data ? getGarsonName(data) : '';
     var nameText = tableName + (garsonName ? ' - ' + garsonName : '');
@@ -100,7 +103,8 @@
       sure: sure,
       sureText: sureText,
       tableName: nameText,
-      rehberIcon: rehberIcon
+      rehberIcon: rehberIcon,
+      billRequested: billRequested
     };
   }
 
@@ -136,6 +140,15 @@
     var amountEl = node.querySelector('.table-amount');
     var metaEl = node.querySelector('.table-meta span');
     var nameText = snapshot.tableName + (snapshot.rehberIcon ? ' ' + snapshot.rehberIcon : '');
+    var badge = node.querySelector('.bill-request-badge');
+    if (snapshot.billRequested && !badge) {
+      badge = document.createElement('div');
+      badge.className = 'bill-request-badge';
+      badge.textContent = '\u2B50';
+      node.insertBefore(badge, node.firstChild.nextSibling);
+    } else if (!snapshot.billRequested && badge) {
+      badge.remove();
+    }
     if (nameEl && nameText !== last.nameText) {
       nameEl.textContent = nameText;
     }
@@ -151,7 +164,8 @@
       kisi: snapshot.kisi,
       sure: snapshot.sure,
       sureText: snapshot.sureText,
-      nameText: nameText
+      nameText: nameText,
+      billRequested: snapshot.billRequested
     };
   }
 
@@ -176,6 +190,7 @@
           isMap: false,
           tables: payload.tables || (global.APP.state && global.APP.state.tables),
           rehberMasalar: payload.rehberMasalar || (global.APP.state && global.APP.state.rehberMasalar),
+          billRequests: payload.billRequests || (global.APP.state && global.APP.state.billRequests),
           tableSessions: payload.tableSessions || (global.APP.state && global.APP.state.tableSessions),
           onClick: payload.onClick || opts.onClick
         });
