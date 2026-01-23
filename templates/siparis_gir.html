@@ -6,6 +6,7 @@
     <title>Sipari&#351; Gir - Kasa</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='layoutView.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='components/tableProgressBorder.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -403,7 +404,7 @@
                 <div class="form-group">
                     <label>Garson Ad&#305;:</label>
                     <select id="garson">
-                        <option value="WhatsApp Siparis">WhatsApp Sipari&#351;</option>
+                        <option value="">Garson secin</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -437,6 +438,11 @@
                         Yukleniyor...
                     </div>
                 </div>
+                <div class="menu-section">
+                    <h3>?ark?teri Men?s?</h3>
+                    <div class="menu-grid" id="menuGridSarkuteri">
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -463,6 +469,9 @@
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="{{ url_for('static', filename='layoutView.js') }}"></script>
     <script src="{{ url_for('static', filename='components/tableProgressBorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='config.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/toast.js') }}"></script>
     <script>
         let siparis = [];
         let toplam = 0;
@@ -475,6 +484,50 @@
         let tableProgressInstance = null;
         let tablesCache = {};
         let tableSessions = {};
+        let staffList = [];
+
+        function notify(message) {
+            if (window.UI && UI.Toast && UI.Toast.show) {
+                UI.Toast.show(message);
+                return;
+            }
+            alert(message);
+        }
+
+        function renderStaffOptions() {
+            const select = document.getElementById('garson');
+            if (!select) return;
+            select.innerHTML = '<option value="">Garson secin</option>';
+            staffList.forEach(staff => {
+                if (!staff || staff.is_active === false) return;
+                const option = document.createElement('option');
+                option.value = staff.id;
+                option.textContent = staff.name;
+                select.appendChild(option);
+            });
+            const lastId = localStorage.getItem('last_staff_id');
+            if (lastId) {
+                select.value = lastId;
+            }
+            select.onchange = function () {
+                if (this.value) {
+                    localStorage.setItem('last_staff_id', this.value);
+                }
+            };
+        }
+
+        function loadStaff() {
+            if (!window.UI || !UI.Api || !UI.Api.getStaff) return;
+            UI.Api.getStaff()
+                .then(list => {
+                    staffList = list || [];
+                    renderStaffOptions();
+                })
+                .catch(err => {
+                    console.error('Staff load failed:', err);
+                    notify('Garson listesi alinamadi.');
+                });
+        }
 
         function getTableOpenMinutes(masaData, masa) {
             let openTs = tableSessions[String(masa)];
@@ -506,19 +559,27 @@
             return kisi;
         }
 
+        function getGarsonName(data) {
+            if (!data || !data.siparisler || !data.siparisler.length) return '';
+            const last = data.siparisler[data.siparisler.length - 1];
+            return last && last.garson ? String(last.garson) : '';
+        }
+
         function buildTableCard(i, masaData) {
             const data = masaData[i];
             const totalText = data ? data.toplam + ' TL' : 'Bos';
             const kisi = data ? countSerpme(data.siparisler) : 0;
             const sure = data ? getTableOpenMinutes(masaData, i) : 0;
             const sureText = sure ? sure + ' dk' : '--';
+            const garsonName = data ? getGarsonName(data) : '';
+            const nameText = (tablesCache[i] || 'Masa ' + i) + (garsonName ? ' - ' + garsonName : '');
             const div = document.createElement('div');
             div.className = (data ? 'table-card occupied' : 'table-card') + (secilenMasa === i ? ' selected' : '');
             div.dataset.masa = i;
             div.dataset.minutes = sure;
             div.innerHTML = `
                 <div class="table-progress" aria-hidden="true"></div>
-                <div class="table-name">${tablesCache[i] || 'Masa ' + i}</div>
+                <div class="table-name">${nameText}</div>
                 <div class="table-amount">${totalText}</div>
                 <div class="table-meta">
                     <span>&#x1F464; ${kisi} kisi &#x23F1;&#xFE0F; ${sureText}</span>
@@ -553,8 +614,9 @@
                 const fullTables = {};
                 const metaMap = {};
                 for (let i = 1; i <= 25; i++) {
-                    fullTables[i] = tablesCache[i] || 'Masa ' + i;
                     const data = masaData[i];
+                    const garsonName = data ? getGarsonName(data) : '';
+                    fullTables[i] = (tablesCache[i] || 'Masa ' + i) + (garsonName ? ' - ' + garsonName : '');
                     const kisi = data ? countSerpme(data.siparisler) : 0;
                     const sure = data ? getTableOpenMinutes(masaData, i) : 0;
                     const sureText = sure ? sure + ' dk' : '--';
@@ -589,6 +651,7 @@
             renderMenuSection(menu.ana_menu || [], 'menuGridAna');
             renderMenuSection(menu.ekstralar || [], 'menuGridEkstra');
             renderMenuSection(menu.icecekler || [], 'menuGridIcecek');
+            renderMenuSection(menu.sarkuteri || [], 'menuGridSarkuteri');
         }
 
         async function initSiparisGir() {
@@ -759,41 +822,46 @@
         function siparisGonder() {
             if (siparisSubmitInFlight) return;
             if (siparis.length === 0) {
-                alert('Lutfen siparis ekleyin!');
+                notify('Lutfen siparis ekleyin!');
                 return;
             }
             if (!secilenMasa) {
-                alert('Lutfen masa seciniz!');
+                notify('Lutfen masa seciniz!');
+                return;
+            }
+            const staffId = document.getElementById('garson').value;
+            if (!staffId) {
+                notify('Garson secilmelidir.');
                 return;
             }
             siparisSubmitInFlight = true;
             const data = {
                 masa: secilenMasa,
-                garson: document.getElementById('garson').value,
+                staff_id: parseInt(staffId, 10),
                 items: siparis,
-                toplam: toplam,
-                zaman: document.getElementById('siparis-zaman').value
+                toplam: toplam
             };
-            fetch('/api/siparis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
+            const submit = (window.UI && UI.Api && UI.Api.createOrder)
+                ? UI.Api.createOrder(data)
+                : fetch('/api/siparis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(response => response.json());
+            submit.then(result => {
                 if (result.success) {
-                    alert('Siparis kaydedildi.');
+                    notify('Siparis kaydedildi.');
                     siparisTemizle();
                     loadAktifSiparisler();
                     document.querySelectorAll('.masa-card').forEach(c => c.classList.remove('selected'));
                     document.getElementById('secili-masa').value = '';
                     secilenMasa = null;
                 } else {
-                    alert('Hata: ' + result.message);
+                    notify('Hata: ' + result.message);
                 }
             })
             .catch(err => {
-                alert('Hata: ' + err.message);
+                notify('Hata: ' + err.message);
             })
             .finally(() => {
                 siparisSubmitInFlight = false;
@@ -831,6 +899,7 @@
             if (window.TableProgressBorder) {
                 tableProgressInstance = TableProgressBorder.initTableProgressBorders(document);
             }
+            loadStaff();
             initSiparisGir();
             loadAktifSiparisler();
             setInterval(loadAktifSiparisler, 20000);

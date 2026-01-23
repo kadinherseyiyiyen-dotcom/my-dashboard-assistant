@@ -253,8 +253,8 @@
                 </div>
                 <div class="form-group">
                     <label>Garson:</label>
-                    <select id="garson" disabled>
-                        <option value="{{ user }}">{{ user }}</option>
+                    <select id="garson">
+                        <option value="">Garson secin</option>
                     </select>
                 </div>
             </div>
@@ -300,6 +300,18 @@
                         {% endfor %}
                     </div>
                 </div>
+                <div class="menu-section">
+                    <h3>?ark?teri Men?s?</h3>
+                    <div class="menu-grid">
+                        {% for item in menu.sarkuteri or [] %}
+                        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                            <div class="icon">{{ item.image }}</div>
+                            <h4>{{ item.name }}</h4>
+                            <div class="price">{{ item.price }} TL</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -324,9 +336,52 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='config.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/toast.js') }}"></script>
     <script>
         let siparis = [];
         let toplam = 0;
+        const currentUserName = "{{ user }}";
+        let staffList = [];
+
+        function notify(message) {
+            if (window.UI && UI.Toast && UI.Toast.show) {
+                UI.Toast.show(message);
+                return;
+            }
+            alert(message);
+        }
+
+        function renderStaffOptions() {
+            const select = document.getElementById('garson');
+            if (!select) return;
+            select.innerHTML = '<option value="">Garson secin</option>';
+            staffList.forEach(staff => {
+                if (!staff || staff.is_active === false) return;
+                const option = document.createElement('option');
+                option.value = staff.id;
+                option.textContent = staff.name;
+                select.appendChild(option);
+            });
+            const match = staffList.find(s => s && s.is_active !== false && s.name === currentUserName);
+            if (match) {
+                select.value = match.id;
+            }
+        }
+
+        function loadStaff() {
+            if (!window.UI || !UI.Api || !UI.Api.getStaff) return;
+            UI.Api.getStaff()
+                .then(list => {
+                    staffList = list || [];
+                    renderStaffOptions();
+                })
+                .catch(err => {
+                    console.error('Staff load failed:', err);
+                    notify('Garson listesi alinamadi.');
+                });
+        }
 
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function() {
@@ -399,31 +454,40 @@
 
         function siparisGonder() {
             if (siparis.length === 0) {
-                alert('Lütfen sipariş ekleyin!');
+                notify('Lutfen siparis ekleyin!');
+                return;
+            }
+            const staffId = document.getElementById('garson').value;
+            if (!staffId) {
+                notify('Garson secilmelidir.');
                 return;
             }
 
             const data = {
                 masa: parseInt(document.getElementById('masa').value),
-                garson: document.getElementById('garson').value,
+                staff_id: parseInt(staffId, 10),
                 items: siparis,
                 toplam: toplam
             };
 
-            fetch('/api/siparis', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
+            const submit = (window.UI && UI.Api && UI.Api.createOrder)
+                ? UI.Api.createOrder(data)
+                : fetch('/api/siparis', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(response => response.json());
+            submit.then(result => {
                 if (result.success) {
-                    alert('Sipariş başarıyla gönderildi!');
+                    notify('Siparis basariyla gonderildi!');
                     siparisTemizle();
                     aktifSiparisleriYukle();
                 } else {
-                    alert('Hata: ' + result.message);
+                    notify('Hata: ' + result.message);
                 }
+            })
+            .catch(err => {
+                notify('Hata: ' + err.message);
             });
         }
 
@@ -454,6 +518,7 @@
         }
 
         // Sayfa yüklendiğinde aktif siparişleri yükle
+        loadStaff();
         aktifSiparisleriYukle();
         
         // Her 30 saniyede bir aktif siparişleri yenile

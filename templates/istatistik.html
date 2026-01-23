@@ -149,6 +149,11 @@
             font-weight: 700;
             color: #1a202c;
         }
+        .staff-stats-date {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 6px;
+        }
         .chart-tabs {
             display: flex;
             gap: 0.5rem;
@@ -255,6 +260,340 @@
                 align-items: flex-start;
             }
         }
+        .staff-stats {
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .staff-stats-table {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .staff-stats-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 2fr 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.9rem;
+        }
+        .staff-stats-head {
+            font-weight: 700;
+            background: #edf2f7;
+        }
+        .staff-head-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .staff-stats-detail {
+            grid-column: 1 / -1;
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .staff-stats {
+            overflow-x: auto;
+        }
+        .staff-stats-table {
+            min-width: 560px;
+        }
+        .staff-sort {
+            background: none;
+            border: none;
+            padding: 0;
+            width: 100%;
+            font: inherit;
+            font-weight: 700;
+            color: #1a202c;
+            text-align: left;
+            cursor: pointer;
+        }
+        .staff-sort-sub {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #718096;
+        }
+        .staff-sort.active {
+            color: #ff6600;
+        }
+        .staff-sort.active::after {
+            content: attr(data-dir);
+            font-size: 0.65rem;
+            margin-left: 6px;
+            color: #ff6600;
+        }
+        .staff-sort.active[data-dir="asc"]::after {
+            content: '▲';
+        }
+        .staff-sort.active[data-dir="desc"]::after {
+            content: '▼';
+        }
+        .staff-row {
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .row-highlight {
+            border-color: rgba(255, 140, 0, 0.4);
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.12);
+        }
+        .row-pulse {
+            animation: rowPulse 0.6s ease;
+        }
+        @keyframes rowPulse {
+            0% { box-shadow: 0 0 0 rgba(255, 140, 0, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(255, 140, 0, 0.18); }
+        }
+        .staff-stats-detail-row {
+            padding: 0 14px 12px;
+        }
+        .staff-stats-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .staff-products-toggle {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            color: #334155;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .staff-products-toggle::after {
+            content: ">";
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+        .staff-products-toggle.is-open::after {
+            transform: rotate(90deg);
+        }
+        .staff-products-panel {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .staff-orders-panel {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+        .staff-orders-list {
+            display: grid;
+            gap: 8px;
+        }
+        .staff-order-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.78rem;
+            color: #334155;
+        }
+        .staff-order-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .staff-order-items {
+            color: #475569;
+        }
+        .staff-orders-empty {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        .staff-products-toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .staff-products-search,
+        .staff-products-filter {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            background: #ffffff;
+            color: #1e293b;
+        }
+        .staff-products-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px 14px;
+        }
+        .staff-product-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #334155;
+        }
+        .staff-product-count {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .staff-products-more {
+            margin-top: 8px;
+            border: none;
+            background: transparent;
+            color: #2563eb;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .staff-products-empty {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        .staff-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .staff-name-cell {
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+        .staff-name-text {
+            font-weight: 700;
+        }
+        .density-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #94a3b8;
+            flex: 0 0 auto;
+        }
+        .density-high { background: #22c55e; }
+        .density-mid { background: #f59e0b; }
+        .density-low { background: #94a3b8; }
+        .staff-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: #ffe4b5;
+            color: #92400e;
+        }
+        .badge-top {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+        .staff-badge:empty {
+            display: none;
+        }
+        .metric-value {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        .staff-revenue-cell .metric-value {
+            font-size: 1.15rem;
+        }
+        .staff-revenue .metric-value {
+            font-size: 1.1rem;
+        }
+        .metric-sub {
+            font-size: 0.78rem;
+            color: #718096;
+        }
+        .metric-bar {
+            height: 6px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .metric-bar span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffb347, #ff8c00);
+            transition: width 240ms ease;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-chip {
+            border: none;
+            cursor: default;
+        }
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge-muted {
+            background: #cbd5e0;
+            color: #1a202c;
+        }
+        .staff-meta {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+        .staff-last-order.last-hot {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .staff-last-order.last-cold {
+            color: #94a3b8;
+        }
+
+        @media (max-width: 768px) {
+            .staff-stats-row {
+                grid-template-columns: 1fr;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .staff-stats-head {
+                display: none;
+            }
+            .staff-cell {
+                width: 100%;
+            }
+            .staff-revenue-cell .metric-value {
+                font-size: 1.25rem;
+            }
+            .staff-serpme-cell .metric-value,
+            .staff-orders-cell .metric-value {
+                font-size: 0.95rem;
+            }
+            .staff-stats-detail {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+            .staff-products-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+            color: #718096;
+            font-size: 0.85rem;
+        }
+
     </style>
 </head>
 <body>
@@ -269,6 +608,9 @@
             <input type="date" id="tarih-sec">
             <button class="btn btn-primary" onclick="istatistikYukle()">🔄 Güncelle</button>
             <button class="btn btn-secondary" onclick="bugunuSec()">📆 Bugün</button>
+            <label for="staff-range-start">Tarih Araligi:</label>
+            <input type="date" id="staff-range-start">
+            <input type="date" id="staff-range-end">
         </div>
 
         <div class="stats-grid">
@@ -304,6 +646,15 @@
             </div>
         </div>
 
+
+        <div class="section" id="staff-stats-section">
+            <div class="section-header">
+                <h2 class="section-title">Garson Istatistikleri</h2>
+                <div class="staff-stats-date" id="staff-stats-date"></div>
+            </div>
+            <div class="staff-stats" id="staff-stats">Yukleniyor...</div>
+        </div>
+
         <!-- Satış Grafikleri -->
         <div class="section">
             <div class="section-header">
@@ -328,22 +679,13 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='config.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/staffStats.js') }}?v=5"></script>
+
     <script>
-        const menuIcons = {
-            'Serpme Kahvaltı': '🍳',
-            'Patates Kızartması': '🍟',
-            'Hellim': '🧀',
-            'Full Falafel': '🥙',
-            'Mıhlama': '🫕',
-            'Göz Yumurta': '🍳',
-            'Çay': '🫖',
-            'Karak': '☕',
-            'Sıcak Süt': '🥛',
-            'Türk Kahvesi': '☕',
-            'Portakal Suyu': '🍊',
-            'Limonata': '🍋',
-            'Su': '💧'
-        };
+        const menuIcons = {};
 
         let satisChart = null;
         let aktifGrafik = 'haftalik';
@@ -351,27 +693,72 @@
         // Chart.js datalabels plugin'ini register et
         Chart.register(ChartDataLabels);
 
+
+
+        function notify(message) {
+            if (window.UI && UI.Toast && UI.Toast.show) {
+                UI.Toast.show(message);
+                return;
+            }
+            alert(message);
+        }
+
+        function fetchStaffStats(dateValue) {
+            const host = document.getElementById('staff-stats');
+            if (host) host.textContent = 'Yukleniyor...';
+
+            if (!window.UI || !UI.Api || !UI.Api.getStaffStats || !window.UI.StaffStats) {
+                if (host) host.textContent = 'Garson istatistikleri alinamadi.';
+                return;
+            }
+
+            UI.Api.getStaffStats(dateValue)
+                .then(() => {})
+                .catch(err => {
+                    console.error('Staff stats fetch failed:', err);
+                    if (host) host.textContent = 'Garson istatistikleri alinamadi.';
+                });
+        }
+
         function bugunuSec() {
             const bugun = new Date();
             const yil = bugun.getFullYear();
             const ay = String(bugun.getMonth() + 1).padStart(2, '0');
             const gun = String(bugun.getDate()).padStart(2, '0');
             document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
+            const rangeStart = document.getElementById('staff-range-start');
+            const rangeEnd = document.getElementById('staff-range-end');
+            if (rangeStart) rangeStart.value = '';
+            if (rangeEnd) rangeEnd.value = '';
             istatistikYukle();
         }
 
         function istatistikYukle() {
             const secilenTarih = document.getElementById('tarih-sec').value;
             if (!secilenTarih) {
-                alert('Lütfen tarih seçiniz!');
+                alert('Lutfen tarih seciniz!');
                 return;
             }
 
-            // Tarihi dd.mm.yyyy formatına çevir
+            // Tarihi dd.mm.yyyy formatina cevir
             const [yil, ay, gun] = secilenTarih.split('-');
             const formatliTarih = `${gun}.${ay}.${yil}`;
 
-            fetch(`/api/istatistik-data?tarih=${formatliTarih}`)
+            const rangeStart = document.getElementById('staff-range-start');
+            const rangeEnd = document.getElementById('staff-range-end');
+            const startVal = rangeStart ? rangeStart.value : '';
+            const endVal = rangeEnd ? rangeEnd.value : '';
+            if (startVal && endVal) {
+                fetchStaffStats({ start: startVal, end: endVal });
+            } else {
+                fetchStaffStats(secilenTarih);
+            }
+
+            const istatistikUrl = (startVal && endVal)
+                ? `/api/istatistik-data?start=${startVal}&end=${endVal}`
+                : `/api/istatistik-data?tarih=${formatliTarih}`;
+
+            fetch(istatistikUrl)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success === false) {
@@ -379,28 +766,28 @@
                         return;
                     }
 
-                    // İstatistikleri güncelle
+                    // Istatistikleri guncelle
                     const toplamCiro = data.toplam_ciro || 0;
                     const toplamKomisyon = data.toplam_komisyon || 0;
                     const netKar = toplamCiro - toplamKomisyon;
-                    
-                    document.getElementById('toplam-ciro').textContent = toplamCiro + '₺';
-                    document.getElementById('nakit-satis').textContent = (data.nakit_satis || 0) + '₺';
-                    document.getElementById('kart-satis').textContent = (data.kart_satis || 0) + '₺';
-                    document.getElementById('toplam-komisyon').textContent = toplamKomisyon + '₺';
-                    document.getElementById('net-kar').textContent = netKar + '₺';
+
+                    document.getElementById('toplam-ciro').textContent = toplamCiro + ' TL';
+                    document.getElementById('nakit-satis').textContent = (data.nakit_satis || 0) + ' TL';
+                    document.getElementById('kart-satis').textContent = (data.kart_satis || 0) + ' TL';
+                    document.getElementById('toplam-komisyon').textContent = toplamKomisyon + ' TL';
+                    document.getElementById('net-kar').textContent = netKar + ' TL';
                     document.getElementById('siparis-sayisi').textContent = data.siparis_sayisi || 0;
 
-                    // Ürün listesini güncelle
+                    // Urun listesini guncelle
                     urunListesiGuncelle(data.urun_satislari || {});
-                    
-                    // Grafikleri güncelle
+
+                    // Grafikleri guncelle
                     grafikYukle();
                 })
                 .catch(error => {
                     console.error('Hata:', error);
-                    document.getElementById('urun-listesi').innerHTML = 
-                        '<div class="loading" style="color: #e53e3e;">Veriler yüklenirken hata oluştu!</div>';
+                    document.getElementById('urun-listesi').innerHTML =
+                        '<div class="loading" style="color: #e53e3e;">Veriler yuklenirken hata olustu!</div>';
                 });
         }
 
@@ -552,7 +939,7 @@
             let html = '<div class="products-grid">';
             
             sortedUrunler.forEach(([urunAdi, veri]) => {
-                const icon = menuIcons[urunAdi] || '🍽️';
+                const icon = menuIcons[urunAdi] || '\uD83C\uDF7D\uFE0F';
                 html += `
                     <div class="product-item">
                         <div class="product-info">
@@ -578,6 +965,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             bugunuSec();
             grafikYukle();
+            if (window.UI && UI.StaffStats) {
+                UI.StaffStats.init('staff-stats');
+            }
         });
     </script>
 </body>

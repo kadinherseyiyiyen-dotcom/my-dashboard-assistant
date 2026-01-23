@@ -1,0 +1,122 @@
+def compute_staff_stats(date_param):
+    target_date = to_iso_date(date_param) or now_tr().date().isoformat()
+    orders = load_orders()
+    staff_list = load_staff()
+    staff_map = {str(s.get('id')): s for s in staff_list}
+    stats = {}
+
+    def ensure_stat(key, staff_id, name):
+        if key in stats:
+            return
+        stats[key] = {
+            'staff_id': staff_id,
+            'name': name,
+            'order_count': 0,
+            'revenue': 0.0,
+            'avg_basket': 0.0,
+            'serpme_count': 0,
+            'tables': [],
+            'active_table_count': 0,
+            'last_order_ts': None,
+            '_tables': set(),
+            '_active_tables': set(),
+            '_last_dt': None
+        }
+
+    for s in staff_list:
+        ensure_stat(str(s.get('id')), s.get('id'), s.get('name') or 'Garson')
+
+    def order_total(order):
+        val = order.get('indirimli_tutar')
+        if val in [None, '']:
+            val = order.get('toplam', 0)
+        try:
+            return float(val)
+        except Exception:
+            return 0.0
+
+    for order in orders:
+        order_date = to_iso_date(get_order_date(order))
+        if order_date != target_date:
+            continue
+
+        staff_id = order.get('staff_id')
+        if staff_id is None:
+            key = 'unknown'
+            name = normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
+        else:
+            key = str(staff_id)
+            staff_item = staff_map.get(key)
+            name = (staff_item.get('name') if staff_item else None) or normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
+
+        ensure_stat(key, staff_id, name)
+        stats[key]['order_count'] += 1
+        stats[key]['revenue'] += order_total(order)
+
+        table_val = order.get('masa')
+        if table_val is not None:
+            stats[key]['_tables'].add(table_val)
+            if order.get('durum') == 'aktif':
+                stats[key]['_active_tables'].add(table_val)
+
+        for item in order.get('items') or []:
+            item_name = str(item.get('name') or '').lower()
+            if 'serpme' in item_name:
+                try:
+                    stats[key]['serpme_count'] += int(item.get('adet') or 0)
+                except Exception:
+                    pass
+
+        dt = parse_order_datetime(order)
+        if dt:
+            last_dt = stats[key]['_last_dt']
+            if not last_dt or dt > last_dt:
+                stats[key]['_last_dt'] = dt
+
+    result = []
+    for key, data in stats.items():
+        tables = list(data.pop('_tables'))
+        active_tables = data.pop('_active_tables')
+        last_dt = data.pop('_last_dt')
+
+        def table_sort_key(v):
+            try:
+                return (0, int(v))
+            except Exception:
+                return (1, str(v))
+
+        tables = sorted(tables, key=table_sort_key)
+        data['tables'] = tables
+        data['active_table_count'] = len(active_tables)
+        data['last_order_ts'] = last_dt.isoformat() if last_dt else None
+
+        order_count = data.get('order_count') or 0
+        revenue = round(float(data.get('revenue') or 0), 2)
+        data['revenue'] = revenue
+        data['avg_basket'] = round(revenue / order_count, 2) if order_count > 0 else 0.0
+        result.append(data)
+
+    result.sort(key=lambda x: (-(x.get('order_count') or 0), -(x.get('revenue') or 0), str(x.get('name') or '')))
+    return target_date, result
+init_data()
+
+def default_tables_layout(area):
+    layout = {}
+    cols = 5
+    width = 120
+    height = 90
+    gap = 16
+    start_x = 16
+    start_y = 16
+    for i in range(1, 26):
+        idx = i - 1
+        col = idx % cols
+        row = idx // cols
+        x = start_x + col * (width + gap)
+        y = start_y + row * (height + gap)
+        layout[str(i)] = {
+            'pos_x': x,
+            'pos_y': y,
+            'width': width,
+            'height': height,
+            'rotation': 0,

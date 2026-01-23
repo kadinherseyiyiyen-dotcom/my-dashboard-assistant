@@ -45,11 +45,32 @@
       "price": 350
     },
     {
-      "id": 100,
-      "name": "Sucuk ",
-      "price": 350,
       "category": "ekstra",
-      "image": "🍳"
+      "id": 100,
+      "image": "🫓​",
+      "name": "Sucuk ",
+      "price": 350
+    },
+    {
+      "category": "ekstralar",
+      "id": 100,
+      "image": "",
+      "name": "Patatesli Gözleme",
+      "price": 300
+    },
+    {
+      "category": "ekstralar",
+      "id": 101,
+      "image": "🫓​",
+      "name": "Peynirli Gözleme",
+      "price": 300
+    },
+    {
+      "category": "ekstralar",
+      "id": 102,
+      "image": "🫓​",
+      "name": "Ispanaklı Gözleme",
+      "price": 300
     }
   ],
   "icecekler": [
@@ -101,6 +122,14 @@
       "image": "💧",
       "name": "Su",
       "price": 60
+    },
+    {
+      "category": "icecek",
+      "id": 100,
+      "image": "🥤",
+      "name": "Nar Suyu",
+      "price": 300
     }
-  ]
+  ],
+  "sarkuteri": []
 }

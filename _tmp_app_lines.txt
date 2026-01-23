@@ -18,8 +18,6 @@ app.config['JSON_AS_ASCII'] = False
 def add_charset(response):
     if response.mimetype == 'text/html':
         response.headers['Content-Type'] = 'text/html; charset=utf-8'
-    if response.mimetype == 'application/json':
-        response.headers['Content-Type'] = 'application/json; charset=utf-8'
     return response
 
 DATA_DIR = os.environ.get('DATA_DIR', '.')
@@ -202,11 +200,8 @@ STAFF_FILE = 'staff.json'
 TIP_FILE = 'tip_havuzu.json'
 EXPENSES_FILE = 'giderler.json'
 CONFIG_FILE = 'config.json'
-PAYMENTS_FILE = 'payments.json'
 OTOPARK_CONFIG_FILE = 'otopark_config.json'
-TABLE_DISCOUNTS_FILE = 'table_discounts.json'
 STAFF_CACHE_TTL = int(os.environ.get('STAFF_CACHE_TTL', '60'))
-PRINTER_NAME = os.environ.get('PRINTER_NAME')
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
@@ -323,16 +318,12 @@ def init_data():
                 {"id": 11, "name": "Portakal Suyu", "price": 20, "category": "icecek", "image": "🍊"},
                 {"id": 12, "name": "Limonata", "price": 18, "category": "icecek", "image": "🍋"},
                 {"id": 13, "name": "Su", "price": 5, "category": "icecek", "image": "💧"}
-            ],
-              "sarkuteri": []
+            ]
         }
         save_json_storage(MENU_FILE, menu)
     
     if not storage_has_key(ORDERS_FILE):
         save_json_storage(ORDERS_FILE, [])
-
-    if not storage_has_key(PAYMENTS_FILE):
-        save_json_storage(PAYMENTS_FILE, [])
     
     if not storage_has_key(TABLES_FILE):
         tables = {str(i): f"Masa {i}" for i in range(1, 26)}
@@ -348,170 +339,8 @@ def save_orders(orders):
     save_json_storage(ORDERS_FILE, orders)
     invalidate_cache('orders')
 
-def load_payments():
-    return cached_load('payments', lambda: load_json_storage(PAYMENTS_FILE, []), ORDERS_CACHE_TTL)
-
-def save_payments(payments):
-    save_json_storage(PAYMENTS_FILE, payments)
-    invalidate_cache('payments')
-
-def load_table_discounts():
-    return load_json_storage(TABLE_DISCOUNTS_FILE, {})
-
-def save_table_discounts(discounts):
-    save_json_storage(TABLE_DISCOUNTS_FILE, discounts)
-
 def load_menu():
     return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
-
-def normalize_payment_type(value):
-    val = (value or '').strip().lower()
-    if val in ['cash', 'nakit']:
-        return 'cash'
-    if val in ['card', 'kart']:
-        return 'card'
-    if val in ['qr', 'qrpay', 'qrcode']:
-        return 'qr'
-    if val in ['other', 'diger', 'diğer']:
-        return 'other'
-    return val or 'other'
-
-def build_payment_breakdown(payments):
-    breakdown = {'cash': 0.0, 'card': 0.0, 'qr': 0.0, 'other': 0.0}
-    for payment in payments or []:
-        ptype = normalize_payment_type(payment.get('type'))
-        try:
-            amount = float(payment.get('amount') or 0)
-        except Exception:
-            amount = 0.0
-        if ptype not in breakdown:
-            breakdown[ptype] = 0.0
-        breakdown[ptype] += amount
-    return breakdown
-
-def get_payment_amount(order, pay_type):
-    ptype = normalize_payment_type(pay_type)
-    breakdown = order.get('odeme_breakdown')
-    if isinstance(breakdown, dict) and ptype in breakdown:
-        try:
-            return float(breakdown.get(ptype) or 0)
-        except Exception:
-            return 0.0
-    if order.get('odeme_turu') in ['nakit', 'kart'] and normalize_payment_type(order.get('odeme_turu')) == ptype:
-        return float(order.get('indirimli_tutar', order.get('toplam', 0)) or 0)
-    return 0.0
-
-def apply_payments_to_orders(orders, payments, allow_discount=True, force_discount=False):
-    if not payments or not isinstance(payments, list):
-        raise ValueError('Odeme listesi gerekli.')
-    allowed = {'cash', 'card', 'qr', 'other'}
-    cleaned = []
-    for item in payments:
-        if not isinstance(item, dict):
-            continue
-        ptype = normalize_payment_type(item.get('type'))
-        if ptype not in allowed:
-            raise ValueError('Gecersiz odeme turu.')
-        try:
-            amount = float(item.get('amount') or 0)
-        except Exception:
-            amount = 0.0
-        if amount <= 0:
-            raise ValueError('Odeme tutari 0 olamaz.')
-        cleaned.append({'type': ptype, 'amount': amount, 'meta': item.get('meta')})
-
-    if not cleaned:
-        raise ValueError('Odeme listesi gerekli.')
-
-    total = sum(float(o.get('toplam', 0) or 0) for o in orders)
-    if total <= 0:
-        raise ValueError('Toplam tutar bulunamadi.')
-
-    cash_only = allow_discount and all(p['type'] == 'cash' for p in cleaned)
-    card_only = all(p['type'] == 'card' for p in cleaned)
-    total_due = round(total * 0.9, 2) if cash_only else round(total, 2)
-    if force_discount and not cash_only:
-        raise ValueError('Nakit indirimi icin tek odeme nakit olmalidir.')
-    paid_total = round(sum(p['amount'] for p in cleaned), 2)
-
-    if abs(paid_total - total_due) > 0.01:
-        raise ValueError('Odeme toplamı tutmuyor.')
-
-    breakdowns = {}
-    for order in orders:
-        breakdowns[order['id']] = {'cash': 0.0, 'card': 0.0, 'qr': 0.0, 'other': 0.0}
-
-    def order_share(order):
-        try:
-            return float(order.get('toplam', 0) or 0) / total
-        except Exception:
-            return 0.0
-
-    for payment in cleaned:
-        allocated = 0.0
-        for idx, order in enumerate(orders):
-            if idx == len(orders) - 1:
-                part = round(payment['amount'] - allocated, 2)
-            else:
-                part = round(payment['amount'] * order_share(order), 2)
-                allocated += part
-            breakdowns[order['id']][payment['type']] += part
-
-    due_map = {}
-    allocated_due = 0.0
-    for idx, order in enumerate(orders):
-        if idx == len(orders) - 1:
-            due = round(total_due - allocated_due, 2)
-        else:
-            ratio = order_share(order)
-            due = round(total_due * ratio, 2)
-            allocated_due += due
-        due_map[order['id']] = due
-
-    return {
-        'payments': cleaned,
-        'total_due': total_due,
-        'cash_only': cash_only,
-        'card_only': card_only,
-        'breakdowns': breakdowns,
-        'due_map': due_map
-    }
-
-def allocate_due_map(orders, total_due):
-    total = sum(float(o.get('toplam', 0) or 0) for o in orders) or 0.0
-    due_map = {}
-    if total <= 0:
-        for order in orders:
-            due_map[order['id']] = 0.0
-        return due_map
-    allocated_due = 0.0
-    for idx, order in enumerate(orders):
-        if idx == len(orders) - 1:
-            due = round(total_due - allocated_due, 2)
-        else:
-            ratio = float(order.get('toplam', 0) or 0) / total
-            due = round(total_due * ratio, 2)
-            allocated_due += due
-        due_map[order['id']] = due
-    return due_map
-
-def compute_discount_amount(subtotal, discount):
-    if not discount:
-        return 0.0
-    try:
-        value = float(discount.get('value') or 0)
-    except Exception:
-        value = 0.0
-    if value <= 0 or subtotal <= 0:
-        return 0.0
-    dtype = discount.get('type')
-    if dtype == 'percent':
-        amount = subtotal * value / 100.0
-    elif dtype == 'amount':
-        amount = value
-    else:
-        return 0.0
-    return max(0.0, min(subtotal, round(amount, 2)))
 
 def flatten_menu_items(menu):
     if not isinstance(menu, dict):
@@ -602,16 +431,8 @@ def find_staff_by_id(staff_list, staff_id):
 
 
 
-def compute_staff_stats(date_param=None, start_param=None, end_param=None):
-    target_date = to_iso_date(date_param) or None
-    start_date = to_iso_date(start_param) or None
-    end_date = to_iso_date(end_param) or None
-    if start_date and not end_date:
-        end_date = start_date
-    if end_date and not start_date:
-        start_date = end_date
-    if not target_date and not start_date:
-        target_date = now_tr().date().isoformat()
+def compute_staff_stats(date_param):
+    target_date = to_iso_date(date_param) or now_tr().date().isoformat()
     orders = load_orders()
     staff_list = load_staff()
     staff_map = {str(s.get('id')): s for s in staff_list}
@@ -649,14 +470,8 @@ def compute_staff_stats(date_param=None, start_param=None, end_param=None):
 
     for order in orders:
         order_date = to_iso_date(get_order_date(order))
-        if start_date and end_date:
-            if not order_date:
-                continue
-            if order_date < start_date or order_date > end_date:
-                continue
-        else:
-            if order_date != target_date:
-                continue
+        if order_date != target_date:
+            continue
 
         staff_id = order.get('staff_id')
         if staff_id is None:
@@ -715,7 +530,9 @@ def compute_staff_stats(date_param=None, start_param=None, end_param=None):
         result.append(data)
 
     result.sort(key=lambda x: (-(x.get('order_count') or 0), -(x.get('revenue') or 0), str(x.get('name') or '')))
-    return (target_date or start_date or now_tr().date().isoformat()), result
+    return target_date, result
+init_data()
+
 def default_tables_layout(area):
     layout = {}
     cols = 5
@@ -828,194 +645,10 @@ def parse_date(value):
 
 
 def load_employees():
-    staff = load_staff()
-    names = []
-    for item in staff:
-        if item.get('is_active') is False:
-            continue
-        name = normalize_staff_name(item.get('name'))
-        if name:
-            names.append(name)
-    return names
+    return load_json_storage(EMPLOYEES_FILE, [])
 
 def save_employees(names):
-    staff = load_staff()
-    next_id = max([int(s.get('id', 0)) for s in staff] + [0]) + 1
-    desired = {}
-    for raw in names:
-        name = normalize_staff_name(raw)
-        if name:
-            desired[name.lower()] = name
-
-    for item in staff:
-        key = normalize_staff_name(item.get('name')).lower()
-        if key in desired:
-            item['name'] = desired[key]
-            item['is_active'] = True
-        else:
-            item['is_active'] = False
-
-    existing_keys = {normalize_staff_name(s.get('name')).lower() for s in staff}
-    for key, name in desired.items():
-        if key in existing_keys:
-            continue
-        staff.append({
-            'id': next_id,
-            'name': name,
-            'is_active': True,
-            'created_at': now_tr().isoformat(timespec='seconds'),
-            'updated_at': now_tr().isoformat(timespec='seconds')
-        })
-        next_id += 1
-
-    save_staff(staff)
-
-def get_printer():
-    try:
-        from escpos.printer import Win32Raw
-    except Exception as exc:
-        raise RuntimeError('python-escpos yuklu degil.') from exc
-    if not PRINTER_NAME:
-        raise RuntimeError('PRINTER_NAME ayari bulunamadi.')
-    return Win32Raw(PRINTER_NAME)
-
-def build_bill_payload(table_id, orders):
-    items_map = {}
-    garson = ''
-    last_time = ''
-    for order in orders:
-        if order.get('durum') != 'aktif':
-            continue
-        garson = order.get('garson') or garson
-        last_time = order.get('zaman') or last_time
-        for item in order.get('items', []):
-            name = item.get('name') or 'Urun'
-            price = float(item.get('price', 0))
-            qty = int(item.get('adet', 0) or 0)
-            key = (name, price)
-            items_map[key] = items_map.get(key, 0) + qty
-    items = []
-    total = 0.0
-    for (name, price), qty in items_map.items():
-        line_total = price * qty
-        total += line_total
-        items.append({'name': name, 'qty': qty, 'price': price, 'line_total': line_total})
-    if total == 0:
-        total = sum(float(o.get('toplam', 0)) for o in orders if o.get('durum') == 'aktif')
-    items.sort(key=lambda i: i['name'])
-    subtotal = sum(float(o.get('toplam', 0) or 0) for o in orders if o.get('durum') == 'aktif')
-    discounts = load_table_discounts()
-    discount = discounts.get(str(table_id))
-    discount_amount = compute_discount_amount(subtotal, discount)
-    total_due = round(subtotal - discount_amount, 2)
-    return {
-        'table_id': table_id,
-        'garson': garson or 'Bilinmiyor',
-        'time': now_tr().strftime('%d.%m.%Y %H:%M'),
-        'items': items,
-        'subtotal': round(subtotal, 2),
-        'discount': discount or None,
-        'discount_amount': discount_amount,
-        'total_due': total_due,
-        'total': round(total, 2)
-    }
-
-def build_bill_text(payload, width=32, lang='tr'):
-    def translate_item(name):
-        if lang != 'en':
-            return name
-        mapping = {
-            'serpme kahvalti': 'Breakfast',
-            'mihlama': 'M\u0131hlama (Turkish Cheese & Cornmeal Fondue)',
-            'goz yumurta': 'Fried Eggs',
-            'patates kizartmasi': 'French Fries',
-            'hellim': 'Halloumi Cheese',
-            'falafel': 'Falafel',
-            'sucuk': 'Turkish Sausage (Sucuk)',
-            'cay': 'Tea',
-            'karak': 'Karak Tea',
-            'sicak sut': 'Hot Milk',
-            'turk kahvesi': 'Turkish Coffee',
-            'portakal suyu': 'Orange Juice',
-            'limonata': 'Lemonade',
-            'su': 'Water',
-            'nar suyu': 'Pomegranate Juice'
-        }
-        raw = (name or '').strip().lower()
-        key = (raw.replace('\u0131', 'i')
-                  .replace('\u011f', 'g')
-                  .replace('\u015f', 's')
-                  .replace('\u00f6', 'o')
-                  .replace('\u00fc', 'u')
-                  .replace('\u00e7', 'c'))
-        return mapping.get(key, name)
-
-    lines = []
-    sep = '-' * width
-    lines.append(sep)
-    if lang == 'en':
-        lines.append(f"Table: {payload['table_id']}")
-        lines.append(f"Worker: {payload['garson']}")
-        lines.append(f"Time: {payload['time']}")
-    else:
-        lines.append(f"Masa: {payload['table_id']}")
-        lines.append(f"Garson: {payload['garson']}")
-        lines.append(f"Tarih: {payload['time']}")
-    lines.append(sep)
-    for item in sorted(payload['items'], key=lambda i: (-i['line_total'], i['name'])):
-        name = translate_item(item['name'])
-        qty = item['qty']
-        line_total = item['line_total']
-        label = f"{name} x{qty}"
-        amount = f"{line_total:.0f} TL"
-        lines.append(label.ljust(width - len(amount)) + amount)
-    lines.append(sep)
-    subtotal_text = f"{payload.get('subtotal', payload['total']):.0f} TL"
-    discount_amount = float(payload.get('discount_amount') or 0)
-    total_due = float(payload.get('total_due') or payload['total'])
-    total_text = f"{total_due:.0f} TL"
-    if lang == 'en':
-        lines.append('Subtotal:'.ljust(width - len(subtotal_text)) + subtotal_text)
-        if discount_amount > 0:
-            dtype = (payload.get('discount') or {}).get('type')
-            dvalue = (payload.get('discount') or {}).get('value')
-            tag = f" ({int(dvalue)}%)" if dtype == 'percent' and dvalue is not None else ''
-            d_text = f"-{discount_amount:.0f} TL"
-            lines.append(('Discount' + tag + ':').ljust(width - len(d_text)) + d_text)
-        lines.append('Total:'.ljust(width - len(total_text)) + total_text)
-    else:
-        lines.append('Ara Toplam:'.ljust(width - len(subtotal_text)) + subtotal_text)
-        if discount_amount > 0:
-            dtype = (payload.get('discount') or {}).get('type')
-            dvalue = (payload.get('discount') or {}).get('value')
-            tag = f" (%{int(dvalue)})" if dtype == 'percent' and dvalue is not None else ''
-            d_text = f"-{discount_amount:.0f} TL"
-            lines.append(('İndirim' + tag + ':').ljust(width - len(d_text)) + d_text)
-        lines.append('Ödenecek:'.ljust(width - len(total_text)) + total_text)
-    lines.append('')
-    if lang == 'en':
-        lines.append('You Are Happy We Are Happy')
-    else:
-        lines.append('Afiyet Olsun Yine Bekleriz')
-    lines.append(sep)
-    return '\n'.join(lines)
-
-def print_bill(table_id, orders, lang='tr'):
-    payload = build_bill_payload(table_id, orders)
-    printer = get_printer()
-
-    try:
-        printer.charcode('CP857')
-    except Exception:
-        try:
-            printer.charcode('CP1254')
-        except Exception:
-            pass
-    printer.text(build_bill_text(payload, 32, lang) + '\n')
-    try:
-        printer.cut()
-    except Exception:
-        pass
+    save_json_storage(EMPLOYEES_FILE, names)
 
 def load_expenses():
     return load_json_storage(EXPENSES_FILE, [])
@@ -1417,9 +1050,7 @@ def staff_stats_new():
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
 
     date_param = request.args.get('date')
-    start_param = request.args.get('start')
-    end_param = request.args.get('end')
-    target_date, stats = compute_staff_stats(date_param, start_param, end_param)
+    target_date, stats = compute_staff_stats(date_param)
     return jsonify(stats)
 
 @app.route('/api/staff-stats')
@@ -1428,9 +1059,7 @@ def staff_stats_legacy():
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
 
     date_param = request.args.get('date')
-    start_param = request.args.get('start')
-    end_param = request.args.get('end')
-    target_date, stats = compute_staff_stats(date_param, start_param, end_param)
+    target_date, stats = compute_staff_stats(date_param)
     return jsonify({'success': True, 'date': target_date, 'stats': stats})
 
 @app.route('/api/staff/<int:staff_id>/product-breakdown')
@@ -1439,30 +1068,14 @@ def staff_product_breakdown(staff_id):
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
 
     date_param = request.args.get('date')
-    start_param = request.args.get('start')
-    end_param = request.args.get('end')
-    target_date = to_iso_date(date_param) or None
-    start_date = to_iso_date(start_param) or None
-    end_date = to_iso_date(end_param) or None
-    if start_date and not end_date:
-        end_date = start_date
-    if end_date and not start_date:
-        start_date = end_date
-    if not target_date and not start_date:
-        target_date = now_tr().date().isoformat()
+    target_date = to_iso_date(date_param) or now_tr().date().isoformat()
     orders = load_orders()
     product_counts = {}
 
     for order in orders:
         order_date = to_iso_date(get_order_date(order))
-        if start_date and end_date:
-            if not order_date:
-                continue
-            if order_date < start_date or order_date > end_date:
-                continue
-        else:
-            if order_date != target_date:
-                continue
+        if order_date != target_date:
+            continue
         order_staff_id = order.get('staff_id')
         if staff_id == 0:
             if order_staff_id not in (None, '', 0):
@@ -1482,7 +1095,7 @@ def staff_product_breakdown(staff_id):
 
     return jsonify({
         'staff_id': staff_id,
-        'date': target_date or start_date or now_tr().date().isoformat(),
+        'date': target_date,
         'product_counts': product_counts
     })
 
@@ -1492,30 +1105,14 @@ def staff_orders(staff_id):
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
 
     date_param = request.args.get('date')
-    start_param = request.args.get('start')
-    end_param = request.args.get('end')
-    target_date = to_iso_date(date_param) or None
-    start_date = to_iso_date(start_param) or None
-    end_date = to_iso_date(end_param) or None
-    if start_date and not end_date:
-        end_date = start_date
-    if end_date and not start_date:
-        start_date = end_date
-    if not target_date and not start_date:
-        target_date = now_tr().date().isoformat()
+    target_date = to_iso_date(date_param) or now_tr().date().isoformat()
     orders = load_orders()
     output = []
 
     for order in orders:
         order_date = to_iso_date(get_order_date(order))
-        if start_date and end_date:
-            if not order_date:
-                continue
-            if order_date < start_date or order_date > end_date:
-                continue
-        else:
-            if order_date != target_date:
-                continue
+        if order_date != target_date:
+            continue
         order_staff_id = order.get('staff_id')
         if staff_id == 0:
             if order_staff_id not in (None, '', 0):
@@ -1550,7 +1147,7 @@ def staff_orders(staff_id):
 
     return jsonify({
         'staff_id': staff_id,
-        'date': target_date or start_date or now_tr().date().isoformat(),
+        'date': target_date,
         'orders': output
     })
 
@@ -1782,342 +1379,57 @@ def hesap_getir(masa):
     orders = load_orders()
     t1 = time.time()
     masa_orders = [o for o in orders if o['masa'] == masa and o['durum'] == 'aktif']
-    subtotal = sum(o['toplam'] for o in masa_orders)
-    discounts = load_table_discounts()
-    discount = discounts.get(str(masa))
-    discount_amount = compute_discount_amount(subtotal, discount)
-    toplam = round(subtotal - discount_amount, 2)
+    toplam = sum(o['toplam'] for o in masa_orders)
     t2 = time.time()
     print("hesap_getir timings:", "load_orders=", round(t1 - t0, 3), "compute=", round(t2 - t1, 3), "total=", round(t2 - t0, 3))
     return jsonify({
         'masa': masa,
         'siparisler': masa_orders,
-        'subtotal': round(subtotal, 2),
-        'discount': discount or None,
-        'discount_amount': discount_amount,
-        'total_due': toplam,
-        'toplam': toplam,
-        'discount_order_id': masa_orders[0].get('id') if masa_orders else None
+        'toplam': toplam
     })
-
-@app.route('/api/tables/<int:table_id>/print-bill', methods=['POST'])
-def print_bill_api(table_id):
-    if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-    data = request.json or {}
-    lang = data.get('lang')
-    if not lang:
-        return jsonify({'success': False, 'error': 'LANG_REQUIRED'}), 400
-    if lang not in ('tr', 'en'):
-        return jsonify({'success': False, 'error': 'LANG_INVALID'}), 400
-    orders = load_orders()
-    masa_orders = [o for o in orders if o.get('masa') == table_id and o.get('durum') == 'aktif']
-    if not masa_orders:
-        return jsonify({'success': False, 'message': 'Aktif siparis bulunamadi.'}), 400
-    try:
-        print_bill(table_id, masa_orders, lang)
-    except Exception as exc:
-        return jsonify({'success': False, 'message': str(exc)}), 500
-    return jsonify({'success': True})
-
-@app.route('/api/tables/<int:table_id>/bill-preview')
-def bill_preview_api(table_id):
-    if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-    lang = request.args.get('lang')
-    if lang and lang not in ('tr', 'en'):
-        return jsonify({'success': False, 'error': 'LANG_INVALID'}), 400
-    orders = load_orders()
-    masa_orders = [o for o in orders if o.get('masa') == table_id and o.get('durum') == 'aktif']
-    if not masa_orders:
-        return jsonify({'success': False, 'message': 'Aktif siparis bulunamadi.'}), 400
-    payload = build_bill_payload(table_id, masa_orders)
-    text = build_bill_text(payload, 32, lang or 'tr')
-    return jsonify({
-        'table_id': table_id,
-        'lang': lang or 'tr',
-        'text': text,
-        'total': payload['total'],
-        'lines': payload['items']
-    })
-
-@app.route('/api/orders/<int:order_id>/payments', methods=['GET', 'POST'])
-def order_payments(order_id):
-    if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-
-    orders = load_orders()
-    order = next((o for o in orders if str(o.get('id')) == str(order_id)), None)
-    if not order:
-        return jsonify({'success': False, 'message': 'Siparis bulunamadi.'}), 404
-
-    if request.method == 'GET':
-        payments = load_payments()
-        items = [p for p in payments if str(p.get('order_id')) == str(order_id)]
-        return jsonify({'order_id': order_id, 'payments': items})
-
-    data = request.json or {}
-    payments_input = data.get('payments')
-    if not payments_input:
-        return jsonify({'success': False, 'message': 'Odeme listesi gerekli.'}), 400
-
-    if order.get('durum') == 'kapali' and order.get('is_paid'):
-        return jsonify({'success': False, 'message': 'Siparis zaten odendi.'}), 409
-
-    discount_flag = data.get('discount_applied')
-    allow_discount = False if discount_flag is False else True
-    force_discount = True if discount_flag is True else False
-    try:
-        result = apply_payments_to_orders([order], payments_input, allow_discount, force_discount)
-    except ValueError as exc:
-        return jsonify({'success': False, 'message': str(exc)}), 400
-
-    breakdown = result['breakdowns'].get(order['id'], {})
-    cash_only = result['cash_only']
-    card_only = result['card_only']
-    due = result['due_map'].get(order['id'], order.get('toplam', 0))
-
-    order['durum'] = 'kapali'
-    order['kapanma_zamani'] = now_tr().strftime('%H:%M')
-    order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
-    order['odeme_breakdown'] = breakdown
-    order['paid_total'] = due
-    order['is_paid'] = True
-    order['paid_at'] = now_tr().isoformat()
-    if cash_only:
-        order['odeme_turu'] = 'nakit'
-        order['indirim'] = order['toplam'] * 0.1
-        order['indirimli_tutar'] = round(order['toplam'] * 0.9, 2)
-    else:
-        order['odeme_turu'] = 'kart' if card_only else 'split'
-        order['indirim'] = 0
-        order['indirimli_tutar'] = order.get('toplam', 0)
-
-    save_orders(orders)
-
-    payments_store = load_payments()
-    for payment in result['payments']:
-        payments_store.append({
-            'id': len(payments_store) + 1,
-            'order_id': order_id,
-            'table_id': order.get('masa'),
-            'type': payment['type'],
-            'amount': round(payment['amount'], 2),
-            'meta_json': payment.get('meta') or {},
-            'created_at': now_tr().isoformat()
-        })
-    save_payments(payments_store)
-
-    return jsonify({'success': True})
-
-@app.route('/api/orders/<int:order_id>/discount', methods=['POST', 'DELETE'])
-def order_discount(order_id):
-    if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-
-    orders = load_orders()
-    order = next((o for o in orders if str(o.get('id')) == str(order_id)), None)
-    if not order:
-        return jsonify({'success': False, 'message': 'Siparis bulunamadi.'}), 404
-    if order.get('durum') != 'aktif':
-        return jsonify({'success': False, 'message': 'Siparis kapali.'}), 400
-
-    table_id = order.get('masa')
-    if request.method == 'DELETE':
-        discounts = load_table_discounts()
-        if str(table_id) in discounts:
-            del discounts[str(table_id)]
-            save_table_discounts(discounts)
-        for o in orders:
-            if o.get('masa') == table_id and o.get('durum') == 'aktif':
-                o['discount_type'] = None
-                o['discount_value'] = None
-                o['discount_reason'] = None
-                o['discount_note'] = None
-                o['discount_applied_by'] = None
-                o['discount_applied_at'] = None
-                o['discount_amount'] = 0
-        save_orders(orders)
-        return jsonify({'success': True})
-
-    data = request.json or {}
-    dtype = data.get('type')
-    reason = data.get('reason')
-    note = (data.get('note') or '').strip()
-    try:
-        value = float(data.get('value') or 0)
-    except Exception:
-        value = 0.0
-
-    if dtype not in ('percent', 'amount'):
-        return jsonify({'success': False, 'message': 'Indirim tipi gecersiz.'}), 400
-    if value <= 0:
-        return jsonify({'success': False, 'message': 'Indirim degeri gerekli.'}), 400
-    if dtype == 'percent' and (value < 1 or value > 100):
-        return jsonify({'success': False, 'message': 'Indirim y\u00fczdesi 1-100 araliginda olmalidir.'}), 400
-    if reason not in ('tanidik', 'personel', 'hata', 'diger'):
-        return jsonify({'success': False, 'message': 'Indirim sebebi gecersiz.'}), 400
-    if reason == 'diger' and not note:
-        return jsonify({'success': False, 'message': 'Aciklama gerekli.'}), 400
-
-    subtotal = sum(o.get('toplam', 0) for o in orders if o.get('masa') == table_id and o.get('durum') == 'aktif')
-    if subtotal <= 0:
-        return jsonify({'success': False, 'message': 'Indirim uygulanacak tutar yok.'}), 400
-    if dtype == 'amount' and value > subtotal:
-        return jsonify({'success': False, 'message': 'Indirim tutari toplamdan buyuk olamaz.'}), 400
-
-    discount = {
-        'type': dtype,
-        'value': value,
-        'reason': reason,
-        'note': note,
-        'applied_by': session.get('user') or 'Kasa',
-        'applied_at': now_tr().isoformat(timespec='seconds')
-    }
-    discounts = load_table_discounts()
-    discounts[str(table_id)] = discount
-    save_table_discounts(discounts)
-
-    for o in orders:
-        if o.get('masa') == table_id and o.get('durum') == 'aktif':
-            o['discount_type'] = dtype
-            o['discount_value'] = value
-            o['discount_reason'] = reason
-            o['discount_note'] = note
-            o['discount_applied_by'] = discount['applied_by']
-            o['discount_applied_at'] = discount['applied_at']
-    save_orders(orders)
-
-    amount = compute_discount_amount(subtotal, discount)
-    return jsonify({'success': True, 'discount': discount, 'discount_amount': amount})
 
 @app.route('/api/hesap_kapat/<int:masa>', methods=['POST'])
-
 def hesap_kapat(masa):
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-
-    data = request.json or {}
-    payments = data.get('payments')
-    odeme_turu = data.get('odeme_turu')
+        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
+    
+    data = request.json
 
     orders = load_orders()
-    payments_store = load_payments()
     rehber_masalar = load_rehber_masalar()
-    toplam_tutar = 0.0
-
+    toplam_tutar = 0
+    
     masa_rehber_durumu = rehber_masalar.get(str(masa), False)
-    masa_orders = [o for o in orders if o.get('masa') == masa and o.get('durum') == 'aktif']
-
-    if not masa_orders:
-        return jsonify({'success': False, 'message': 'Aktif siparis bulunamadi.'}), 400
-
-    toplam_tutar = sum(o.get('toplam', 0) for o in masa_orders)
-    discounts = load_table_discounts()
-    table_discount = discounts.get(str(masa))
-    discount_amount = compute_discount_amount(toplam_tutar, table_discount)
-    discounted_subtotal = round(toplam_tutar - discount_amount, 2)
-
-    adjusted_orders = []
-    discount_shares = {}
-    for order in masa_orders:
-        share = (order.get('toplam', 0) / toplam_tutar) if toplam_tutar > 0 else 0
-        share_amount = round(discount_amount * share, 2)
-        adjusted_orders.append({**order, 'toplam': round(order.get('toplam', 0) - share_amount, 2)})
-        discount_shares[order['id']] = share_amount
-
-    if payments:
-        discount_flag = data.get('discount_applied')
-        allow_discount = False if discount_flag is False else True
-        force_discount = True if discount_flag is True else False
-        try:
-            result = apply_payments_to_orders(adjusted_orders, payments, allow_discount, force_discount)
-        except ValueError as exc:
-            return jsonify({'success': False, 'message': str(exc)}), 400
-
-        breakdowns = result['breakdowns']
-        due_map = result['due_map']
-        cash_only = result['cash_only']
-        card_only = result['card_only']
-
-        for order in masa_orders:
+    
+    for order in orders:
+        if order['masa'] == masa and order['durum'] == 'aktif':
+            toplam_tutar += order['toplam']
             order['durum'] = 'kapali'
             order['kapanma_zamani'] = now_tr().strftime('%H:%M')
             order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
+            order['odeme_turu'] = data.get('odeme_turu', 'nakit')
             order['rehber_masa'] = masa_rehber_durumu
-            order['odeme_breakdown'] = breakdowns.get(order['id'], {})
-            order['paid_total'] = due_map.get(order['id'], order.get('toplam', 0))
-            order['is_paid'] = True
-            order['paid_at'] = now_tr().isoformat()
-            order['odeme_turu'] = 'nakit' if cash_only else ('kart' if card_only else 'split')
-            order['indirimli_tutar'] = round(due_map.get(order['id'], order.get('toplam', 0)), 2)
-            order['indirim'] = round(order.get('toplam', 0) - order['indirimli_tutar'], 2)
-            if table_discount:
-                order['discount_type'] = table_discount.get('type')
-                order['discount_value'] = table_discount.get('value')
-                order['discount_reason'] = table_discount.get('reason')
-                order['discount_note'] = table_discount.get('note')
-                order['discount_applied_by'] = table_discount.get('applied_by')
-                order['discount_applied_at'] = table_discount.get('applied_at')
-                order['discount_amount'] = discount_shares.get(order['id'], 0)
-
-        for payment in result['payments']:
-            for idx, order in enumerate(masa_orders):
-                payment_amount = breakdowns.get(order['id'], {}).get(payment['type'], 0)
-                if payment_amount <= 0:
-                    continue
-                payments_store.append({
-                    'id': len(payments_store) + 1,
-                    'order_id': order.get('id'),
-                    'table_id': masa,
-                    'type': payment['type'],
-                    'amount': round(payment_amount, 2),
-                    'meta_json': payment.get('meta') or {},
-                    'created_at': now_tr().isoformat()
-                })
-
-        save_payments(payments_store)
-    else:
-        if odeme_turu not in ['nakit', 'kart']:
-            return jsonify({'success': False, 'message': 'Odeme turu gerekli.'}), 400
-        total_due = discounted_subtotal
-        if odeme_turu == 'nakit':
-            total_due = round(total_due * 0.9, 2)
-        due_map = allocate_due_map(adjusted_orders, total_due)
-
-        for order in masa_orders:
-            order['durum'] = 'kapali'
-            order['kapanma_zamani'] = now_tr().strftime('%H:%M')
-            order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
-            order['odeme_turu'] = odeme_turu
-            order['rehber_masa'] = masa_rehber_durumu
-            order['indirimli_tutar'] = round(due_map.get(order['id'], order.get('toplam', 0)), 2)
-            order['indirim'] = round(order.get('toplam', 0) - order['indirimli_tutar'], 2)
-            if table_discount:
-                order['discount_type'] = table_discount.get('type')
-                order['discount_value'] = table_discount.get('value')
-                order['discount_reason'] = table_discount.get('reason')
-                order['discount_note'] = table_discount.get('note')
-                order['discount_applied_by'] = table_discount.get('applied_by')
-                order['discount_applied_at'] = table_discount.get('applied_at')
-                order['discount_amount'] = discount_shares.get(order['id'], 0)
-
+            if data.get('odeme_turu') == 'nakit':
+                order['indirim'] = order['toplam'] * 0.1
+                order['indirimli_tutar'] = int(order['toplam'] * 0.9)
+            else:
+                order['indirim'] = 0
+                order['indirimli_tutar'] = order['toplam']
+    
     save_orders(orders)
-
+    
     if str(masa) in rehber_masalar:
         rehber_masalar[str(masa)] = False
         save_rehber_masalar(rehber_masalar)
 
     finalize_table_session(masa, orders)
-    if str(masa) in discounts:
-        del discounts[str(masa)]
-        save_table_discounts(discounts)
-
+    
     response = {'success': True}
-    if odeme_turu == 'nakit' and not payments:
-        response['indirimli_tutar'] = int(discounted_subtotal * 0.9)
+    if data.get('odeme_turu') == 'nakit':
+        response['indirimli_tutar'] = int(toplam_tutar * 0.9)
     return jsonify(response)
 
+@app.route('/api/masa-transfer', methods=['POST'])
 def masa_transfer():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
@@ -2233,84 +1545,58 @@ def get_komisyonlar_tarih():
     })
 
 @app.route('/api/istatistik-data')
-
 def istatistik_data():
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
-
+        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
+    
     tarih = request.args.get('tarih')
-    start_param = request.args.get('start')
-    end_param = request.args.get('end')
     orders = load_orders()
-
-    start_date = to_iso_date(start_param) if start_param else None
-    end_date = to_iso_date(end_param) if end_param else None
-    if start_date and not end_date:
-        end_date = start_date
-    if end_date and not start_date:
-        start_date = end_date
-
-    tarih_iso = None
-    if not start_date:
-        if not tarih:
-            bugun_iso = now_tr().strftime('%Y-%m-%d')
-            bugun_tr = now_tr().strftime('%d.%m.%Y')
-            tarih = bugun_tr
-            tarih_iso = bugun_iso
+    
+    if not tarih:
+        bugun_iso = now_tr().strftime('%Y-%m-%d')
+        bugun_tr = now_tr().strftime('%d.%m.%Y')
+        tarih = bugun_tr
+        tarih_iso = bugun_iso
+    else:
+        if '.' in tarih:
+            gun, ay, yil = tarih.split('.')
+            tarih_iso = f"{yil}-{ay.zfill(2)}-{gun.zfill(2)}"
         else:
-            if '.' in tarih:
-                gun, ay, yil = tarih.split('.')
-                tarih_iso = f"{yil}-{ay.zfill(2)}-{gun.zfill(2)}"
-            else:
-                tarih_iso = tarih
-                parts = tarih.split('-')
-                if len(parts) >= 3:
-                    tarih = f"{parts[2]}.{parts[1]}.{parts[0]}"
-
+            tarih_iso = tarih
+            parts = tarih.split('-')
+            tarih = f"{parts[2]}.{parts[1]}.{parts[0]}"
+    
     tarih_orders = []
     for order in orders:
-        if order.get('durum') != 'kapali':
+        if order['durum'] != 'kapali':
             continue
-
-        order_date = to_iso_date(get_order_date(order))
-        if start_date and end_date:
-            if not order_date:
-                continue
-            if order_date < start_date or order_date > end_date:
-                continue
-        else:
-            if order_date != tarih_iso:
-                continue
-
-        tarih_orders.append(order)
-
+        
+        order_tarih = order.get('tarih', '')
+        kapanma_tarih = order.get('kapanma_tarih', '')
+        
+        tarih_match = (
+            order_tarih == tarih or 
+            order_tarih == tarih_iso or
+            kapanma_tarih == tarih or 
+            kapanma_tarih == tarih_iso
+        )
+        
+        if tarih_match:
+            tarih_orders.append(order)
+    
     toplam_ciro = sum(o.get('indirimli_tutar', o.get('toplam', 0)) for o in tarih_orders)
-
-    if start_date and end_date:
-        toplam_gider = 0
-        start_dt = datetime.fromisoformat(start_date)
-        end_dt = datetime.fromisoformat(end_date)
-        cursor = start_dt
-        while cursor <= end_dt:
-            toplam_gider += sum_expenses_for_date(cursor.strftime('%Y-%m-%d'))
-            cursor += timedelta(days=1)
-        tarih_str = start_date if start_date == end_date else f"{start_date} - {end_date}"
-    else:
-        toplam_gider = sum_expenses_for_date(tarih_iso)
-        tarih_str = tarih
-
+    toplam_gider = sum_expenses_for_date(tarih_iso)
     net_ciro = toplam_ciro - toplam_gider
-    nakit_satis = sum(get_payment_amount(o, 'cash') for o in tarih_orders)
-    kart_satis = sum(get_payment_amount(o, 'card') for o in tarih_orders)
-
+    nakit_satis = sum(o.get('indirimli_tutar', o.get('toplam', 0)) for o in tarih_orders if o.get('odeme_turu') == 'nakit')
+    kart_satis = sum(o.get('indirimli_tutar', o.get('toplam', 0)) for o in tarih_orders if o.get('odeme_turu') == 'kart')
+    
     toplam_komisyon = 0
     for order in tarih_orders:
         if order.get('rehber_masa', False):
             for item in order.get('items', []):
-                name = str(item.get('name') or '').lower()
-                if 'serpme' in name:
+                if item.get('name') == 'Serpme Kahvaltı':
                     toplam_komisyon += item.get('adet', 0) * 100
-
+    
     urun_satislari = {}
     for order in tarih_orders:
         for item in order.get('items', []):
@@ -2326,9 +1612,9 @@ def istatistik_data():
                 }
             urun_satislari[name]['adet'] += item.get('adet', 0)
             urun_satislari[name]['toplam_tutar'] += birim_fiyat * item.get('adet', 0)
-
+    
     return jsonify({
-        'tarih': tarih_str,
+        'tarih': tarih,
         'toplam_ciro': net_ciro,
         'nakit_satis': nakit_satis,
         'kart_satis': kart_satis,
@@ -2344,7 +1630,7 @@ def dashboard_data():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     
     orders = load_orders()
-    bugun_iso = now_tr().date().isoformat()
+    bugun_key = business_day_key(now_tr())
     
     saatlik_satis = {}
     for i in range(0, 24):
@@ -2359,8 +1645,8 @@ def dashboard_data():
     for o in orders:
         if o.get('durum') != 'kapali':
             continue
-        order_date = to_iso_date(get_order_date(o))
-        if order_date == bugun_iso:
+        order_dt = parse_order_datetime(o)
+        if business_day_key(order_dt) == bugun_key:
             bugun_orders.append(o)
     
     for order in bugun_orders:
@@ -2393,13 +1679,13 @@ def dashboard_data():
     populer_urunler = sorted(urun_satis.items(), key=lambda x: x[1]['adet'], reverse=True)[:5]
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
     populer_masalar = sorted(masa_kullanim.items(), key=lambda x: x[1], reverse=True)[:10]
-    day_key = bugun_iso
+    day_key = business_day_key(now_tr()).isoformat()
     table_usage = load_table_usage()
     day_usage = table_usage.get(day_key, {})
     longest_tables = sorted(day_usage.items(), key=lambda x: x[1], reverse=True)[:10]
     longest_tables = [{'masa': k, 'sure_dk': int(max(1, round(v / 60)))} for k, v in longest_tables]
     
-    toplam_gider = sum_expenses_for_date(bugun_iso)
+    toplam_gider = sum_expenses_for_date(now_tr().strftime('%Y-%m-%d'))
     toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
     net_ciro = toplam_ciro - toplam_gider
 

@@ -3,148 +3,366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menü Yönetimi</title>
+    <title>Menü Ayarları</title>
     <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: rgba(15, 23, 42, 0.08);
+            --primary: #2563eb;
+            --danger: #ef4444;
+            --success: #16a34a;
+            --radius: 14px;
+            --shadow-sm: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #f8f9fa;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
         }
-        .header { 
-            background: linear-gradient(135deg, #2196F3, #1976D2);
-            color: white; 
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .header {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: white;
+            padding: 18px 24px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
         }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.55rem 0.9rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-primary { background: var(--primary); }
+        .btn-danger { background: var(--danger); }
+        .btn-secondary { background: rgba(255,255,255,0.18); color: white; }
+        .btn-muted { background: #e2e8f0; color: #1f2937; }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 24px;
         }
         .section {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
-        }
-        .section h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-        }
-        .menu-item {
-            background: #f8f9fa;
+            background: var(--card);
             padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #e1e1e1;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            color: white;
-            font-size: 14px;
-            margin: 5px;
-        }
-        .btn-primary { background: #2196F3; }
-        .btn-success { background: #4CAF50; }
-        .btn-danger { background: #dc3545; }
-        .btn-secondary { background: #6c757d; }
-        .add-item {
-            background: #e8f5e9;
-            border: 2px dashed #4CAF50;
+        .section-header {
             display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
             align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            cursor: pointer;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .menu-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 180px auto;
+            gap: 12px;
+            width: 100%;
+        }
+        .menu-toolbar input,
+        .menu-toolbar select {
+            padding: 0.6rem 0.75rem;
             border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.85rem;
         }
-        .add-item:hover {
-            background: #d4edda;
+
+        .menu-table {
+            display: grid;
+            gap: 10px;
         }
+        .menu-table-head,
+        .menu-row {
+            display: grid;
+            grid-template-columns: 70px 1.6fr 120px 180px 80px;
+            gap: 10px;
+            align-items: center;
+        }
+        .menu-table-head {
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0 8px;
+        }
+        .menu-row {
+            padding: 10px 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+        .menu-row input,
+        .menu-row select {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.85rem;
+        }
+        .menu-row .icon-input {
+            text-align: center;
+        }
+        .menu-row .btn-delete {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            border-radius: 10px;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .staff-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .staff-toolbar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .staff-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .staff-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e1e7ef;
+            background: #f8fafc;
+        }
+        .staff-row.inactive {
+            opacity: 0.6;
+        }
+        .staff-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
         .password-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
         .password-form {
-            background: #f8f9fa;
-            padding: 20px;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1f2937;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
             border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .menu-footer {
+            text-align: right;
+            margin-top: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-content {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .fab-add {
+            display: none;
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            font-size: 1.6rem;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .menu-toolbar {
+                grid-template-columns: 1fr;
+            }
+            .menu-table-head {
+                display: none;
+            }
+            .menu-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .menu-row .btn-delete {
+                width: 100%;
+            }
+            .password-section {
+                grid-template-columns: 1fr;
+            }
+            .fab-add {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>⚙️ Menü Yönetimi</h2>
-        <div>
-            <a href="/kasa" class="btn btn-secondary">← Kasa Paneli</a>
-            <a href="/logout" class="btn btn-danger">Çıkış</a>
+        <h1>Menü Ayarları</h1>
+        <div class="header-actions">
+            <a href="/kasa" class="btn btn-secondary">🏠 Kasa Paneli</a>
+            <a href="/logout" class="btn btn-danger">🚪 Çıkış</a>
         </div>
     </div>
 
     <div class="container">
         <div class="section">
-            <h3>🍳 Ana Menü</h3>
-            <div class="menu-grid" id="ana-menu-grid"></div>
+            <div class="section-header">
+                <div class="section-title">Menü Ürünleri</div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Ürün Ekle</button>
+            </div>
+            <div class="menu-toolbar">
+                <input type="text" id="menu-search" placeholder="Ürün ara">
+                <select id="menu-category">
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="ana_menu">Ana Menü</option>
+                    <option value="ekstralar">Ekstralar</option>
+                    <option value="icecekler">İçecekler</option>
+                    <option value="sarkuteri">Şarküteri</option>
+                </select>
+                <button class="btn btn-muted" onclick="menuKaydet()">Kaydet</button>
+            </div>
+
+            <div class="menu-table" id="menu-table">
+                <div class="menu-table-head">
+                    <div>Emoji</div>
+                    <div>Ürün Adı</div>
+                    <div>Fiyat</div>
+                    <div>Kategori</div>
+                    <div>Sil</div>
+                </div>
+                <div id="menu-rows"></div>
+            </div>
         </div>
 
         <div class="section">
-            <h3>🍟 Ekstralar</h3>
-            <div class="menu-grid" id="ekstra-grid"></div>
+            <h3>Garson Yönetimi</h3>
+            <div class="staff-toolbar">
+                <input type="text" id="staff-name-input" placeholder="Garson adı">
+                <button class="btn btn-primary" onclick="staffEkle()">Ekle</button>
+            </div>
+            <div class="staff-list" id="staff-list"></div>
         </div>
 
         <div class="section">
-            <h3>🥤 İçecek Menüsü</h3>
-            <div class="menu-grid" id="icecek-grid"></div>
-        </div>
-
-        <div class="section">
-            <h3>🔐 Şifre Değiştir</h3>
+            <h3>Şifre Değiştir</h3>
             <div class="password-section">
                 <div class="password-form">
                     <div class="form-group">
-                        <label>Mevcut Şifre:</label>
+                        <label>Mevcut şifre:</label>
                         <input type="password" id="eski-sifre">
                     </div>
                     <div class="form-group">
-                        <label>Yeni Şifre:</label>
+                        <label>Yeni şifre:</label>
                         <input type="password" id="yeni-sifre">
                     </div>
                     <button class="btn btn-primary" onclick="sifreDegistir()">Şifre Değiştir</button>
                     <button class="btn btn-danger" onclick="denemeSifirla()">Deneme Sıfırla</button>
                 </div>
-                <div style="padding: 20px; color: #666;">
+                <div style="padding: 16px; color: var(--muted);">
                     <h4>Şifre Değiştirme Kuralları:</h4>
-                    <ul style="margin-top: 10px; padding-left: 20px;">
+                    <ul style="margin-top: 10px; padding-left: 18px;">
                         <li>En az 6 karakter olmalı</li>
                         <li>Güvenli bir şifre seçin</li>
                         <li>Şifrenizi kimseyle paylaşmayın</li>
@@ -153,137 +371,216 @@
             </div>
         </div>
 
-        <div style="text-align: center; margin-top: 30px;">
-            <button class="btn btn-success" onclick="menuKaydet()">💾 Tüm Değişiklikleri Kaydet</button>
+        <div class="menu-footer">
+            <button class="btn btn-primary" onclick="menuKaydet()">Tüm Değişiklikleri Kaydet</button>
         </div>
     </div>
 
+    <button class="fab-add" onclick="openAddModal()">+</button>
+
+    <div class="modal" id="add-item-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Yeni Ürün Ekle</div>
+                <button class="btn btn-muted" onclick="closeAddModal()">Kapat</button>
+            </div>
+            <div class="form-group">
+                <label>Emoji</label>
+                <input type="text" id="new-emoji" placeholder="Örn: 🍳">
+            </div>
+            <div class="form-group">
+                <label>Ürün adı</label>
+                <input type="text" id="new-name">
+            </div>
+            <div class="form-group">
+                <label>Fiyat</label>
+                <input type="number" id="new-price" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Kategori</label>
+                <select id="new-category">
+                    <option value="ana_menu">Ana Menü</option>
+                    <option value="ekstralar">Ekstralar</option>
+                    <option value="icecekler">İçecekler</option>
+                    <option value="sarkuteri">Şarküteri</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-muted" onclick="closeAddModal()">Vazgeç</button>
+                <button class="btn btn-primary" onclick="addNewItem()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='config.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/toast.js') }}"></script>
+
     <script>
         let menu = {};
+        let staffList = [];
+        let filteredItems = [];
         let nextId = 100;
+
+        const categories = {
+            ana_menu: 'Ana Menü',
+            ekstralar: 'Ekstralar',
+            icecekler: 'İçecekler',
+            sarkuteri: 'Şarküteri'
+        };
+
+        function notify(message) {
+            if (window.UI && UI.Toast && UI.Toast.show) {
+                UI.Toast.show(message);
+                return;
+            }
+            alert(message);
+        }
 
         function menuYukle() {
             fetch('/api/menu')
                 .then(response => response.json())
                 .then(data => {
-                    menu = data;
-                    menuGoster();
+                    menu = data || {};
+                    menu.sarkuteri = menu.sarkuteri || [];
+                    renderMenu();
                 });
         }
 
-        function menuGoster() {
-            const anaMenuGrid = document.getElementById('ana-menu-grid');
-            const ekstraGrid = document.getElementById('ekstra-grid');
-            const icecekGrid = document.getElementById('icecek-grid');
-            
-            anaMenuGrid.innerHTML = '';
-            ekstraGrid.innerHTML = '';
-            icecekGrid.innerHTML = '';
-
-            // Ana menü items
-            if (menu.ana_menu) {
-                menu.ana_menu.forEach(item => {
-                    anaMenuGrid.appendChild(createMenuItemElement(item, 'ana_menu'));
+        function flattenMenu() {
+            const items = [];
+            Object.keys(categories).forEach(key => {
+                (menu[key] || []).forEach(item => {
+                    items.push({
+                        id: item.id,
+                        name: item.name,
+                        price: item.price,
+                        image: item.image || '',
+                        category: key
+                    });
                 });
-            }
-            anaMenuGrid.appendChild(createAddButton('ana_menu'));
+            });
+            return items;
+        }
 
-            // Ekstra items
-            if (menu.ekstralar) {
-                menu.ekstralar.forEach(item => {
-                    ekstraGrid.appendChild(createMenuItemElement(item, 'ekstralar'));
+        function renderMenu() {
+            filteredItems = applyFilters(flattenMenu());
+            renderRows(filteredItems);
+        }
+
+        function applyFilters(list) {
+            const search = String(document.getElementById('menu-search').value || '').toLowerCase();
+            const category = document.getElementById('menu-category').value;
+            return list.filter(item => {
+                if (category && item.category !== category) return false;
+                if (search && !String(item.name || '').toLowerCase().includes(search)) return false;
+                return true;
+            });
+        }
+
+        function renderRows(items) {
+            const host = document.getElementById('menu-rows');
+            host.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.style.color = '#94a3b8';
+                empty.style.padding = '12px 8px';
+                empty.textContent = 'Ürün bulunamadı.';
+                host.appendChild(empty);
+                return;
+            }
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'menu-row';
+                row.innerHTML = `
+                    <input class="icon-input" value="${item.image || ''}" data-field="image" data-id="${item.id}" data-cat="${item.category}">
+                    <input value="${item.name}" data-field="name" data-id="${item.id}" data-cat="${item.category}">
+                    <input type="number" min="0" step="0.01" value="${item.price}" data-field="price" data-id="${item.id}" data-cat="${item.category}">
+                    <select data-field="category" data-id="${item.id}" data-cat="${item.category}">
+                        <option value="ana_menu">Ana Menü</option>
+                        <option value="ekstralar">Ekstralar</option>
+                        <option value="icecekler">İçecekler</option>
+                        <option value="sarkuteri">Şarküteri</option>
+                    </select>
+                    <button class="btn-delete" data-id="${item.id}" data-cat="${item.category}">Sil</button>
+                `;
+                row.querySelector('select').value = item.category;
+                row.querySelectorAll('input, select').forEach(el => {
+                    el.addEventListener('change', handleRowChange);
                 });
-            }
-            ekstraGrid.appendChild(createAddButton('ekstralar'));
-
-            // İçecek items
-            if (menu.icecekler) {
-                menu.icecekler.forEach(item => {
-                    icecekGrid.appendChild(createMenuItemElement(item, 'icecekler'));
-                });
-            }
-            icecekGrid.appendChild(createAddButton('icecekler'));
+                row.querySelector('.btn-delete').addEventListener('click', handleDelete);
+                host.appendChild(row);
+            });
         }
 
-        function createMenuItemElement(item, category) {
-            const div = document.createElement('div');
-            div.className = 'menu-item';
-            div.innerHTML = `
-                <div class="form-group">
-                    <label>Emoji:</label>
-                    <input type="text" value="${item.image || ''}" onchange="updateItem(${item.id}, 'image', this.value)">
-                </div>
-                <div class="form-group">
-                    <label>Ürün Adı:</label>
-                    <input type="text" value="${item.name}" onchange="updateItem(${item.id}, 'name', this.value)">
-                </div>
-                <div class="form-group">
-                    <label>Fiyat (₺):</label>
-                    <input type="number" value="${item.price}" onchange="updateItem(${item.id}, 'price', parseInt(this.value))">
-                </div>
-                <button class="btn btn-danger" onclick="deleteItem(${item.id}, '${category}')">🗑️ Sil</button>
-            `;
-            return div;
-        }
-
-        function createAddButton(category) {
-            const div = document.createElement('div');
-            div.className = 'add-item';
-            div.innerHTML = '<h3>+ Yeni Ürün Ekle</h3>';
-            div.onclick = () => addNewItem(category);
-            return div;
-        }
-
-        function updateItem(id, field, value) {
-            // Ana menüde ara
-            let item = menu.ana_menu ? menu.ana_menu.find(i => i.id === id) : null;
-            if (!item && menu.ekstralar) {
-                // Ekstralarda ara
-                item = menu.ekstralar.find(i => i.id === id);
-            }
-            if (!item && menu.icecekler) {
-                // İçeceklerde ara
-                item = menu.icecekler.find(i => i.id === id);
-            }
-            
-            if (item) {
-                item[field] = value;
+        function handleRowChange(event) {
+            const el = event.target;
+            const id = parseInt(el.dataset.id, 10);
+            const field = el.dataset.field;
+            const currentCat = el.dataset.cat;
+            const value = field === 'price' ? parseFloat(el.value || 0) : el.value;
+            updateItem(id, currentCat, field, value);
+            if (field === 'category') {
+                renderMenu();
             }
         }
 
-        function deleteItem(id, category) {
-            if (confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
-                menu[category] = menu[category].filter(item => item.id !== id);
-                menuGoster();
+        function updateItem(id, category, field, value) {
+            const list = menu[category] || [];
+            const item = list.find(i => i.id === id);
+            if (!item) return;
+            if (field === 'category') {
+                menu[category] = list.filter(i => i.id !== id);
+                const target = value;
+                menu[target] = menu[target] || [];
+                item.category = target;
+                menu[target].push(item);
+                return;
             }
+            item[field] = value;
         }
 
-        function addNewItem(category) {
-            const name = prompt('Ürün adı:');
-            if (!name) return;
-            
-            const price = parseInt(prompt('Fiyat (₺):'));
-            if (!price) return;
-            
-            const image = prompt('Emoji (opsiyonel):') || '🍽️';
-            
-            let categoryName = 'ana_menu';
-            if (category === 'ekstralar') categoryName = 'ekstra';
-            else if (category === 'icecekler') categoryName = 'icecek';
-            
+        function handleDelete(event) {
+            const id = parseInt(event.target.dataset.id, 10);
+            const category = event.target.dataset.cat;
+            if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return;
+            menu[category] = (menu[category] || []).filter(item => item.id !== id);
+            renderMenu();
+        }
+
+        function openAddModal() {
+            document.getElementById('add-item-modal').style.display = 'flex';
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-item-modal').style.display = 'none';
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+            document.getElementById('new-emoji').value = '';
+        }
+
+        function addNewItem() {
+            const name = String(document.getElementById('new-name').value || '').trim();
+            const price = parseFloat(document.getElementById('new-price').value || 0);
+            const image = String(document.getElementById('new-emoji').value || '').trim();
+            const category = document.getElementById('new-category').value;
+
+            if (!name || !price) {
+                notify('Ürün adı ve fiyat gerekli.');
+                return;
+            }
+
             const newItem = {
                 id: nextId++,
                 name: name,
                 price: price,
-                category: categoryName,
+                category: category,
                 image: image
             };
-            
-            if (!menu[category]) {
-                menu[category] = [];
-            }
+            menu[category] = menu[category] || [];
             menu[category].push(newItem);
-            menuGoster();
+            closeAddModal();
+            renderMenu();
         }
 
         function menuKaydet() {
@@ -295,27 +592,126 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert('Menü başarıyla kaydedildi!');
+                    notify('Menü başarıyla kaydedildi.');
                 } else {
-                    alert('Hata: ' + result.message);
+                    notify('Hata: ' + result.message);
                 }
             });
+        }
+
+        function staffYukle() {
+            if (!window.UI || !UI.Api || !UI.Api.getStaff) return;
+            UI.Api.getStaff()
+                .then(list => {
+                    staffList = list || [];
+                    staffGoster();
+                })
+                .catch(err => {
+                    console.error('Staff load failed:', err);
+                    notify('Garson listesi alınamadı.');
+                });
+        }
+
+        function staffGoster() {
+            const host = document.getElementById('staff-list');
+            if (!host) return;
+            host.innerHTML = '';
+            if (!staffList.length) {
+                host.textContent = 'Garson kaydı yok.';
+                return;
+            }
+            staffList.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'staff-row' + (item.is_active === false ? ' inactive' : '');
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = item.name || '';
+
+                const actions = document.createElement('div');
+                actions.className = 'staff-actions';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn btn-primary';
+                saveBtn.textContent = 'Kaydet';
+                saveBtn.onclick = function () {
+                    UI.Api.updateStaff(item.id, { name: input.value })
+                        .then(() => {
+                            notify('Garson güncellendi.');
+                            staffYukle();
+                            if (window.APP && APP.emit) APP.emit('staff:updated', staffList);
+                        })
+                        .catch(err => notify('Hata: ' + err.message));
+                };
+
+                const toggleBtn = document.createElement('button');
+                if (item.is_active === false) {
+                    toggleBtn.className = 'btn btn-primary';
+                    toggleBtn.textContent = 'Aktif Et';
+                    toggleBtn.onclick = function () {
+                        UI.Api.updateStaff(item.id, { is_active: true })
+                            .then(() => {
+                                notify('Garson aktif edildi.');
+                                staffYukle();
+                                if (window.APP && APP.emit) APP.emit('staff:updated', staffList);
+                            })
+                            .catch(err => notify('Hata: ' + err.message));
+                    };
+                } else {
+                    toggleBtn.className = 'btn btn-danger';
+                    toggleBtn.textContent = 'Sil';
+                    toggleBtn.onclick = function () {
+                        UI.Api.deleteStaff(item.id)
+                            .then(() => {
+                                notify('Garson pasif edildi.');
+                                staffYukle();
+                                if (window.APP && APP.emit) APP.emit('staff:updated', staffList);
+                            })
+                            .catch(err => notify('Hata: ' + err.message));
+                    };
+                }
+
+                actions.appendChild(saveBtn);
+                actions.appendChild(toggleBtn);
+
+                row.appendChild(input);
+                row.appendChild(actions);
+                host.appendChild(row);
+            });
+        }
+
+        function staffEkle() {
+            const input = document.getElementById('staff-name-input');
+            if (!input) return;
+            const name = String(input.value || '').trim();
+            if (!name) {
+                notify('Garson adı girin.');
+                return;
+            }
+            UI.Api.createStaff(name)
+                .then(() => {
+                    notify('Garson eklendi.');
+                    input.value = '';
+                    staffYukle();
+                    if (window.APP && APP.emit) APP.emit('staff:updated', staffList);
+                })
+                .catch(err => notify('Hata: ' + err.message));
         }
 
         function sifreDegistir() {
             const eskiSifre = document.getElementById('eski-sifre').value;
             const yeniSifre = document.getElementById('yeni-sifre').value;
-            
+
             if (!eskiSifre || !yeniSifre) {
                 alert('Lütfen tüm alanları doldurun!');
                 return;
             }
-            
+
             if (yeniSifre.length < 6) {
                 alert('Yeni şifre en az 6 karakter olmalı!');
                 return;
             }
-            
+
             fetch('/api/sifre-degistir', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -353,8 +749,11 @@
             }
         }
 
-        // Sayfa yüklendiğinde menüyü yükle
+        document.getElementById('menu-search').addEventListener('input', renderMenu);
+        document.getElementById('menu-category').addEventListener('change', renderMenu);
+
         menuYukle();
+        staffYukle();
     </script>
 </body>
 </html>

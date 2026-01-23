@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "order_id": 13,
+    "table_id": 3,
+    "type": "cash",
+    "amount": 2159.0,
+    "meta_json": {},
+    "created_at": "2026-01-22T21:25:31.915009+03:00"
+  },
+  {
+    "id": 2,
+    "order_id": 13,
+    "table_id": 3,
+    "type": "card",
+    "amount": 1711.0,
+    "meta_json": {},
+    "created_at": "2026-01-22T21:25:31.915009+03:00"
+  },
+  {
+    "id": 3,
+    "order_id": 18,
+    "table_id": 3,
+    "type": "cash",
+    "amount": 1791.0,
+    "meta_json": {},
+    "created_at": "2026-01-23T11:21:09.511972+03:00"
+  }
+]

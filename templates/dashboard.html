@@ -316,7 +316,7 @@
                 .then(data => {
                     // İstatistik kartlarını güncelle
                     document.getElementById('total-orders').textContent = data.toplam_siparis;
-                    document.getElementById('total-revenue').textContent = data.toplam_ciro + '₺';
+                    document.getElementById('total-revenue').textContent = data.toplam_ciro + ' TL';
                     
                     // Saatlik satış grafiği
                     updateSalesChart(data.saatlik_satis);
@@ -353,7 +353,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Satış (₺)',
+                        label: 'Satis (TL)',
                         data: values,
                         borderColor: '#3182ce',
                         backgroundColor: 'rgba(49, 130, 206, 0.1)',
@@ -382,7 +382,7 @@
                             },
                             ticks: {
                                 callback: function(value) {
-                                    return value + '₺';
+                                    return value + ' TL';
                                 }
                             }
                         },

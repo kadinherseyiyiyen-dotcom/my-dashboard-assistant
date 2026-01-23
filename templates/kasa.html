@@ -6,6 +6,7 @@
     <title>Kasa Paneli</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='layoutView.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='components/tableProgressBorder.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='utilities.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -13,6 +14,7 @@
             background: #f5f7fa;
             color: #2d3748;
             line-height: 1.6;
+            overflow-x: hidden;
         }
         .header { 
             background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
@@ -37,16 +39,29 @@
             align-items: center;
             flex-wrap: wrap;
         }
+        .top-row {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+            margin: 18px 0;
+        }
+        .now-card {
+            flex: 1;
+        }
+        .fx-card {
+            width: 240px;
+            flex: 0 0 240px;
+            display: flex;
+        }
         .live-timeline {
             background: #ffffff;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
             padding: 12px 16px;
             display: grid;
-            grid-template-columns: auto 1fr auto auto;
+            grid-template-columns: auto 1fr auto;
             gap: 16px;
             align-items: center;
-            margin: 18px 0;
         }
         .live-time {
             font-weight: 800;
@@ -130,7 +145,8 @@
             margin-top: 4px;
         }
         .fx-panel {
-            min-width: 180px;
+            min-width: 0;
+            width: 100%;
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -562,6 +578,297 @@
         .payment-btn.kart:hover {
             background: linear-gradient(135deg, #2c5282, #2a4365);
         }
+        .payment-stack {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        .payment-main-btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .payment-main-btn.cash {
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            color: white;
+        }
+        .payment-main-btn.card {
+            background: linear-gradient(135deg, #3182ce, #2c5282);
+            color: white;
+        }
+        .payment-main-btn.split {
+            background: transparent;
+            border: 2px dashed #cbd5f5;
+            color: #374151;
+            box-shadow: none;
+        }
+        .payment-main-btn.print {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+        }
+        .payment-main-btn.print:hover {
+            background: #eef2f7;
+        }
+        .bill-preview-box {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .bill-preview-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .bill-preview-actions .btn-secondary {
+            background: #e2e8f0;
+            color: #1f2937;
+            border: 1px solid #cbd5f5;
+        }
+        .bill-total {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .bill-total .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .bill-total .total-row.muted {
+            color: #94a3b8;
+        }
+        .bill-total-amount {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .bill-total-amount .amount {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        .bill-total-note {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .discount-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 1rem;
+        }
+        .discount-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .discount-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+        }
+        .discount-status {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        .discount-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .discount-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .discount-actions .btn {
+            padding: 0.4rem 0.75rem;
+        }
+        .discount-section .btn.btn-secondary {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
+        .discount-modal-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .discount-type {
+            display: inline-flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: 999px;
+        }
+        .discount-type input {
+            display: none;
+        }
+        .discount-type label {
+            padding: 6px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #475569;
+        }
+        .discount-type input:checked + label {
+            background: #2563eb;
+            color: #fff;
+        }
+        .discount-hint {
+            color: #ef4444;
+            font-size: 0.85rem;
+        }
+        .bill-lang-select {
+            display: inline-flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: 999px;
+        }
+        .bill-lang-select input {
+            display: none;
+        }
+        .bill-lang-select label {
+            padding: 6px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #475569;
+            background: transparent;
+        }
+        .bill-lang-select input:checked + label {
+            background: #2563eb;
+            color: #fff;
+        }
+        .bill-lang-hint {
+            font-size: 0.8rem;
+            color: #ef4444;
+            margin-top: 6px;
+            display: none;
+        }
+        .payment-main-btn.print {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+        }
+        .payment-main-btn.print:hover {
+            background: #eef2f7;
+        }
+        .payment-hint {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .payment-hint strong {
+            color: #16a34a;
+        }
+        .payment-modal {
+            max-width: 720px;
+        }
+        .payment-summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .payment-total {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        .payment-total .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .payment-discount {
+            font-size: 0.75rem;
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .payment-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .payment-rows {
+            display: grid;
+            gap: 0.75rem;
+        }
+        .payment-row {
+            display: grid;
+            grid-template-columns: 140px 120px 1fr 36px;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .payment-row select,
+        .payment-row input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .payment-remove {
+            border: none;
+            background: #fee2e2;
+            color: #b91c1c;
+            border-radius: 0.5rem;
+            height: 36px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .payment-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+        .payment-actions .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        .split-area .btn-secondary {
+            background: #f1f5f9 !important;
+            color: #1f2937 !important;
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+        }
+        .payment-warning {
+            color: #b91c1c;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
         .time-display {
             font-family: 'Courier New', monospace;
             font-weight: 600;
@@ -701,7 +1008,10 @@
         }
 
         .container{
-          padding: 16px;
+          width: 100%;
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 12px;
         }
 
         .stats-grid{
@@ -902,57 +1212,75 @@
             padding: 12px;
           }
         }
+        @media (max-width: 768px) {
+          .top-row {
+            flex-direction: column;
+          }
+          .now-card,
+          .fx-card {
+            width: 100%;
+            flex: 0 0 auto;
+          }
+          .fx-card {
+            order: 2;
+            font-size: 14px;
+          }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>💼 Kasa Paneli</h1>
+        <h1>&#128188; Kasa Paneli</h1>
         <div class="header-actions">
             <span class="time-display" id="current-time"></span>
-            <a href="/komisyonlar" class="btn btn-primary">💰 Komisyonlar</a>
-            <button class="btn btn-primary" onclick="otoparkGideri()">🚗 Otopark</button>
-            <a href="/dashboard" class="btn btn-primary">📊 Dashboard</a>
-            <a href="/istatistik" class="btn btn-primary">📊 İstatistik</a>
-            <a href="/tip-havuzu" class="btn btn-primary">💸 Tip Havuzu</a>
+            <a href="/komisyonlar" class="btn btn-primary">&#128176; Komisyonlar</a>
+            <button class="btn btn-primary" onclick="otoparkGideri()">&#128663; Otopark</button>
+            <a href="/dashboard" class="btn btn-primary">&#128202; Dashboard</a>
+            <a href="/istatistik" class="btn btn-primary">&#128202; &#304;statistik</a>
+            <a href="/tip-havuzu" class="btn btn-primary">&#128184; Tip Havuzu</a>
             <a href="/giderler" class="btn btn-primary">Giderler</a>
-            <a href="/vardiya" class="btn btn-primary">🗓️ Vardiya</a>
-            <a href="/menu-yonetim" class="btn btn-secondary">⚙️ Ayarlar</a>
-            <button class="btn btn-secondary" onclick="yenile()">🔄</button>
-            <a href="/logout" class="btn btn-danger">🚪 Çıkış</a>
+            <a href="/vardiya" class="btn btn-primary">&#128467; Vardiya</a>
+            <a href="/menu-yonetim" class="btn btn-secondary">&#9881; Ayarlar</a>
+            <button class="btn btn-secondary" onclick="yenile()">&#128260;</button>
+            <a href="/logout" class="btn btn-danger">&#128682; &#199;&#305;k&#305;&#351;</a>
         </div>
     </div>
 
     <div class="container">
-        <div class="live-timeline">
-            <div class="live-time">&#350;u an: <span id="live-clock">--:--:--</span></div>
-            <div class="timeline-track">
-                <div class="timeline-inner" id="timeline-inner"></div>
-                <div class="timeline-marker"></div>
-                <div class="timeline-now">&#350;&#304;MD&#304;</div>
+        <div class="top-row">
+            <div class="live-timeline now-card">
+                <div class="live-time">&#350;u an: <span id="live-clock">--:--:--</span></div>
+                <div class="timeline-track">
+                    <div class="timeline-inner" id="timeline-inner"></div>
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-now">&#350;&#304;MD&#304;</div>
+                </div>
+                <div class="density-wrap">
+                    <div class="density-label">Yo&#287;unluk: <span id="density-text">Normal</span></div>
+                    <div class="density-bar"><div class="density-fill" id="density-fill"></div></div>
+                    <div class="density-status" id="density-score">Skor: 0</div>
+                </div>
             </div>
-            <div class="density-wrap">
-                <div class="density-label">Yogunluk: <span id="density-text">Normal</span></div>
-                <div class="density-bar"><div class="density-fill" id="density-fill"></div></div>
-                <div class="density-status" id="density-score">Skor: 0</div>
-            </div>
-            <div class="fx-panel">
-                <div class="fx-title">Kur</div>
-                <div class="fx-live" id="fx-live"><span class="live-dot">&#9679;</span> Canli</div>
-                <div class="fx-row"><span>USD/TRY</span><strong id="fx-usd">--</strong></div>
-                <div class="fx-row"><span>EUR/TRY</span><strong id="fx-eur">--</strong></div>
+            <div class="fx-card">
+                <div class="fx-panel">
+                    <div class="fx-title">Kur</div>
+                    <div class="fx-live" id="fx-live"><span class="live-dot">&#9679;</span> Canl&#305;</div>
+                    <div class="fx-row"><span>USD/TRY</span><strong id="fx-usd">--</strong></div>
+                    <div class="fx-row"><span>EUR/TRY</span><strong id="fx-eur">--</strong></div>
+                </div>
             </div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card aktif-masa">
-                <span class="stat-icon">🍽️</span>
+                <span class="stat-icon">&#127869;</span>
                 <div class="stat-number" id="aktif-masa-sayisi">0</div>
                 <div class="stat-label">Aktif Masa</div>
             </div>
             <a href="/siparis-gir" class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 1.5rem; --gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                 <div style="text-align: center;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📱</div>
-                    <div style="font-size: 1rem; font-weight: 700;">Yeni Sipariş</div>
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128241;</div>
+                    <div style="font-size: 1rem; font-weight: 700;">Yeni Sipari&#351;</div>
                 </div>
             </a>
         </div>
@@ -969,9 +1297,9 @@
                         <button class="btn btn-success" id="layout-save-btn" style="display:none;">Kaydet</button>
                     </div>
                 </div>
-                <h2 class="section-title">🏪 Masa Durumları</h2>
-                <button class="btn btn-primary" onclick="masaTransfer()">🔄 Masa Transfer</button>
-                <button class="btn btn-secondary" onclick="masaYonetimi()">⚙️ Masa Ayarları</button>
+                <h2 class="section-title">&#127970; Masa Durumlar&#305;</h2>
+                <button class="btn btn-primary" onclick="masaTransfer()">&#128260; Masa Transfer</button>
+                <button class="btn btn-secondary" onclick="masaYonetimi()">&#9881; Masa Ayarlar&#305;</button>
             </div>
             <div class="tables-grid" id="masalar-grid"></div>
             <div class="layout-canvas layout-hidden" id="layoutCanvas"></div>
@@ -989,17 +1317,17 @@
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Kaynak Masa:</label>
                 <select id="kaynak-masa" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
-                    <option value="">Masa seçiniz</option>
+                    <option value="">Masa se&#231;iniz</option>
                 </select>
             </div>
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Hedef Masa:</label>
                 <select id="hedef-masa" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
-                    <option value="">Masa seçiniz</option>
+                    <option value="">Masa se&#231;iniz</option>
                 </select>
             </div>
             <div id="transfer-detay" style="margin: 1rem 0; padding: 1rem; background: #f7fafc; border-radius: 0.375rem; display: none;">
-                <h4 style="margin-bottom: 0.5rem;">Transfer Edilecek Siparişler:</h4>
+                <h4 style="margin-bottom: 0.5rem;">Transfer Edilecek Sipari&#351;ler:</h4>
                 <div id="transfer-liste"></div>
             </div>
             <div style="text-align: center; margin-top: 1.5rem;">
@@ -1009,21 +1337,71 @@
     </div>
 
     <!-- Hesap Modal -->
+
     <div id="hesap-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" id="hesap-baslik">Hesap Detayı</h3>
+                <h3 class="modal-title" id="hesap-baslik">Hesap Detayi</h3>
                 <button class="close-btn" onclick="modalKapat()">&times;</button>
             </div>
             <div id="hesap-icerik"></div>
         </div>
     </div>
+    <div id="bill-preview-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="bill-preview-title">Hesap Fi&#351;i &#214;nizleme</h3>
+                <button class="close-btn" onclick="UI.BillPreviewModal.close()">&times;</button>
+            </div>
+            <div class="bill-preview-box" id="bill-preview-text">Yukleniyor...</div>
+            <div style="margin-top: 16px;">
+                <div class="bill-lang-select" id="bill-lang-select">
+                    <input type="radio" name="bill-lang" id="bill-lang-tr" value="tr">
+                    <label for="bill-lang-tr">T&#252;rk&#231;e</label>
+                    <input type="radio" name="bill-lang" id="bill-lang-en" value="en">
+                    <label for="bill-lang-en">English</label>
+                </div>
+                <div class="bill-lang-hint" id="bill-lang-hint">Lutfen dil secin</div>
+            </div>
+            <div class="bill-preview-actions">
+                <button class="btn btn-secondary" onclick="UI.BillPreviewModal.close()">&#304;ptal</button>
+                <button class="btn btn-success" id="bill-preview-confirm">Onayla ve Yazd&#305;r</button>
+            </div>
+        </div>
+    </div>
+    <div id="discount-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Indirim Uygula</h3>
+                <button class="close-btn" onclick="UI.DiscountModal.close()">&times;</button>
+            </div>
+            <div class="discount-modal-grid">
+                <div class="discount-type">
+                    <input type="radio" name="discount-type" id="discount-type-percent" value="percent" checked>
+                    <label for="discount-type-percent">%</label>
+                    <input type="radio" name="discount-type" id="discount-type-amount" value="amount">
+                    <label for="discount-type-amount">&#8378;</label>
+                </div>
+                <input type="number" id="discount-value" placeholder="Deger" min="0" step="0.01">
+                <select id="discount-reason">
+                    <option value="tanidik">Tanidik</option>
+                    <option value="personel">Personel</option>
+                    <option value="hata">Hata telafisi</option>
+                    <option value="diger">Diger</option>
+                </select>
+                <div id="discount-note-wrap" style="display:none;">
+                    <input type="text" id="discount-note" placeholder="Aciklama">
+                </div>
+                <div class="discount-hint" id="discount-hint"></div>
+                <button class="btn btn-success" id="discount-apply">Uygula</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- Masa Yönetimi Modal -->
     <div id="masa-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Masa İsimleri</h3>
+                <h3 class="modal-title">Masa &#304;simleri</h3>
                 <button class="close-btn" onclick="masaModalKapat()">&times;</button>
             </div>
             <div id="masa-icerik"></div>
@@ -1036,13 +1414,42 @@
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="{{ url_for('static', filename='layoutView.js') }}"></script>
     <script src="{{ url_for('static', filename='components/tableProgressBorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='config.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/tableCard.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/timeline.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/fxRates.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/progressBorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/paymentModal.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/billPreviewModal.js') }}"></script>
+    <script src="{{ url_for('static', filename='ui/discountModal.js') }}"></script>
     <script>
+        window.APP = window.APP || {};
+        window.APP.state = window.APP.state || {
+            tables: {},
+            orders: [],
+            rehberMasalar: {},
+            tableSessions: {},
+            activeTables: 0,
+            lastOrders5m: 0,
+            fx: { usd: null, eur: null },
+            staff: [],
+            staffStats: [],
+            staffStatsDate: null,
+            lastFetchTimes: {},
+            lastError: null,
+            density: null
+        };
+
         let mevcutMasa = null;
         let allOrders = [];
         let hesapInFlight = {};
         let tables = {};
         let rehberMasalar = {};
         let tableSessions = {};
+        let currentBill = null;
         let layoutViewInstance = null;
         let tableProgressInstance = null;
 
@@ -1052,111 +1459,38 @@
         }
 
         function updateLiveClock() {
-            const now = new Date();
-            const clock = document.getElementById('live-clock');
-            if (clock) {
-                clock.textContent = now.toLocaleTimeString('tr-TR');
+            if (window.UI && UI.Timeline && UI.Timeline.updateLiveClock) {
+                UI.Timeline.updateLiveClock('live-clock');
             }
         }
         function buildTimelineLabels() {
-            const inner = document.getElementById('timeline-inner');
-            if (!inner) return;
-            inner.innerHTML = '';
-            const pxPerMinute = 3;
-            const totalWidth = 1440 * pxPerMinute;
-            inner.style.width = totalWidth + 'px';
-            for (let h = 0; h < 24; h++) {
-                const full = document.createElement('span');
-                full.className = 'timeline-tick hour';
-                full.style.left = (h * 60 * pxPerMinute) + 'px';
-                full.textContent = (h < 10 ? '0' + h : h) + ':00';
-                inner.appendChild(full);
-
-                const half = document.createElement('span');
-                half.className = 'timeline-tick half';
-                half.style.left = ((h * 60 + 30) * pxPerMinute) + 'px';
-                half.textContent = (h < 10 ? '0' + h : h) + ':30';
-                inner.appendChild(half);
+            if (window.UI && UI.Timeline && UI.Timeline.buildLabels) {
+                UI.Timeline.buildLabels({
+                    innerId: 'timeline-inner',
+                    pxPerMinute: (window.CONFIG && CONFIG.timelinePxPerMinute) || (window.APP_CONFIG && APP_CONFIG.timelinePxPerMinute) || 3
+                });
             }
         }
         function updateTimeline() {
-            const inner = document.getElementById('timeline-inner');
-            if (!inner) return;
-            const now = new Date();
-            const minutes = (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
-            const track = inner.parentElement;
-            const trackWidth = track ? track.clientWidth : 0;
-            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const pxPerMinute = 3;
-            const centerX = trackWidth / 2;
-            const translateX = centerX - (minutes * pxPerMinute);
-            inner.style.transition = reduce ? 'none' : 'transform 0.6s linear';
-            inner.style.transform = 'translate(' + translateX + 'px, -50%)';
-        }
-
-        const FX_CACHE_KEY = 'fx_cache';
-        const FX_TTL_MS = 10 * 60 * 1000;
-
-        function readFxCache() {
-            try {
-                const raw = localStorage.getItem(FX_CACHE_KEY);
-                return raw ? JSON.parse(raw) : null;
-            } catch {
-                return null;
+            if (window.UI && UI.Timeline && UI.Timeline.update) {
+                UI.Timeline.update({
+                    innerId: 'timeline-inner',
+                    pxPerMinute: (window.CONFIG && CONFIG.timelinePxPerMinute) || (window.APP_CONFIG && APP_CONFIG.timelinePxPerMinute) || 3
+                });
             }
-        }
-
-        function writeFxCache(data) {
-            try {
-                localStorage.setItem(FX_CACHE_KEY, JSON.stringify(data));
-            } catch {
-                // ignore cache write failures
-            }
-        }
-
-        function renderFx(data, hasData) {
-            const usdEl = document.getElementById('fx-usd');
-            const eurEl = document.getElementById('fx-eur');
-            const liveEl = document.getElementById('fx-live');
-            if (!usdEl || !eurEl || !liveEl) return;
-            if (!hasData) {
-                usdEl.textContent = 'Kur alinamadi';
-                eurEl.textContent = '--';
-                liveEl.innerHTML = '<span class="live-dot">&#9679;</span> Canli';
-                return;
-            }
-            usdEl.textContent = data.usd.toFixed(2);
-            eurEl.textContent = data.eur.toFixed(2);
-            liveEl.innerHTML = '<span class="live-dot">&#9679;</span> Canli';
         }
 
         function fetchFxRates() {
-            const now = Date.now();
-            const cache = readFxCache();
-            if (cache && (now - cache.ts) < FX_TTL_MS) {
-                renderFx(cache, true);
-                return;
-            }
-            if (cache) {
-                renderFx(cache, true);
-            }
-            const usdUrl = 'https://api.frankfurter.app/latest?from=USD&to=TRY';
-            const eurUrl = 'https://api.frankfurter.app/latest?from=EUR&to=TRY';
-            Promise.all([
-                fetch(usdUrl).then(r => { if (!r.ok) throw new Error('HTTP error'); return r.json(); }),
-                fetch(eurUrl).then(r => { if (!r.ok) throw new Error('HTTP error'); return r.json(); })
-            ]).then(([usdData, eurData]) => {
-                const usd = usdData && usdData.rates ? usdData.rates.TRY : null;
-                const eur = eurData && eurData.rates ? eurData.rates.TRY : null;
-                if (!usd || !eur) throw new Error('Kur alinamadi');
-                const payload = { usd, eur, ts: Date.now() };
-                writeFxCache(payload);
-                renderFx(payload, true);
-            }).catch((err) => {
-                console.error('FX fetch failed', err);
-                const fallback = readFxCache();
-                renderFx(fallback, !!fallback);
-            });
+            if (!window.UI || !UI.Api || !UI.Api.getFxRates) return;
+            UI.Api.getFxRates()
+                .then(data => {
+                    APP.state.fx = data;
+                    APP.state.lastFetchTimes.fx = Date.now();
+                    APP.emit('fx:updated', data);
+                })
+                .catch(err => {
+                    console.error('FX fetch failed', err);
+                });
         }
 
         function getAktifMasaSayisi() {
@@ -1165,55 +1499,12 @@
             return Number.isFinite(val) ? val : 0;
         }
         function hesaplaYogunluk() {
-            const aktifMasa = (allOrders || []).filter(o => o.durum === 'aktif')
-                .map(o => String(o.masa))
-                .filter((v, i, a) => a.indexOf(v) === i).length || getAktifMasaSayisi();
-
-            const now = new Date();
-            const fiveMinAgo = now.getTime() - (5 * 60 * 1000);
-            let son5dkSiparis = 0;
-            (allOrders || []).forEach(order => {
-                if (order.durum !== 'aktif') return;
-                const tarih = order.tarih || '';
-                const zaman = order.zaman || '00:00';
-                let dt = null;
-                if (tarih.includes('.')) {
-                    const parts = tarih.split('.');
-                    if (parts.length >= 3) {
-                        const gun = parseInt(parts[0], 10);
-                        const ay = parseInt(parts[1], 10) - 1;
-                        const yil = parseInt(parts[2], 10);
-                        const time = zaman.split(':');
-                        dt = new Date(yil, ay, gun, parseInt(time[0] || 0, 10), parseInt(time[1] || 0, 10));
-                    }
-                }
-                if (dt && dt.getTime() >= fiveMinAgo) {
-                    son5dkSiparis += 1;
-                }
-            });
-            // TODO: varsa siparis eventlerinden daha net timestamp topla
-
-            const scoreRaw = (aktifMasa * 15) + (son5dkSiparis * 10);
-            const score = Math.min(100, Math.max(0, scoreRaw));
-            let durum = 'Normal';
-            if (score >= 100) {
-                durum = 'Kritik';
-            } else if (score >= 70) {
-                durum = 'Artıyor';
-            } else if (score < 50) {
-                durum = 'Düşük';
-            }
-
-            const densityText = document.getElementById('density-text');
-            const densityFill = document.getElementById('density-fill');
-            const densityScore = document.getElementById('density-score');
-
-            if (densityText) densityText.textContent = durum;
-            if (densityScore) densityScore.textContent = 'Skor: ' + score;
-            if (densityFill) {
-                densityFill.style.width = score + '%';
-                densityFill.style.background = score >= 100 ? '#ef4444' : (score >= 70 ? '#f59e0b' : (score < 50 ? '#3b82f6' : '#22c55e'));
-            }
+            if (!window.UI || !UI.Api || !UI.Api.getDensity) return;
+            const result = UI.Api.getDensity(allOrders, getAktifMasaSayisi(), (window.CONFIG && CONFIG.density) || {});
+            APP.state.activeTables = result.activeTables;
+            APP.state.lastOrders5m = result.lastOrders5m;
+            APP.state.density = result;
+            APP.emit('density:updated', result);
         }
 
         let yenileInFlight = false;
@@ -1221,31 +1512,42 @@
         function yenile() {
             if (yenileInFlight) return;
             yenileInFlight = true;
-            fetch('/api/kasa-init')
-                .then(r => r.json())
-                .then(data => {
-                if (data.success === false) {
-                    throw new Error(data.message || 'Yukleme hatasi');
-                }
-                const orders = data.orders || [];
-                allOrders = orders;
-                tables = data.tables || {};
-                rehberMasalar = data.rehber || {};
-                tableSessions = data.table_sessions || {};
-                masalariGuncelle(orders);
-                istatistikleriGuncelle(orders);
-                hesaplaYogunluk();
-            }).catch(err => {
-                console.error('Yenileme hatasi:', err);
-            }).finally(() => {
+            if (!window.Api || !Api.getTables) {
                 yenileInFlight = false;
-            });
+                return;
+            }
+            UI.Api.getTables()
+                .then(data => {
+                    const orders = data.orders || [];
+                    allOrders = orders;
+                    tables = data.tables || {};
+                    rehberMasalar = data.rehber || {};
+                    tableSessions = data.table_sessions || {};
+                    APP.state.orders = orders;
+                    APP.state.tables = tables;
+                    APP.state.rehberMasalar = rehberMasalar;
+                    APP.state.tableSessions = tableSessions;
+                    masalariGuncelle(orders);
+                    istatistikleriGuncelle(orders);
+                    hesaplaYogunluk();
+                }).catch(err => {
+                    console.error('Yenileme hatasi:', err);
+                }).finally(() => {
+                    yenileInFlight = false;
+                });
         }
 
         function istatistikleriGuncelle(orders) {
             function setText(id, value) {
                 const el = document.getElementById(id);
                 if (el) el.textContent = value;
+            }
+            function getPaymentAmount(order, type) {
+                const breakdown = order.odeme_breakdown || {};
+                if (type === 'nakit' && breakdown.cash) return Number(breakdown.cash) || 0;
+                if (type === 'kart' && breakdown.card) return Number(breakdown.card) || 0;
+                if (order.odeme_turu === type) return (order.indirimli_tutar || order.toplam || 0);
+                return 0;
             }
             const aktifOrders = orders.filter(o => o.durum === 'aktif');
             const aktifMasalar = [...new Set(aktifOrders.map(o => o.masa))];
@@ -1258,10 +1560,10 @@
             });
             const brutCiro = gunlukSiparisler.reduce((sum, o) => sum + (o.indirimli_tutar || o.toplam), 0);
             const nakitSatis = gunlukSiparisler.reduce((sum, o) => {
-                return sum + (o.odeme_turu === 'nakit' ? (o.indirimli_tutar || o.toplam || 0) : 0);
+                return sum + getPaymentAmount(o, 'nakit');
             }, 0);
             const kartSatis = gunlukSiparisler.reduce((sum, o) => {
-                return sum + (o.odeme_turu === 'kart' ? (o.indirimli_tutar || o.toplam || 0) : 0);
+                return sum + getPaymentAmount(o, 'kart');
             }, 0);
             const toplamIndirim = gunlukSiparisler.reduce((sum, o) => {
                 if (typeof o.indirim === 'number') return sum + o.indirim;
@@ -1276,7 +1578,7 @@
             gunlukSiparisler.forEach(order => {
                 if (rehberMasalar[order.masa]) {
                     order.items.forEach(item => {
-                        if (item.name === 'Serpme Kahvaltı') {
+                        if (item.name === 'Serpme Kahvalt\u0131') {
                             gunlukKomisyon += item.adet * 100;
                         }
                     });
@@ -1286,80 +1588,82 @@
             const netCiro = brutCiro - gunlukKomisyon;
 
             setText('aktif-masa-sayisi', aktifMasalar.length);
-            setText('gunluk-ciro', netCiro + '?');
-            setText('gunluk-nakit', 'Nakit: ' + nakitSatis + '?');
-            setText('gunluk-kart', 'Kart: ' + kartSatis + '?');
-            setText('gunluk-indirim', toplamIndirim + '?');
+            setText('gunluk-ciro', netCiro + ' TL');
+            setText('gunluk-nakit', 'Nakit: ' + nakitSatis + ' TL');
+            setText('gunluk-kart', 'Kart: ' + kartSatis + ' TL');
+            setText('gunluk-indirim', toplamIndirim + ' TL');
             setText('gunluk-siparis', gunlukSiparisler.length);
 
 
-            // Not: Bu ID'ler kasa ekranında yok. Eğer eklemek istersen söyle, ben karta dönüştüreyim.
+            // Not: Bu ID'ler kasa ekraninda yok. Eger eklemek istersen soyle, ben karta donustureyim.
             // document.getElementById('toplam-siparis').textContent = gunlukSiparisler.length;
-            // document.getElementById('gunluk-ciro').textContent = netCiro + '₺';
-            // document.getElementById('gunluk-komisyon').textContent = gunlukKomisyon + '₺';
+            // document.getElementById('gunluk-ciro').textContent = netCiro + ' TL';
+            // document.getElementById('gunluk-komisyon').textContent = gunlukKomisyon + ' TL';
+        }
+
+        function formatMoney(value) {
+            const num = Number(value) || 0;
+            try {
+                return new Intl.NumberFormat('tr-TR', {
+                    style: 'currency',
+                    currency: 'TRY',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(num);
+            } catch (err) {
+                return num.toFixed(2) + ' TL';
+            }
         }
 
         function getTableOpenMinutes(masaData, masa) {
-            let openTs = tableSessions[String(masa)];
-            if (!openTs && masaData[masa]) {
-                masaData[masa].siparisler.forEach(order => {
-                    if (order.masa_acilis_ts) {
-                        if (!openTs || order.masa_acilis_ts < openTs) {
-                            openTs = order.masa_acilis_ts;
-                        }
-                    }
-                });
+            if (window.UI && UI.TableCard && UI.TableCard.getOpenMinutes) {
+                return UI.TableCard.getOpenMinutes(masaData, masa, tableSessions);
             }
-            if (!openTs) return 0;
-            const dt = new Date(openTs);
-            if (Number.isNaN(dt.getTime())) return 0;
-            return Math.max(1, Math.floor((Date.now() - dt.getTime()) / 60000));
+            return 0;
         }
 
         function countSerpme(siparisler) {
-            let kisi = 0;
-            (siparisler || []).forEach(order => {
-                (order.items || []).forEach(item => {
-                    const name = String(item.name || '').toLowerCase();
-                    if (name.includes('serpme')) {
-                        kisi += Number(item.adet || 0);
-                    }
-                });
-            });
-            return kisi;
+            if (window.UI && UI.TableCard && UI.TableCard.countSerpme) {
+                return UI.TableCard.countSerpme(siparisler);
+            }
+            return 0;
+        }
+
+        function getGarsonName(data) {
+            if (!data || !data.siparisler || !data.siparisler.length) return '';
+            const last = data.siparisler[data.siparisler.length - 1];
+            return last && last.garson ? String(last.garson) : '';
         }
 
         function buildTableCard(i, masaData, isMap) {
-            const data = masaData[i];
-            const totalText = data ? data.toplam + ' TL' : 'Bos';
-            const kisi = data ? countSerpme(data.siparisler) : 0;
-            const sure = data ? getTableOpenMinutes(masaData, i) : 0;
-            const div = document.createElement('div');
-            div.className = (data ? 'table-card occupied' : 'table-card') + (isMap ? ' map-card' : '');
-            div.dataset.masa = i;
-            div.dataset.minutes = sure;
-            div.onclick = () => masaDetay(i);
-            const rehberIcon = rehberMasalar[i] ? '*' : '';
-            const sureText = sure ? sure + ' dk' : '--';
-            div.innerHTML = `
-                <div class="table-progress" aria-hidden="true"></div>
-                <div class="table-name">${tables[i] || 'Masa ' + i} ${rehberIcon}</div>
-                <div class="table-amount">${totalText}</div>
-                <div class="table-meta">
-                    <span>&#x1F464; ${kisi} kisi &#x23F1;&#xFE0F; ${sureText}</span>
-                </div>
-            `;
-            return div;
+            if (!window.UI || !UI.TableCard || !UI.TableCard.build) return null;
+            return UI.TableCard.build(i, masaData, {
+                isMap: !!isMap,
+                tables: tables,
+                rehberMasalar: rehberMasalar,
+                tableSessions: tableSessions,
+                onClick: masaDetay
+            });
         }
 
         function renderTablesGrid(masaData) {
-            const grid = document.getElementById('masalar-grid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            for (let i = 1; i <= 25; i++) {
-                const div = buildTableCard(i, masaData, false);
-                grid.appendChild(div);
+            if (!window.UI || !UI.TableCard || !UI.TableCard.updateGrid) return;
+            if (!APP._tableCardReady && UI.TableCard.init) {
+                UI.TableCard.init({
+                    gridId: 'masalar-grid',
+                    totalTables: 25,
+                    onClick: masaDetay
+                });
+                APP._tableCardReady = true;
             }
+            UI.TableCard.updateGrid(masaData, {
+                totalTables: 25,
+                isMap: false,
+                tables: tables,
+                rehberMasalar: rehberMasalar,
+                tableSessions: tableSessions,
+                onClick: masaDetay
+            });
         }
 
         function masalariGuncelle(orders) {
@@ -1374,26 +1678,37 @@
                 aktifMasalar[String(order.masa)] = true;
             });
             renderTablesGrid(masaData);
-            if (layoutViewInstance) {
-                const fullTables = {};
-                const metaMap = {};
-                for (let i = 1; i <= 25; i++) {
-                    fullTables[i] = tables[i] || 'Masa ' + i;
-                    const data = masaData[i];
-                    const kisi = data ? countSerpme(data.siparisler) : 0;
-                    const sure = data ? getTableOpenMinutes(masaData, i) : 0;
-                    const sureText = sure ? sure + ' dk' : '--';
-                    const toplamText = data ? data.toplam + ' TL' : 'Bos';
-                    metaMap[String(i)] = { kisi: kisi, sure: sureText, toplam: toplamText, minutes: sure };
-                }
-                layoutViewInstance.setData(fullTables, aktifMasalar, function (tableId) {
-                    masaDetay(tableId);
-                }, metaMap);
-            }
-            if (tableProgressInstance && tableProgressInstance.update) {
-                tableProgressInstance.update();
-            }
+            APP.state.masaData = masaData;
+            APP.emit('tables:updated', {
+                masaData: masaData,
+                aktifMasalar: aktifMasalar,
+                tables: tables,
+                rehberMasalar: rehberMasalar,
+                tableSessions: tableSessions
+            });
         }
+
+        function handleTablesUpdated(payload) {
+            if (!payload || !layoutViewInstance) return;
+            const masaData = payload.masaData || {};
+            const aktifMasalar = payload.aktifMasalar || {};
+            const fullTables = {};
+            const metaMap = {};
+            for (let i = 1; i <= 25; i++) {
+                const data = masaData[i];
+                const garsonName = data ? getGarsonName(data) : '';
+                fullTables[i] = (tables[i] || 'Masa ' + i) + (garsonName ? ' - ' + garsonName : '');
+                const kisi = data ? countSerpme(data.siparisler) : 0;
+                const sure = data ? getTableOpenMinutes(masaData, i) : 0;
+                const sureText = sure ? sure + ' dk' : '--';
+                const toplamText = data ? data.toplam + ' TL' : 'Bo&#351;';
+                metaMap[String(i)] = { kisi: kisi, sure: sureText, toplam: toplamText, minutes: sure };
+            }
+            layoutViewInstance.setData(fullTables, aktifMasalar, function (tableId) {
+                masaDetay(tableId);
+            }, metaMap);
+        }
+
 
         function masaDetay(masa) {
             if (hesapInFlight[masa]) return;
@@ -1406,13 +1721,23 @@
                     const baslik = document.getElementById('hesap-baslik');
                     const icerik = document.getElementById('hesap-icerik');
 
-                    baslik.textContent = `${tables[masa] || 'Masa ' + masa} Hesabı`;
+                    baslik.textContent = `${tables[masa] || 'Masa ' + masa} Hesab\u0131`;
 
                     if (data.siparisler.length === 0) {
-                        icerik.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Bu masada aktif sipariş yok.</div>';
+                        icerik.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Bu masada aktif sipari\u015f yok.</div>';
                         modal.style.display = 'block';
                         return;
                     }
+
+                    currentBill = {
+                        tableId: masa,
+                        total: data.total_due || data.toplam,
+                        subtotal: data.subtotal || data.toplam,
+                        discount: data.discount || null,
+                        discountAmount: data.discount_amount || 0,
+                        orderId: data.discount_order_id || (data.siparisler && data.siparisler[0] ? data.siparisler[0].id : null),
+                        orders: data.siparisler || []
+                    };
 
                     let hesapHTML = '';
                     
@@ -1430,50 +1755,118 @@
                                             <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', ${item.id})">+</button>
                                         </div>
                                     </div>
-                                    <span>${item.price * item.adet} ₺</span>
+                                    <span>${item.price * item.adet} TL</span>
                                 </div>
                             `;
                         });
                         hesapHTML += '</div>';
                     });
 
+                    const discountAmount = Number(data.discount_amount) || 0;
+                    const subtotal = Number(data.subtotal) || Number(data.toplam) || 0;
+                    const totalDue = Number(data.total_due) || Number(data.toplam) || 0;
+                    const discountInfo = data.discount || null;
+                    const reasonMap = {
+                        tanidik: 'Tan&#305;d&#305;k',
+                        personel: 'Personel',
+                        hata: 'Hata telafisi',
+                        diger: 'Di&#287;er'
+                    };
+                    const discountName = discountInfo ? (reasonMap[discountInfo.reason] || '&#304;ndirim') : '&#304;ndirim';
+                    const valueLabel = discountInfo && discountInfo.type === 'percent'
+                        ? `%${discountInfo.value}`
+                        : formatMoney(discountAmount);
+                    const statusText = discountAmount > 0 && discountInfo
+                        ? `${discountName} indirimi: ${valueLabel} (\u2212${formatMoney(discountAmount)})`
+                        : '&#304;ndirim yok';
+                    const discountBlock = `
+                        <div class="discount-section">
+                            <div class="discount-header">
+                                <div class="discount-title">&#304;ndirim</div>
+                                <div class="discount-actions">
+                                    ${discountAmount > 0 && discountInfo
+                                        ? `<button class="btn btn-secondary" onclick="openDiscountModal()">Duzenle</button>
+                                           <button class="btn btn-danger" onclick="removeDiscount()">Kaldir</button>`
+                                        : `<button class="btn btn-secondary" onclick="openDiscountModal()">+ &#304;ndirim Uygula</button>`}
+                                </div>
+                            </div>
+                            <div class="discount-status">${statusText}</div>
+                        </div>
+                    `;
+                    hesapHTML += discountBlock;
+
                     hesapHTML += `
                         <div class="bill-total">
-                            <div style="margin-bottom: 0.5rem;">Toplam Tutar</div>
-                            <div class="bill-total-amount">${data.toplam} ₺</div>
-                            <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #38a169; font-weight: 600;">
-                                Nakit İndirimi (%10): ${Math.round(data.toplam * 0.9)} ₺
+                            ${discountAmount > 0 ? `
+                                <div class="total-row"><span>Ara Toplam</span><span>${formatMoney(subtotal)}</span></div>
+                                <div class="total-row"><span>&#304;ndirim</span><span>- ${formatMoney(discountAmount)}</span></div>
+                            ` : ''}
+                            <div class="bill-total-amount">
+                                <span>&#214;denecek</span>
+                                <span class="amount">${formatMoney(totalDue)}</span>
                             </div>
+                            <div class="bill-total-note">Nakit &#304;ndirimi (%10): ${formatMoney(totalDue * 0.9)}</div>
                         </div>
                         <div style="text-align: center; margin: 1rem 0;">
                             <button class="btn" style="background: ${rehberMasalar[masa] ? '#16a34a' : '#64748b'} !important; color: white !important; padding: 0.75rem 1.5rem;" onclick="rehberToggle(${masa})">
-                                ${rehberMasalar[masa] ? '👥 Rehberli Masa' : '👤 Rehbersiz Masa'}
+                                ${rehberMasalar[masa] ? '&#128101; Rehberli Masa' : '&#128100; Rehbersiz Masa'}
                             </button>
                         </div>
-                        <div class="payment-buttons">
-                            <button class="payment-btn nakit" onclick="hesapKapat('nakit')">
-                                <span style="font-size: 2rem;">💵</span>
-                                <div>
-                                    <div>NAKİT</div>
-                                    <div style="font-size: 0.875rem; opacity: 0.9;">%10 İndirim</div>
-                                </div>
+                        <div class="payment-stack">
+                            <button class="payment-main-btn print" onclick="UI.BillPreviewModal.open(mevcutMasa)">
+                                &#128424; Hesap Fi&#351;i
                             </button>
-                            <button class="payment-btn kart" onclick="hesapKapat('kart')">
-                                <span style="font-size: 2rem;">💳</span>
-                                <div>
-                                    <div>KART</div>
-                                    <div style="font-size: 0.875rem; opacity: 0.9;">Tam Fiyat</div>
-                                </div>
+                            <button class="payment-main-btn cash" onclick="onPayCash()">
+                                Nakit Ode
                             </button>
+                            <div class="payment-hint" id="cash-discount-hint"></div>
+
+                            <button class="payment-main-btn card" onclick="onPayCard()">
+                                Kart Ode
+                            </button>
+
+                            <button class="payment-main-btn split" onclick="toggleSplitArea()">
+                                Parcali Odeme
+                            </button>
+                        </div>
+
+                        <div id="payment-split-area" class="split-area" style="display:none;">
+                            <div class="payment-summary">
+                                <div class="payment-total">
+                                    <div>Toplam Tutar</div>
+                                    <div class="value" id="payment-grand-total">0 TL</div>
+                                    <div class="payment-discount" id="payment-discount-note"></div>
+                                </div>
+                                <div class="payment-stats">
+                                    <div>Girilen: <span id="payment-entered">0 TL</span></div>
+                                    <div>Kalan: <span id="payment-remaining">0 TL</span></div>
+                                </div>
+                            </div>
+                            <div id="payment-rows" class="payment-rows"></div>
+                            <div class="payment-actions">
+                                <button class="btn btn-secondary" id="payment-add">+ Odeme Ekle</button>
+                                <button class="btn btn-secondary" id="payment-fill-cash">Kalani Nakit Yap</button>
+                                <button class="btn btn-secondary" id="payment-fill-card">Kalani Kart Yap</button>
+                            </div>
+                            <div class="payment-warning" id="payment-warning"></div>
+                            <div style="text-align: right; margin-top: 1rem;">
+                                <button class="btn btn-success" id="payment-complete">Tamamla</button>
+                            </div>
                         </div>
                         <div style="text-align: center; margin-top: 1rem;">
                             <button class="btn btn-danger" onclick="siparisIptal()" style="background: #e53e3e; color: white; padding: 0.75rem 1.5rem;">
-                                ❌ Siparişi İptal Et
+                                &#10060; Sipari&#351;i &#304;ptal Et
                             </button>
                         </div>
                     `;
 
                     icerik.innerHTML = hesapHTML;
+                    const cashHint = document.getElementById('cash-discount-hint');
+                    if (cashHint) {
+                        cashHint.textContent = '';
+                    }
+                    const splitArea = document.getElementById('payment-split-area');
+                    if (splitArea) splitArea.style.display = 'none';
                     modal.style.display = 'block';
                 })
                 .catch(err => {
@@ -1487,9 +1880,9 @@
         function hesapKapat(odemeTuru) {
             if (!mevcutMasa) return;
             
-            const odemeTuruText = odemeTuru === 'kart' ? 'KART' : 'NAKİT';
+            const odemeTuruText = odemeTuru === 'kart' ? 'KART' : 'NAK\u0130T';
             
-            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} hesabını ${odemeTuruText} ile kapatmak istediğinizden emin misiniz?`)) {
+            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} hesab\u0131n\u0131 ${odemeTuruText} ile kapatmak istedi\u011finizden emin misiniz?`)) {
                 fetch(`/api/hesap_kapat/${mevcutMasa}`, { 
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -1498,9 +1891,9 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        let mesaj = `Hesap ${odemeTuruText} ile başarıyla kapatıldı!`;
+                        let mesaj = `Hesap ${odemeTuruText} ile ba\u015far\u0131yla kapat\u0131ld\u0131!`;
                         if (result.indirimli_tutar) {
-                            mesaj += `\nAlınacak tutar: ${result.indirimli_tutar} ₺`;
+                            mesaj += `\nAl\u0131nacak tutar: ${result.indirimli_tutar} TL`;
                         }
                         alert(mesaj);
                         modalKapat();
@@ -1510,9 +1903,97 @@
                     }
                 })
                 .catch(error => {
-                    alert('Bir hata oluştu: ' + error.message);
+                    alert('Bir hata olu\u015ftu: ' + error.message);
                 });
             }
+        }
+
+        function odemeModalAc() {
+            if (!currentBill || !window.UI || !UI.PaymentModal) return;
+            UI.PaymentModal.open({
+                tableId: currentBill.tableId,
+                total: currentBill.total
+            });
+        }
+
+          function handlePaymentSuccess() {
+              if (window.APP && APP.emit) {
+                  APP.emit('tables:updated');
+                  APP.emit('toast:show', { type: 'success', message: 'Odeme alindi.' });
+              }
+              modalKapat();
+              yenile();
+          }
+
+          function refreshHesapModal() {
+              if (mevcutMasa) {
+                  masaDetay(mevcutMasa);
+              }
+          }
+
+          function openDiscountModal() {
+              if (!currentBill || !window.UI || !UI.DiscountModal) return;
+              if (!currentBill.orderId) return;
+              UI.DiscountModal.open(currentBill.orderId, currentBill.subtotal, currentBill.discount);
+          }
+
+          function removeDiscount() {
+              if (!currentBill || !window.UI || !UI.Api) return;
+              if (!currentBill.orderId) return;
+              if (!confirm('Indirim kaldirilsin mi?')) return;
+              UI.Api.removeDiscount(currentBill.orderId).then(() => {
+                  if (window.APP && APP.emit) {
+                      APP.emit('toast:show', { type: 'success', message: 'Indirim kaldirildi.' });
+                      APP.emit('tables:updated');
+                      APP.emit('order:updated', { orderId: currentBill.orderId });
+                  }
+                  refreshHesapModal();
+              }).catch(err => {
+                  alert('Hata: ' + (err && err.message ? err.message : 'Indirim kaldirilamadi.'));
+              });
+          }
+
+        function onPayCash() {
+            if (!currentBill || !window.UI || !UI.Api) return;
+            const total = Number(currentBill.total) || 0;
+            const discounted = Math.round(total * 0.9 * 100) / 100;
+            if (!confirm('Nakit odeme alindi mi?')) return;
+            UI.Api.closeTablePayments(currentBill.tableId, [
+                { type: 'cash', amount: discounted }
+            ], { discount_applied: true }).then(() => {
+                handlePaymentSuccess();
+            }).catch(err => {
+                alert('Hata: ' + (err && err.message ? err.message : 'Odeme alinamadi.'));
+            });
+        }
+
+          function onPayCard() {
+              if (!currentBill || !window.UI || !UI.Api) return;
+              const total = Number(currentBill.total) || 0;
+              if (!confirm('Kart odeme alindi mi?')) return;
+              UI.Api.closeTablePayments(currentBill.tableId, [
+                  { type: 'card', amount: total }
+              ], { discount_applied: false }).then(() => {
+                  handlePaymentSuccess();
+              }).catch(err => {
+                  alert('Hata: ' + (err && err.message ? err.message : 'Odeme alinamadi.'));
+              });
+          }
+
+          function toggleSplitArea() {
+            const splitArea = document.getElementById('payment-split-area');
+            if (!splitArea || !window.UI || !UI.PaymentModal) return;
+            if (splitArea.style.display === 'block') {
+                UI.PaymentModal.close();
+                splitArea.style.display = 'none';
+                return;
+            }
+            UI.PaymentModal.open({
+                tableId: currentBill ? currentBill.tableId : null,
+                total: currentBill ? currentBill.total : 0,
+                containerId: 'payment-split-area',
+                disableDiscount: true
+            });
         }
 
         function masaTransfer() {
@@ -1520,8 +2001,8 @@
             const kaynakSelect = document.getElementById('kaynak-masa');
             const hedefSelect = document.getElementById('hedef-masa');
             
-            kaynakSelect.innerHTML = '<option value="">Masa seçiniz</option>';
-            hedefSelect.innerHTML = '<option value="">Masa seçiniz</option>';
+            kaynakSelect.innerHTML = '<option value="">Masa se&#231;iniz</option>';
+            hedefSelect.innerHTML = '<option value="">Masa se&#231;iniz</option>';
             
             for (let i = 1; i <= 25; i++) {
                 const option1 = document.createElement('option');
@@ -1565,13 +2046,13 @@
                     <div style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; margin-bottom: 0.5rem;">
                         <strong>${order.garson}</strong> - ${order.zaman}<br>
                         <small>${items}</small><br>
-                        <span style="color: #38a169; font-weight: bold;">${order.toplam} ₺</span>
+                        <span style="color: #38a169; font-weight: bold;">${order.toplam} TL</span>
                     </div>
                 `;
                 toplam += order.toplam;
             });
             
-            html += `<div style="text-align: center; margin-top: 1rem; font-weight: bold; color: #1a202c;">Toplam: ${toplam} ₺</div>`;
+            html += `<div style="text-align: center; margin-top: 1rem; font-weight: bold; color: #1a202c;">Toplam: ${toplam} TL</div>`;
             
             listeDiv.innerHTML = html;
             detayDiv.style.display = 'block';
@@ -1582,16 +2063,16 @@
             const hedefMasa = parseInt(document.getElementById('hedef-masa').value);
             
             if (!kaynakMasa || !hedefMasa) {
-                alert('Lütfen kaynak ve hedef masa seçiniz!');
+                alert('L\u00fctfen kaynak ve hedef masa se\u00e7iniz!');
                 return;
             }
             
             if (kaynakMasa === hedefMasa) {
-                alert('Kaynak ve hedef masa aynı olamaz!');
+                alert('Kaynak ve hedef masa ayn\u0131 olamaz!');
                 return;
             }
             
-            if (confirm(`${tables[kaynakMasa] || 'Masa ' + kaynakMasa} siparişlerini ${tables[hedefMasa] || 'Masa ' + hedefMasa} masasına transfer etmek istediğinizden emin misiniz?`)) {
+            if (confirm(`${tables[kaynakMasa] || 'Masa ' + kaynakMasa} sipari\u015flerini ${tables[hedefMasa] || 'Masa ' + hedefMasa} masas\u0131na transfer etmek istedi\u011finizden emin misiniz?`)) {
                 fetch('/api/masa-transfer', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -1603,7 +2084,7 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert(`Transfer başarıyla tamamlandı! ${result.transfer_count} sipariş taşındı.`);
+                        alert(`Transfer ba\u015far\u0131yla tamamland\u0131! ${result.transfer_count} sipari\u015f ta\u015f\u0131nd\u0131.`);
                         transferModalKapat();
                         yenile();
                     } else {
@@ -1611,7 +2092,7 @@
                     }
                 })
                 .catch(error => {
-                    alert('Bir hata oluştu: ' + error.message);
+                    alert('Bir hata olu\u015ftu: ' + error.message);
                 });
             }
         }
@@ -1624,7 +2105,7 @@
         function siparisIptal() {
             if (!mevcutMasa) return;
             
-            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} siparişlerini iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve ciroyu etkilemez.`)) {
+            if (confirm(`${tables[mevcutMasa] || 'Masa ' + mevcutMasa} sipari\u015flerini iptal etmek istedi\u011finizden emin misiniz? Bu i\u015flem geri al\u0131namaz ve ciroyu etkilemez.`)) {
                 fetch(`/api/siparis-iptal/${mevcutMasa}`, { 
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'}
@@ -1632,7 +2113,7 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert(`${result.iptal_count} sipariş başarıyla iptal edildi!`);
+                        alert(`${result.iptal_count} sipari\u015f ba\u015far\u0131yla iptal edildi!`);
                         modalKapat();
                         yenile();
                     } else {
@@ -1640,7 +2121,7 @@
                     }
                 })
                 .catch(error => {
-                    alert('Bir hata oluştu: ' + error.message);
+                    alert('Bir hata olu\u015ftu: ' + error.message);
                 });
             }
         }
@@ -1682,7 +2163,7 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert('Masa isimleri başarıyla kaydedildi!');
+                    alert('Masa isimleri ba\u015far\u0131yla kaydedildi!');
                     masaModalKapat();
                     yenile();
                 }
@@ -1757,22 +2238,22 @@
                         }
                     })
                     .catch(error => {
-                        alert('Bir hata olustu: ' + error.message);
+                    alert('Bir hata olu\u015ftu: ' + error.message);
                     });
             }
         }
 
 function otoparkGideri() {
-            // Önce mevcut ayarları al
+            // Once mevcut ayarlari al
             fetch('/api/otopark-ayarlar')
                 .then(response => response.json())
                 .then(config => {
                     const mevcutFiyat = config.otopark_fiyat || 50;
-                    const tutar = prompt(`Otopark gideri tutarını giriniz (TL):`, mevcutFiyat);
+                      const tutar = prompt(`Otopark gideri tutar\u0131n\u0131 giriniz (TL):`, mevcutFiyat);
                     
                     if (tutar && !isNaN(tutar) && parseFloat(tutar) > 0) {
                         if (confirm(`${tutar} TL otopark gideri kaydedilsin mi?`)) {
-                            // Yeni fiyatı kaydet
+                            // Yeni fiyati kaydet
                             fetch('/api/otopark-ayarlar', {
                                 method: 'POST',
                                 headers: {'Content-Type': 'application/json'},
@@ -1795,11 +2276,11 @@ function otoparkGideri() {
                                 }
                             })
                             .catch(error => {
-                                alert('Bir hata oluştu: ' + error.message);
+                    alert('Bir hata olu\u015ftu: ' + error.message);
                             });
                         }
                     } else if (tutar !== null) {
-                        alert('Lütfen geçerli bir tutar giriniz!');
+                        alert('L\u00fctfen ge\u00e7erli bir tutar giriniz!');
                     }
                 });
         }
@@ -1821,17 +2302,39 @@ function otoparkGideri() {
                 area: 'salon'
             });
         }
-        if (window.TableProgressBorder) {
-            tableProgressInstance = TableProgressBorder.initTableProgressBorders(document);
+        if (window.UI && UI.TableCard) {
+            UI.TableCard.init({
+                gridId: 'masalar-grid',
+                totalTables: 25,
+                onClick: masaDetay
+            });
+        }
+        if (window.APP && APP.on) {
+            APP.on('tables:updated', handleTablesUpdated);
+        }
+        if (window.UI && UI.ProgressBorder) {
+            tableProgressInstance = UI.ProgressBorder.init(document);
         }
         yenile();
         
-        setInterval(saatGuncelle, 1000);
-        setInterval(updateLiveClock, 1000);
-        setInterval(updateTimeline, 1000);
-        setInterval(yenile, 15000);
-        setInterval(hesaplaYogunluk, 10000);
-        setInterval(fetchFxRates, FX_TTL_MS);
+        const intervals = (window.CONFIG && CONFIG.intervals) || {};
+        const clockMs = intervals.clockMs || 1000;
+        const refreshMs = intervals.refreshMs || 60000;
+        const densityMs = intervals.densityMs || 10000;
+        const progressMs = intervals.progressUpdateMs || 10000;
+        const fxMs = intervals.fxTtlMs || 600000;
+
+        setInterval(saatGuncelle, clockMs);
+        setInterval(updateLiveClock, clockMs);
+        setInterval(updateTimeline, clockMs);
+        setInterval(yenile, refreshMs);
+        setInterval(hesaplaYogunluk, densityMs);
+        setInterval(fetchFxRates, fxMs);
+        setInterval(function () {
+            if (tableProgressInstance && tableProgressInstance.update) {
+                tableProgressInstance.update();
+            }
+        }, progressMs);
 
         window.onclick = function(event) {
             const hesapModal = document.getElementById('hesap-modal');
@@ -1843,3 +2346,4 @@ function otoparkGideri() {
     </script>
 </body>
 </html>
+

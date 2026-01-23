@@ -33,7 +33,6 @@
                 </div>
                 <div class="toolbar-right">
                     <button class="btn btn-primary" onclick="loadMonth()">Yukle</button>
-                    <button class="btn btn-success" onclick="saveEmployees()">Calisanlari Kaydet</button>
                 </div>
             </div>
             <div class="status-legend">
@@ -48,15 +47,6 @@
                 <div class="status-pill s-gelmedi">X</div>
                 <span>Gelmedi</span>
                 <span class="legend-info">Tikla: Durum sec</span>
-            </div>
-        </div>
-
-        <div class="card employee-card">
-            <div class="card-title">Calisan Listesi</div>
-            <div class="employee-list" id="employee-list"></div>
-            <div class="employee-actions">
-                <button class="btn btn-primary" onclick="addEmployee()">+ Calisan Ekle</button>
-                <div class="note">Calisan isimleri bir kere girilir. Aylik tabloda otomatik gorunur.</div>
             </div>
         </div>
 
@@ -82,40 +72,14 @@
             return new Date(year, month, 0).getDate();
         }
 
-        function addEmployee(name = '') {
-            const list = document.getElementById('employee-list');
-            const div = document.createElement('div');
-            div.className = 'employee-chip';
-            div.innerHTML = `
-                <input type="text" class="employee-name" value="${name}" placeholder="Orn: Ahmet">
-                <button class="chip-remove" onclick="this.parentElement.remove()" title="Sil">&times;</button>
-            `;
-            list.appendChild(div);
-        }
-
-        function saveEmployees() {
-            const names = Array.from(document.querySelectorAll('.employee-name')).map(i => i.value.trim()).filter(Boolean);
-            fetch('/api/calisanlar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ names })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (!data.success) { alert(data.message || 'Hata'); return; }
-                alert('Calisanlar kaydedildi.');
-                loadMonth();
-            });
-        }
+        let employeeNames = [];
 
         function loadEmployees() {
             fetch('/api/calisanlar')
                 .then(r => r.json())
                 .then(data => {
-                    const list = document.getElementById('employee-list');
-                    list.innerHTML = '';
-                    (data.names || []).forEach(n => addEmployee(n));
-                    if ((data.names || []).length === 0) addEmployee('');
+                    employeeNames = (data.names || []).filter(Boolean);
+                    loadMonth();
                 });
         }
 
@@ -126,7 +90,7 @@
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success) { alert(data.message || 'Hata'); return; }
-                    renderMonth(month, data.records || []);
+                    renderMonth(month, data.records || [], employeeNames);
                 });
         }
 
@@ -149,7 +113,7 @@
             return '';
         }
 
-        function renderMonth(month, records) {
+        function renderMonth(month, records, names) {
             const [y, m] = month.split('-').map(v => parseInt(v, 10));
             const totalDays = daysInMonth(y, m);
             const today = new Date();
@@ -161,7 +125,7 @@
                 waiters[r.waiter][r.date] = r;
             });
 
-            const employeeNames = Array.from(document.querySelectorAll('.employee-name')).map(i => i.value.trim()).filter(Boolean);
+            const list = (names && names.length) ? names : employeeNames;
 
             const head = document.getElementById('month-head');
             const body = document.getElementById('month-body');
@@ -184,7 +148,7 @@
                 `<th class="day-head total-head">Toplam Gun</th>`;
             head.appendChild(headRow);
 
-            employeeNames.forEach(name => {
+            list.forEach(name => {
                 let total = 0;
                 const row = document.createElement('tr');
                 let cells = `<td class="name-cell">${name}</td>`;
@@ -321,7 +285,6 @@
 
         setDefaultMonth();
         loadEmployees();
-        loadMonth();
     </script>
 </body>
 </html>
