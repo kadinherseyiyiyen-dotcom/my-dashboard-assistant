@@ -24,7 +24,12 @@ def add_charset(response):
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
     return response
 
-DATA_DIR = os.environ.get('DATA_DIR', '.')
+DATA_DIR = os.environ.get('DATA_DIR')
+if not DATA_DIR:
+    if os.path.isdir('/var/data'):
+        DATA_DIR = '/var/data'
+    else:
+        DATA_DIR = '.'
 DB_URL = os.environ.get('DATABASE_URL', '').strip()
 USE_DB = bool(DB_URL)
 

@@ -176,9 +176,51 @@
         .key.action {
             background: rgba(255, 226, 196, 0.9);
         }
-        @media (max-width: 640px) {
-            .login-container { padding: 2rem 1.5rem; }
-            h2 { font-size: 1.5rem; }
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            .login-container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                border-radius: 0;
+                padding: 1.2rem;
+                box-shadow: none;
+                min-height: 100vh;
+                border: none;
+                justify-content: stretch;
+            }
+            .header {
+                margin-bottom: 1rem;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+            .pin-display {
+                margin: 0.75rem 0 1rem;
+            }
+            .keypad {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+            .key {
+                height: 60px;
+                font-size: 1.25rem;
+                border-radius: 14px;
+            }
+            .role-icon {
+                width: 68px;
+                height: 68px;
+                font-size: 1.8rem;
+            }
+            .btn, .btn-secondary {
+                padding: 0.9rem;
+                font-size: 1rem;
+            }
+            input, select {
+                padding: 0.75rem 0.9rem;
+            }
         }
     </style>
 </head>
@@ -201,7 +243,7 @@
 
             <div class="form-group pin-display">
                 <label for="password">&#350;ifre:</label>
-                <input type="password" id="password" required placeholder="&#350;ifrenizi giriniz" inputmode="numeric">
+                <input type="password" id="password" required placeholder="&#350;ifrenizi giriniz">
             </div>
 
             <div class="keypad" id="keypad">

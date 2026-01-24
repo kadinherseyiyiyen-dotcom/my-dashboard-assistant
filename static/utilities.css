@@ -142,6 +142,174 @@ body {
   margin-top: 54px !important;
 }
 
+/* Mobile first stack adjustments */
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden !important; }
+  .layout {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding: 12px 14px 20px !important;
+    margin: 0 auto;
+  }
+  .topbar {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    gap: 6px !important;
+  }
+  .topbar .status-strip {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+  .topbar .logout {
+    margin-left: auto !important;
+  }
+  .left-panel {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  .left-panel > div:first-of-type {
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+  }
+  .left-panel #date-block {
+    display: none !important;
+  }
+  .left-panel #time-block {
+    font-size: 1.4rem !important;
+  }
+  .left-panel .fx-card,
+  .left-panel .density-card,
+  .left-panel .weather-card {
+    width: 100% !important;
+    padding: 12px 14px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .grid {
+    margin-top: 0 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  .tile {
+    min-height: 150px !important;
+    padding: 14px 16px !important;
+    border-radius: 20px !important;
+  }
+  .tile .tile-icon { font-size: 28px !important; }
+  .tile .tile-title { font-size: 1.15rem !important; }
+  .tile .tile-desc { font-size: 0.85rem !important; }
+}
+
+@media (max-width: 420px) {
+  .grid { grid-template-columns: 1fr !important; }
+  .left-panel { grid-template-columns: 1fr !important; }
+  .tile {
+    min-height: 140px !important;
+    padding: 12px 14px !important;
+  }
+  .tile .tile-icon { font-size: 26px !important; }
+  .tile .tile-title { font-size: 1rem !important; }
+  .topbar {
+    flex-direction: column !important;
+  }
+  .topbar .logout {
+    margin-left: 0 !important;
+    width: 100% !important;
+    text-align: center;
+  }
+}
+
+/* Mobile tweaks | max 768px */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden !important;
+  }
+
+  /* layout stack */
+  .layout {
+    grid-template-columns: 1fr !important;
+    margin: 0 !important;
+    padding: 0 12px 24px !important;
+    gap: 12px !important;
+  }
+
+  /* header/status wrap */
+  .topbar {
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .topbar .status-strip {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+
+  /* left panel stack */
+  .left-panel {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* left-panel cards full width */
+  .left-panel > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* grid 2 columns, no overflow */
+  .grid {
+    margin-top: 12px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* tile compact for mobile */
+  .tile {
+    min-height: 180px !important;
+    padding: 1.2rem !important;
+    border-radius: 18px !important;
+  }
+
+  .tile .tile-icon {
+    font-size: 2rem !important;
+  }
+
+  .tile .tile-title {
+    font-size: 1.1rem !important;
+  }
+
+  .tile .tile-desc {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* very small screens (max 420px) */
+@media (max-width: 420px) {
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tile {
+    min-height: 160px !important;
+    padding: 1rem !important;
+  }
+
+  .tile .tile-icon {
+    font-size: 1.8rem !important;
+  }
+
+  .tile .tile-title {
+    font-size: 1rem !important;
+  }
+}
+
 .tile {
   min-height: 182px !important;
   padding: 1.5rem !important;
@@ -362,4 +530,207 @@ body {
 
 .fx-live {
   color: #b91c1c !important;
+}
+
+/* Mobile layout fix for dashboard */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Top status bar */
+  .topbar {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .status-strip {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    font-size: 0.72rem !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    order: 1 !important;
+  }
+
+  .logout {
+    order: 2 !important;
+    margin-left: auto !important;
+  }
+
+  /* Main layout stacks */
+  .layout {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding: 10px 12px 20px !important;
+    min-height: auto !important;
+  }
+
+  .left-panel {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-self: stretch !important;
+  }
+
+  /* Hide large time/date block on mobile */
+  .left-panel > div:first-child {
+    display: none !important;
+  }
+
+  /* Left panel cards */
+  .left-panel .fx-card,
+  .left-panel .density-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 12px 14px !important;
+    margin: 0 !important;
+  }
+
+  .left-panel .weather-card {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .tile {
+    min-height: 150px !important;
+    padding: 14px 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .tile .tile-icon { font-size: 28px !important; }
+  .tile .tile-title { font-size: 1rem !important; }
+  .tile .tile-desc { font-size: 0.8rem !important; }
+}
+
+@media (max-width: 420px) {
+  .left-panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .logout {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* Mobile: place settings button next to logout */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Push content below fixed back/exit on mobile */
+  .page-actions {
+    top: 8px !important;
+    right: 8px !important;
+  }
+
+  .page-actions ~ .container {
+    padding-top: 72px !important;
+  }
+
+  .settings-btn {
+    position: fixed !important;
+    left: 12px !important;
+    right: calc(50% + 6px) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 12px) !important;
+    z-index: 300 !important;
+    height: 40px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.95rem !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    -webkit-transform: translate3d(0,0,0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+  }
+
+  .logout {
+    position: fixed !important;
+    right: 12px !important;
+    left: calc(50% + 6px) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 12px) !important;
+    z-index: 300 !important;
+    height: 40px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    line-height: 40px !important;
+    white-space: nowrap !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    -webkit-transform: translate3d(0,0,0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+  }
+
+  .settings-btn,
+  .logout {
+    max-width: calc(50% - 18px) !important;
+  }
+
+  /* Scroll only inside main content to keep fixed buttons stable on iOS */
+  .layout {
+    max-height: calc(100vh - 90px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 90px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .settings-btn,
+  .logout {
+    height: 42px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* iOS Safari fixed-position stabilization */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    html, body {
+      height: 100% !important;
+      -webkit-overflow-scrolling: auto !important;
+      overscroll-behavior: none !important;
+    }
+
+    .settings-btn,
+    .logout {
+      position: fixed !important;
+      transform: translate3d(0, 0, 0) !important;
+      -webkit-transform: translate3d(0, 0, 0) !important;
+    }
+  }
 }
