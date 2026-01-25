@@ -8,6 +8,7 @@ import os
 import urllib.parse
 import urllib.request
 from werkzeug.security import generate_password_hash, check_password_hash
+import traceback
 
 app = Flask(__name__)
 @app.route("/health")
@@ -1229,8 +1230,10 @@ def auth():
                 session['waiter_id'] = None
                 return jsonify({'success': True, 'redirect': '/dashboard'})
         return jsonify({'success': False, 'message': 'Hatali sifre!'})
-    except Exception:
-        return jsonify({'success': False, 'message': 'Giris hatasi. Sunucuya erisim saglanamadi.'}), 500
+    except Exception as exc:
+        print('AUTH_ERROR:', repr(exc), flush=True)
+        print(traceback.format_exc(), flush=True)
+        return ('auth error', 500)
 
 @app.route('/logout')
 def logout():
