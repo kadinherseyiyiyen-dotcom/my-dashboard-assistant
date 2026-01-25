@@ -324,24 +324,31 @@ def load_config():
 def init_data():
     if not storage_has_key(MENU_FILE):
         menu = {
-            "ana_menu": [{"id": 1, "name": "Serpme Kahvaltı", "price": 85, "category": "ana_menu", "image": "🍳"}],
+            "ana_menu": [
+                {"id": 1, "name": "Serpme Kahvalt?", "price": 1290, "category": "ana_menu", "image": "??"}
+            ],
             "ekstralar": [
-                {"id": 2, "name": "Patates Kızartması", "price": 25, "category": "ekstra", "image": "🍟"},
-                {"id": 3, "name": "Hellim", "price": 30, "category": "ekstra", "image": "🧀"},
-                {"id": 4, "name": "Full Falafel", "price": 35, "category": "ekstra", "image": "🥙"},
-                {"id": 5, "name": "Mıhlama", "price": 40, "category": "ekstra", "image": "🫕"},
-                {"id": 6, "name": "Göz Yumurta", "price": 20, "category": "ekstra", "image": "🍳"}
+                {"id": 2, "name": "Patates K?zartmas?", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 3, "name": "Hellim", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 4, "name": "Falafel", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 5, "name": "M?hlama", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 6, "name": "G?z Yumurta", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 7, "name": "Sucuk", "price": 350, "category": "ekstra", "image": "??"},
+                {"id": 8, "name": "Patatesli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
+                {"id": 9, "name": "Peynirli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
+                {"id": 10, "name": "Ispanakl? G?zleme", "price": 300, "category": "ekstra", "image": "??"}
             ],
             "icecekler": [
-                {"id": 7, "name": "Çay", "price": 8, "category": "icecek", "image": "🫖"},
-                {"id": 8, "name": "Karak", "price": 15, "category": "icecek", "image": "☕"},
-                {"id": 9, "name": "Sıcak Süt", "price": 12, "category": "icecek", "image": "🥛"},
-                {"id": 10, "name": "Türk Kahvesi", "price": 25, "category": "icecek", "image": "☕"},
-                {"id": 11, "name": "Portakal Suyu", "price": 20, "category": "icecek", "image": "🍊"},
-                {"id": 12, "name": "Limonata", "price": 18, "category": "icecek", "image": "🍋"},
-                {"id": 13, "name": "Su", "price": 5, "category": "icecek", "image": "💧"}
+                {"id": 11, "name": "?ay", "price": 50, "category": "icecek", "image": "?"},
+                {"id": 12, "name": "Karak", "price": 100, "category": "icecek", "image": "?"},
+                {"id": 13, "name": "S?cak S?t", "price": 100, "category": "icecek", "image": "??"},
+                {"id": 14, "name": "T?rk Kahvesi", "price": 150, "category": "icecek", "image": "?"},
+                {"id": 15, "name": "Portakal Suyu", "price": 300, "category": "icecek", "image": "??"},
+                {"id": 16, "name": "Limonata", "price": 300, "category": "icecek", "image": "??"},
+                {"id": 17, "name": "Su", "price": 60, "category": "icecek", "image": "??"},
+                {"id": 18, "name": "Nar Suyu", "price": 300, "category": "icecek", "image": "??"}
             ],
-              "sarkuteri": []
+            "sarkuteri": []
         }
         save_json_storage(MENU_FILE, menu)
     

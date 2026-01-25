@@ -451,5 +451,32 @@
     "kaynak": "kasa",
     "masa_acilis_ts": "2026-01-26T01:38:41.982871+03:00",
     "auto_water_added": true
+  },
+  {
+    "id": 12,
+    "masa": 4,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1
+      },
+      {
+        "id": 13,
+        "name": "Su",
+        "price": 60,
+        "adet": 2
+      }
+    ],
+    "toplam": 1410,
+    "zaman": "02:26",
+    "tarih": "26.01.2026",
+    "durum": "aktif",
+    "kaynak": "kasa",
+    "masa_acilis_ts": "2026-01-26T02:26:07.074957+03:00",
+    "auto_water_added": true
   }
 ]
