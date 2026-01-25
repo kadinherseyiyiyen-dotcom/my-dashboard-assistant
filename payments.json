@@ -172,5 +172,104 @@
     "created_at": "2026-01-26T01:32:31.936858+03:00",
     "staff_id": 2,
     "staff_name": "Kasiyer"
+  },
+  {
+    "id": 18,
+    "order_id": 1,
+    "table_id": 3,
+    "type": "cash",
+    "amount": 1161.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:36:09.843634+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 19,
+    "order_id": 3,
+    "table_id": 4,
+    "type": "cash",
+    "amount": 1161.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:36:26.355364+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 20,
+    "order_id": 4,
+    "table_id": 4,
+    "type": "cash",
+    "amount": 1161.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:36:26.355364+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 21,
+    "order_id": 10,
+    "table_id": 2,
+    "type": "cash",
+    "amount": 423.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:00.687288+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 22,
+    "order_id": 5,
+    "table_id": 3,
+    "type": "cash",
+    "amount": 1269.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:02.612335+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 23,
+    "order_id": 6,
+    "table_id": 4,
+    "type": "cash",
+    "amount": 1269.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:06.423861+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 24,
+    "order_id": 8,
+    "table_id": 5,
+    "type": "cash",
+    "amount": 1269.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:08.395374+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 25,
+    "order_id": 7,
+    "table_id": 6,
+    "type": "cash",
+    "amount": 1269.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:10.252315+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 26,
+    "order_id": 9,
+    "table_id": 7,
+    "type": "cash",
+    "amount": 1269.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T01:37:12.276176+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
   }
 ]

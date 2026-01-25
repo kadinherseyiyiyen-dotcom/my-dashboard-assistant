@@ -1203,29 +1203,34 @@ def login():
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    data = request.json
+    data = request.json or {}
 
     role = data.get('role')
     password = data.get('password')
 
-    if role == 'garson':
-        staff_list = load_staff()
-        staff_item = find_staff_by_name(staff_list, data.get('name'))
-        if not staff_item or not staff_item.get('is_active'):
-            return jsonify({'success': False, 'message': 'Garson bulunamadi.'}), 400
-        pin_hash = staff_item.get('pin_hash')
-        if not pin_hash or not password or not check_password_hash(pin_hash, password):
-            return jsonify({'success': False, 'message': 'Hatali sifre!'}), 400
-        session['role'] = 'garson'
-        session['user'] = staff_item.get('name')
-        session['waiter_id'] = staff_item.get('id')
-        return jsonify({'success': True, 'redirect': '/garson'})
-    if role == 'kasa' and password == load_config().get('kasa_sifre', 'kasa123'):
-        session['role'] = 'kasa'
-        session['user'] = 'Kasiyer'
-        session['waiter_id'] = None
-        return jsonify({'success': True, 'redirect': '/dashboard'})
-    return jsonify({'success': False, 'message': 'Hatali sifre!'})
+    try:
+        if role == 'garson':
+            staff_list = load_staff()
+            staff_item = find_staff_by_name(staff_list, data.get('name'))
+            if not staff_item or not staff_item.get('is_active'):
+                return jsonify({'success': False, 'message': 'Garson bulunamadi.'}), 400
+            pin_hash = staff_item.get('pin_hash')
+            if not pin_hash or not password or not check_password_hash(pin_hash, password):
+                return jsonify({'success': False, 'message': 'Hatali sifre!'}), 400
+            session['role'] = 'garson'
+            session['user'] = staff_item.get('name')
+            session['waiter_id'] = staff_item.get('id')
+            return jsonify({'success': True, 'redirect': '/garson'})
+        if role == 'kasa':
+            kasa_sifre = load_config().get('kasa_sifre', 'kasa123')
+            if password == kasa_sifre:
+                session['role'] = 'kasa'
+                session['user'] = 'Kasiyer'
+                session['waiter_id'] = None
+                return jsonify({'success': True, 'redirect': '/dashboard'})
+        return jsonify({'success': False, 'message': 'Hatali sifre!'})
+    except Exception:
+        return jsonify({'success': False, 'message': 'Giris hatasi. Sunucuya erisim saglanamadi.'}), 500
 
 @app.route('/logout')
 def logout():

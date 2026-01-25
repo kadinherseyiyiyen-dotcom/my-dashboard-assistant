@@ -1016,7 +1016,9 @@
                 listEl.innerHTML = '<div class="loading">Kayit bulunamadi.</div>';
                 return;
             }
-            listEl.innerHTML = records.map(rec => {
+            const showAll = listEl.getAttribute('data-show-all') === 'true';
+            const visibleRecords = showAll ? records : records.slice(0, 3);
+            listEl.innerHTML = visibleRecords.map(rec => {
                 const opened = rec.opened_at || '--';
                 const closed = rec.closed_at ? rec.closed_at.replace('T', ' ').slice(0, 16) : '--';
                 const staff = rec.staff_name || 'Bilinmiyor';
@@ -1032,6 +1034,21 @@
                     </div>
                 `;
             }).join('');
+            if (records.length > 3) {
+                const label = showAll ? 'Daha az goster' : 'Tumunu goster';
+                listEl.insertAdjacentHTML('beforeend', `
+                    <div style="text-align:center; margin-top: 0.5rem;">
+                        <button class="btn btn-secondary" id="closed-toggle-btn">${label}</button>
+                    </div>
+                `);
+                const toggleBtn = document.getElementById('closed-toggle-btn');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function () {
+                        listEl.setAttribute('data-show-all', showAll ? 'false' : 'true');
+                        renderClosedChecks(records);
+                    });
+                }
+            }
 
             listEl.querySelectorAll('.closed-row').forEach(row => {
                 row.addEventListener('click', function () {
