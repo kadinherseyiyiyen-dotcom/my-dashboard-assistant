@@ -321,35 +321,39 @@ def finalize_table_session(masa, orders):
 def load_config():
     return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
 
+
+def default_menu_seed():
+    return {
+        "ana_menu": [
+            {"id": 1, "name": "Serpme Kahvalt?", "price": 1290, "category": "ana_menu", "image": "??"}
+        ],
+        "ekstralar": [
+            {"id": 2, "name": "Patates K?zartmas?", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 3, "name": "Hellim", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 4, "name": "Falafel", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 5, "name": "M?hlama", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 6, "name": "G?z Yumurta", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 7, "name": "Sucuk", "price": 350, "category": "ekstra", "image": "??"},
+            {"id": 8, "name": "Patatesli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
+            {"id": 9, "name": "Peynirli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
+            {"id": 10, "name": "Ispanakl? G?zleme", "price": 300, "category": "ekstra", "image": "??"}
+        ],
+        "icecekler": [
+            {"id": 11, "name": "?ay", "price": 50, "category": "icecek", "image": "?"},
+            {"id": 12, "name": "Karak", "price": 100, "category": "icecek", "image": "?"},
+            {"id": 13, "name": "S?cak S?t", "price": 100, "category": "icecek", "image": "??"},
+            {"id": 14, "name": "T?rk Kahvesi", "price": 150, "category": "icecek", "image": "?"},
+            {"id": 15, "name": "Portakal Suyu", "price": 300, "category": "icecek", "image": "??"},
+            {"id": 16, "name": "Limonata", "price": 300, "category": "icecek", "image": "??"},
+            {"id": 17, "name": "Su", "price": 60, "category": "icecek", "image": "??"},
+            {"id": 18, "name": "Nar Suyu", "price": 300, "category": "icecek", "image": "??"}
+        ],
+        "sarkuteri": []
+    }
+
 def init_data():
     if not storage_has_key(MENU_FILE):
-        menu = {
-            "ana_menu": [
-                {"id": 1, "name": "Serpme Kahvalt?", "price": 1290, "category": "ana_menu", "image": "??"}
-            ],
-            "ekstralar": [
-                {"id": 2, "name": "Patates K?zartmas?", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 3, "name": "Hellim", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 4, "name": "Falafel", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 5, "name": "M?hlama", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 6, "name": "G?z Yumurta", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 7, "name": "Sucuk", "price": 350, "category": "ekstra", "image": "??"},
-                {"id": 8, "name": "Patatesli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
-                {"id": 9, "name": "Peynirli G?zleme", "price": 300, "category": "ekstra", "image": "??"},
-                {"id": 10, "name": "Ispanakl? G?zleme", "price": 300, "category": "ekstra", "image": "??"}
-            ],
-            "icecekler": [
-                {"id": 11, "name": "?ay", "price": 50, "category": "icecek", "image": "?"},
-                {"id": 12, "name": "Karak", "price": 100, "category": "icecek", "image": "?"},
-                {"id": 13, "name": "S?cak S?t", "price": 100, "category": "icecek", "image": "??"},
-                {"id": 14, "name": "T?rk Kahvesi", "price": 150, "category": "icecek", "image": "?"},
-                {"id": 15, "name": "Portakal Suyu", "price": 300, "category": "icecek", "image": "??"},
-                {"id": 16, "name": "Limonata", "price": 300, "category": "icecek", "image": "??"},
-                {"id": 17, "name": "Su", "price": 60, "category": "icecek", "image": "??"},
-                {"id": 18, "name": "Nar Suyu", "price": 300, "category": "icecek", "image": "??"}
-            ],
-            "sarkuteri": []
-        }
+        menu = default_menu_seed()
         save_json_storage(MENU_FILE, menu)
     
     if not storage_has_key(ORDERS_FILE):
@@ -467,7 +471,12 @@ def save_table_discounts(discounts):
     save_json_storage(TABLE_DISCOUNTS_FILE, discounts)
 
 def load_menu():
-    return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
+    menu = cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
+    if not menu:
+        menu = default_menu_seed()
+        save_json_storage(MENU_FILE, menu)
+        invalidate_cache('menu')
+    return menu
 
 def find_menu_item_by_name(menu, name):
     if not isinstance(menu, dict):
