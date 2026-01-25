@@ -178,41 +178,6 @@
             color: #9a3412;
             letter-spacing: 0.02em;
         }
-        .density-card {
-            background: rgba(255,255,255,0.75);
-            border: 1px solid rgba(255,168,93,0.35);
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-            box-shadow: 0 12px 24px rgba(255, 144, 51, 0.18);
-        }
-        .density-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #7a3619;
-            margin-bottom: 0.65rem;
-        }
-        .density-bar {
-            height: 10px;
-            border-radius: 999px;
-            background: #f1d7be;
-            overflow: hidden;
-        }
-        .density-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ffb347, #ff7a1a);
-            transition: width 0.4s ease;
-        }
-        .density-meta {
-            margin-top: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.78rem;
-            color: #8a4b12;
-        }
         .grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(170px, 1fr));
@@ -284,7 +249,7 @@
         @media (max-width: 960px) {
             .layout { grid-template-columns: 1fr; }
             .left-panel { flex-direction: row; flex-wrap: wrap; }
-            .fx-card, .density-card { flex: 1; min-width: 240px; }
+            .fx-card { flex: 1; min-width: 240px; }
             .grid { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
         }
         @media (max-width: 640px) {
@@ -299,7 +264,7 @@
         <div class="status-strip">
             <div class="status-item"><span class="status-dot" id="server-dot"></span>Server ONLINE</div>
             <div class="status-item"><span class="status-dot" id="internet-dot"></span>Internet <span id="internet-text">ONLINE</span></div>
-            <div class="status-item"><span>&#128100;</span>Y&#214;NET&#304;C&#304;</div>
+            <div class="status-item"><span>&#128100;</span>{{ session.get('user', 'YONETICI') }}</div>
             <div class="status-item" id="time-top">--:--</div>
         </div>
         <a href="/logout" class="logout">&#199;&#305;k&#305;&#351;</a>
@@ -316,17 +281,6 @@
                 <div class="fx-row"><span>USD</span><span id="fx-usd">--</span></div>
                 <div class="fx-row"><span>EUR</span><span id="fx-eur">--</span></div>
                 <div class="fx-row"><span>GBP</span><span id="fx-gbp">--</span></div>
-            </div>
-            <div class="density-card">
-                <div class="density-header">
-                    <span>Yo&#287;unluk</span>
-                    <span id="density-text">--</span>
-                </div>
-                <div class="density-bar"><div class="density-fill" id="density-fill"></div></div>
-                <div class="density-meta">
-                    <span>Skor: <strong id="density-score">0</strong></span>
-                    <span>Aktif masa: <strong id="density-count">0</strong></span>
-                </div>
             </div>
         </div>
         <div class="grid">
@@ -363,33 +317,6 @@
                     <div>
                         <div class="tile-title">Son Kapat&#305;lanlar</div>
                         <div class="tile-desc">Geri al / son i&#351;lemler</div>
-                    </div>
-                </a>
-            </div>
-            <div class="tile">
-                <a href="/kasa?open=otopark">
-                    <div class="tile-icon">&#128663;</div>
-                    <div>
-                        <div class="tile-title">Otopark</div>
-                        <div class="tile-desc">Ara&#231; giri&#351;/&#231;&#305;k&#305;&#351;</div>
-                    </div>
-                </a>
-            </div>
-            <div class="tile">
-                <a href="/tip-havuzu">
-                    <div class="tile-icon">&#128176;</div>
-                    <div>
-                        <div class="tile-title">Tip Havuzu</div>
-                        <div class="tile-desc">Tip da&#287;&#305;t&#305;m&#305;</div>
-                    </div>
-                </a>
-            </div>
-            <div class="tile">
-                <a href="/vardiya">
-                    <div class="tile-icon">&#128101;</div>
-                    <div>
-                        <div class="tile-title">Vardiya</div>
-                        <div class="tile-desc">Vardiya takibi</div>
                     </div>
                 </a>
             </div>
@@ -495,56 +422,12 @@
                 .then(renderWeather)
                 .catch(() => {});
         }
-        function computeDensity(activeCount) {
-            var score = 0;
-            var label = 'D\u00fc\u015f\u00fck';
-            if (activeCount < 7) {
-                score = Math.round((activeCount / 7) * 50);
-                label = 'D\u00fc\u015f\u00fck';
-            } else if (activeCount < 10) {
-                score = 50 + Math.round(((activeCount - 7) / 3) * 25);
-                label = 'Art\u0131yor';
-            } else if (activeCount < 15) {
-                score = 75 + Math.round(((activeCount - 10) / 5) * 25);
-                label = 'Yo\u011fun';
-            } else {
-                score = 100;
-                label = 'Kritik';
-            }
-            return { score: Math.min(100, Math.max(0, score)), label: label };
-        }
-        function updateDensity() {
-            fetch('/api/kasa-init')
-                .then(r => r.json())
-                .then(data => {
-                    var orders = (data && data.orders) || [];
-                    var activeSet = new Set();
-                    orders.forEach(function (o) {
-                        if (o && o.durum === 'aktif') {
-                            activeSet.add(String(o.masa));
-                        }
-                    });
-                    var activeCount = activeSet.size;
-                    var result = computeDensity(activeCount);
-                    var textEl = document.getElementById('density-text');
-                    var scoreEl = document.getElementById('density-score');
-                    var countEl = document.getElementById('density-count');
-                    var fillEl = document.getElementById('density-fill');
-                    if (textEl) textEl.textContent = result.label;
-                    if (scoreEl) scoreEl.textContent = result.score;
-                    if (countEl) countEl.textContent = activeCount;
-                    if (fillEl) fillEl.style.width = result.score + '%';
-                })
-                .catch(() => {});
-        }
         updateClock();
         updateStatus();
         updateFx();
-        updateDensity();
         updateWeather();
         setInterval(updateClock, 1000);
         setInterval(updateFx, 600000);
-        setInterval(updateDensity, 15000);
         setInterval(updateWeather, 600000);
         window.addEventListener('online', updateStatus);
         window.addEventListener('offline', updateStatus);

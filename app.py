@@ -7,6 +7,7 @@ import json
 import os
 import urllib.parse
 import urllib.request
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 @app.route("/health")
@@ -214,6 +215,9 @@ CONFIG_FILE = 'config.json'
 PAYMENTS_FILE = 'payments.json'
 OTOPARK_CONFIG_FILE = 'otopark_config.json'
 TABLE_DISCOUNTS_FILE = 'table_discounts.json'
+CLOSED_CHECKS_FILE = 'closed_checks.json'
+CLOSED_CHECK_ITEMS_FILE = 'closed_check_items.json'
+ACTIVITY_LOG_FILE = 'activity_log.json'
 STAFF_CACHE_TTL = int(os.environ.get('STAFF_CACHE_TTL', '60'))
 PRINTER_NAME = os.environ.get('PRINTER_NAME')
 WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '55d81da9d6c54f39ae3222425262301')
@@ -363,12 +367,76 @@ def save_orders(orders):
     save_json_storage(ORDERS_FILE, orders)
     invalidate_cache('orders')
 
+def load_activity_log():
+    return load_json_storage(ACTIVITY_LOG_FILE, [])
+
+def save_activity_log(entries):
+    save_json_storage(ACTIVITY_LOG_FILE, entries)
+
+def append_activity(action, payload):
+    entries = load_activity_log()
+    entry = {
+        'id': len(entries) + 1,
+        'action': action,
+        'created_at': now_tr().isoformat(),
+        'data': payload or {}
+    }
+    entries.append(entry)
+    save_activity_log(entries)
+
 def load_payments():
     return cached_load('payments', lambda: load_json_storage(PAYMENTS_FILE, []), ORDERS_CACHE_TTL)
 
 def save_payments(payments):
     save_json_storage(PAYMENTS_FILE, payments)
     invalidate_cache('payments')
+
+def load_closed_checks():
+    return load_json_storage(CLOSED_CHECKS_FILE, [])
+
+def save_closed_checks(records):
+    save_json_storage(CLOSED_CHECKS_FILE, records)
+
+def load_closed_check_items():
+    return load_json_storage(CLOSED_CHECK_ITEMS_FILE, [])
+
+def save_closed_check_items(items):
+    save_json_storage(CLOSED_CHECK_ITEMS_FILE, items)
+
+def archive_closed_order(order, staff_info=None):
+    if not order:
+        return
+    checks = load_closed_checks()
+    items_store = load_closed_check_items()
+    check_id = max([c.get('id', 0) for c in checks] or [0]) + 1
+    closed_at = now_tr().isoformat()
+    table_id = order.get('masa')
+    record = {
+        'id': check_id,
+        'order_id': order.get('id'),
+        'table_id': table_id,
+        'table_name': load_tables().get(str(table_id)) or f"Masa {table_id}",
+        'opened_at': order.get('masa_acilis_ts') or order.get('tarih'),
+        'closed_at': closed_at,
+        'total': order.get('indirimli_tutar') or order.get('paid_total') or order.get('toplam') or 0,
+        'payment_type': order.get('odeme_turu') or 'bilinmiyor',
+        'payment_breakdown': order.get('odeme_breakdown') or {},
+        'staff_id': (staff_info or {}).get('staff_id'),
+        'staff_name': (staff_info or {}).get('staff_name') or order.get('garson') or 'Bilinmiyor'
+    }
+    checks.append(record)
+    for item in order.get('items') or []:
+        items_store.append({
+            'check_id': check_id,
+            'order_id': order.get('id'),
+            'item_id': item.get('id'),
+            'name': item.get('name'),
+            'adet': item.get('adet'),
+            'price': item.get('price'),
+            'total': (item.get('price') or 0) * (item.get('adet') or 0)
+        })
+    save_closed_checks(checks)
+    save_closed_check_items(items_store)
 
 def parse_closed_datetime(order):
     date_str = order.get('kapanma_tarih') or order.get('tarih') or ''
@@ -393,36 +461,16 @@ def save_table_discounts(discounts):
 def load_menu():
     return cached_load('menu', lambda: load_json_storage(MENU_FILE, {}), MENU_CACHE_TTL)
 
-def fetch_weather():
-    now_ts = time.time()
-    cached = _WEATHER_CACHE.get('data')
-    if cached and now_ts - _WEATHER_CACHE.get('ts', 0) < WEATHER_TTL:
-        return cached
-    if not WEATHER_API_KEY:
+def find_menu_item_by_name(menu, name):
+    if not isinstance(menu, dict):
         return None
-    params = urllib.parse.urlencode({
-        'key': WEATHER_API_KEY,
-        'q': WEATHER_LOCATION,
-        'lang': 'tr'
-    })
-    url = f'https://api.weatherapi.com/v1/current.json?{params}'
-    try:
-        with urllib.request.urlopen(url, timeout=8) as resp:
-            raw = resp.read().decode('utf-8')
-            payload = json.loads(raw)
-    except Exception:
-        return cached
-    current = payload.get('current') or {}
-    condition = current.get('condition') or {}
-    data = {
-        'temp': current.get('temp_c'),
-        'condition': condition.get('text') or '',
-        'icon': condition.get('icon') or '',
-        'location': WEATHER_LOCATION
-    }
-    _WEATHER_CACHE['ts'] = now_ts
-    _WEATHER_CACHE['data'] = data
-    return data
+    for group_items in menu.values():
+        if not isinstance(group_items, list):
+            continue
+        for item in group_items:
+            if (item.get('name') or '').strip() == name:
+                return item
+    return None
 
 def normalize_payment_type(value):
     val = (value or '').strip().lower()
@@ -435,6 +483,15 @@ def normalize_payment_type(value):
     if val in ['other', 'diger', 'diğer']:
         return 'other'
     return val or 'other'
+
+def payment_label_from_type(ptype):
+    if ptype == 'cash':
+        return 'nakit'
+    if ptype == 'card':
+        return 'kart'
+    if ptype == 'qr':
+        return 'qr'
+    return 'diger'
 
 def build_payment_breakdown(payments):
     breakdown = {'cash': 0.0, 'card': 0.0, 'qr': 0.0, 'other': 0.0}
@@ -621,7 +678,16 @@ def save_bill_requests(data):
     save_json_storage(TABLE_BILL_REQUEST_FILE, data)
 
 def load_staff():
-    return cached_load('staff', lambda: load_json_storage(STAFF_FILE, []), STAFF_CACHE_TTL)
+    staff = cached_load('staff', lambda: load_json_storage(STAFF_FILE, []), STAFF_CACHE_TTL)
+    updated = False
+    for item in staff:
+        if not item.get('pin_hash'):
+            item['pin_hash'] = generate_password_hash('1234')
+            item['updated_at'] = now_tr().isoformat()
+            updated = True
+    if updated:
+        save_staff(staff)
+    return staff
 
 def save_staff(staff):
     save_json_storage(STAFF_FILE, staff)
@@ -629,6 +695,15 @@ def save_staff(staff):
 
 def normalize_staff_name(name):
     return str(name or '').strip()
+
+def find_staff_by_name(staff_list, name):
+    key = normalize_staff_name(name).lower()
+    if not key:
+        return None
+    for item in staff_list:
+        if normalize_staff_name(item.get('name')).lower() == key:
+            return item
+    return None
 
 def get_staff_defaults():
     employees = load_json_storage(EMPLOYEES_FILE, [])
@@ -654,6 +729,7 @@ def init_staff_storage():
             'id': next_id,
             'name': name,
             'is_active': True,
+            'pin_hash': generate_password_hash('1234'),
             'created_at': now_iso,
             'updated_at': now_iso
         })
@@ -665,6 +741,23 @@ def find_staff_by_id(staff_list, staff_id):
         if str(item.get('id')) == str(staff_id):
             return item
     return None
+
+def get_actor_info(staff_id=None, staff_name=None):
+    sid = session.get('waiter_id')
+    sname = session.get('user')
+    if sid is None and staff_id is not None:
+        sid = staff_id
+    if (not sname) and staff_name:
+        sname = staff_name
+    if sid is not None:
+        staff_list = load_staff()
+        item = find_staff_by_id(staff_list, sid)
+        if item and not sname:
+            sname = item.get('name')
+    return {
+        'staff_id': sid,
+        'staff_name': sname or 'Bilinmiyor'
+    }
 
 
 
@@ -1114,17 +1207,25 @@ def auth():
 
     role = data.get('role')
     password = data.get('password')
-    
-    if role == 'garson' and password == 'garson123':
+
+    if role == 'garson':
+        staff_list = load_staff()
+        staff_item = find_staff_by_name(staff_list, data.get('name'))
+        if not staff_item or not staff_item.get('is_active'):
+            return jsonify({'success': False, 'message': 'Garson bulunamadi.'}), 400
+        pin_hash = staff_item.get('pin_hash')
+        if not pin_hash or not password or not check_password_hash(pin_hash, password):
+            return jsonify({'success': False, 'message': 'Hatali sifre!'}), 400
         session['role'] = 'garson'
-        session['user'] = data.get('name', 'Garson')
+        session['user'] = staff_item.get('name')
+        session['waiter_id'] = staff_item.get('id')
         return jsonify({'success': True, 'redirect': '/garson'})
-    elif role == 'kasa' and password == load_config().get('kasa_sifre', 'kasa123'):
+    if role == 'kasa' and password == load_config().get('kasa_sifre', 'kasa123'):
         session['role'] = 'kasa'
         session['user'] = 'Kasiyer'
+        session['waiter_id'] = None
         return jsonify({'success': True, 'redirect': '/dashboard'})
-    else:
-        return jsonify({'success': False, 'message': 'Hatalı şifre!'})
+    return jsonify({'success': False, 'message': 'Hatali sifre!'})
 
 @app.route('/logout')
 def logout():
@@ -1373,6 +1474,7 @@ def siparis_ekle():
 
     orders = load_orders()
     masa = data.get('masa')
+    existing_active = [o for o in orders if o.get('durum') == 'aktif' and str(o.get('masa')) == str(masa)]
     open_ts = get_table_open_ts(orders, masa)
     if not open_ts:
         open_ts = now_tr().isoformat()
@@ -1387,23 +1489,49 @@ def siparis_ekle():
         save_table_sessions(sessions)
     
     garson_name = staff_item.get('name')
+    menu = load_menu()
+    items = list(data.get('items') or [])
+    auto_water_added = False
+    if not existing_active:
+        water_item = find_menu_item_by_name(menu, 'Su')
+        if water_item:
+            has_water = any((i.get('name') or i.get('urun')) == 'Su' for i in items)
+            if not has_water:
+                items.append({
+                    'id': water_item.get('id'),
+                    'name': water_item.get('name'),
+                    'price': water_item.get('price'),
+                    'adet': 2
+                })
+                auto_water_added = True
+    toplam = sum((i.get('price') or 0) * (i.get('adet') or 0) for i in items)
     
     new_order = {
         'id': len(orders) + 1,
         'masa': masa,
         'garson': garson_name,
         'staff_id': staff_id,
-        'items': data['items'],
-        'toplam': data['toplam'],
+        'items': items,
+        'toplam': toplam,
         'zaman': now_tr().strftime('%H:%M'),
         'tarih': now_tr().strftime('%d.%m.%Y'),
         'durum': 'aktif',
         'kaynak': 'kasa' if session.get('role') == 'kasa' else 'garson',
-        'masa_acilis_ts': open_ts
+        'masa_acilis_ts': open_ts,
+        'auto_water_added': auto_water_added
     }
     
     orders.append(new_order)
     save_orders(orders)
+
+    if auto_water_added:
+        append_activity('AUTO_WATER', {
+            'order_id': new_order['id'],
+            'table_id': masa,
+            'staff_id': staff_id,
+            'staff_name': garson_name,
+            'count': 2
+        })
     
     return jsonify({'success': True, 'order_id': new_order['id']})
 
@@ -1438,6 +1566,7 @@ def staff_api():
         'id': next_id,
         'name': name,
         'is_active': True,
+        'pin_hash': generate_password_hash(str(data.get('pin') or '1234')),
         'created_at': now_iso,
         'updated_at': now_iso
     }
@@ -1466,11 +1595,18 @@ def staff_item(staff_id):
     name = normalize_staff_name(data.get('name'))
     if name:
         item['name'] = name
+    if data.get('pin'):
+        item['pin_hash'] = generate_password_hash(str(data.get('pin')))
     if 'is_active' in data:
         item['is_active'] = bool(data.get('is_active'))
     item['updated_at'] = now_iso
     save_staff(staff)
     return jsonify({'success': True, 'staff': item})
+
+@app.route('/api/public-staff')
+def public_staff():
+    staff = [s for s in load_staff() if s.get('is_active')]
+    return jsonify({'success': True, 'staff': staff})
 
 @app.route('/api/staff/stats')
 def staff_stats_new():
@@ -1702,18 +1838,6 @@ def handle_menu():
         invalidate_cache('menu')
         return jsonify({'success': True})
 
-@app.route('/api/weather')
-def api_weather():
-    data = fetch_weather()
-    if not data:
-        return jsonify({'success': False, 'message': 'Weather not available'}), 503
-    return jsonify({
-        'temp': data.get('temp'),
-        'condition': data.get('condition'),
-        'icon': data.get('icon'),
-        'location': data.get('location') or WEATHER_LOCATION
-    })
-
 @app.route('/api/giderler', methods=['GET', 'POST'])
 def giderler_api():
     if session.get('role') != 'kasa':
@@ -1721,10 +1845,26 @@ def giderler_api():
 
     if request.method == 'GET':
         date_val = request.args.get('date')
+        start_val = request.args.get('start')
+        end_val = request.args.get('end')
+        kategori_val = request.args.get('kategori')
         records = load_expenses()
-        if date_val:
+        if start_val or end_val:
+            start_iso = normalize_date(start_val) if start_val else None
+            end_iso = normalize_date(end_val) if end_val else None
+            if start_iso and not end_iso:
+                end_iso = start_iso
+            if end_iso and not start_iso:
+                start_iso = end_iso
+            records = [
+                r for r in records
+                if start_iso <= normalize_date(r.get('date')) <= end_iso
+            ]
+        elif date_val:
             date_iso = normalize_date(date_val)
             records = [r for r in records if normalize_date(r.get('date')) == date_iso]
+        if kategori_val:
+            records = [r for r in records if (r.get('kategori') or '').strip() == kategori_val]
         return jsonify({'success': True, 'records': records})
 
     data = request.json or {}
@@ -1802,10 +1942,61 @@ def giderler_summary():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
     date_val = request.args.get('date')
-    if not date_val:
+    start_val = request.args.get('start')
+    end_val = request.args.get('end')
+    if not date_val and not (start_val or end_val):
         return jsonify({'success': False, 'message': 'Tarih gerekli.'}), 400
-    total = sum_expenses_for_date(date_val)
+    if start_val or end_val:
+        start_iso = normalize_date(start_val) if start_val else None
+        end_iso = normalize_date(end_val) if end_val else None
+        if start_iso and not end_iso:
+            end_iso = start_iso
+        if end_iso and not start_iso:
+            start_iso = end_iso
+        total = sum(
+            float(r.get('tutar', 0))
+            for r in load_expenses()
+            if start_iso <= normalize_date(r.get('date')) <= end_iso
+        )
+    else:
+        total = sum_expenses_for_date(date_val)
     return jsonify({'success': True, 'toplam_gider': total})
+
+@app.route('/api/closed-checks')
+def closed_checks():
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    date_val = request.args.get('date')
+    start_val = request.args.get('start')
+    end_val = request.args.get('end')
+    target_date = normalize_date(date_val) if date_val else None
+    start_iso = normalize_date(start_val) if start_val else None
+    end_iso = normalize_date(end_val) if end_val else None
+    if start_iso and not end_iso:
+        end_iso = start_iso
+    if end_iso and not start_iso:
+        start_iso = end_iso
+    records = []
+    for check in load_closed_checks():
+        dt = parse_iso_datetime(check.get('closed_at')) or parse_iso_datetime(check.get('opened_at') or '')
+        if not dt:
+            continue
+        date_iso = dt.date().isoformat()
+        if start_iso and end_iso:
+            if date_iso < start_iso or date_iso > end_iso:
+                continue
+        elif target_date and date_iso != target_date:
+            continue
+        records.append(check)
+    records.sort(key=lambda x: x.get('closed_at') or '', reverse=True)
+    return jsonify({'success': True, 'records': records})
+
+@app.route('/api/closed-checks/<int:check_id>')
+def closed_check_items(check_id):
+    if session.get('role') != 'kasa':
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    items = [i for i in load_closed_check_items() if str(i.get('check_id')) == str(check_id)]
+    return jsonify({'success': True, 'items': items})
 
 @app.route('/api/otopark-gider', methods=['POST'])
 def otopark_gider():
@@ -1937,6 +2128,93 @@ def order_payments(order_id):
         return jsonify({'order_id': order_id, 'payments': items})
 
     data = request.json or {}
+
+    manual = data.get('manual')
+    if manual:
+        pay_type = normalize_payment_type(manual.get('payment_type') or manual.get('type') or manual.get('odeme_turu'))
+        if pay_type not in ['cash', 'card', 'qr', 'other']:
+            return jsonify({'success': False, 'message': 'Odeme turu gecersiz.'}), 400
+        override_total = manual.get('override_total')
+        discount_enabled = bool(manual.get('discount_enabled'))
+        discount_type = manual.get('discount_type')
+        discount_value = manual.get('discount_value')
+        note = (manual.get('note') or '').strip()
+        base_total = float(order.get('toplam', 0) or 0)
+        manual_due = base_total
+        if override_total not in [None, '']:
+            try:
+                manual_due = float(override_total)
+            except Exception:
+                return jsonify({'success': False, 'message': 'Tahsil tutari gecersiz.'}), 400
+        elif discount_enabled:
+            try:
+                dv = float(discount_value or 0)
+            except Exception:
+                return jsonify({'success': False, 'message': 'Indirim degeri gecersiz.'}), 400
+            if dv <= 0:
+                return jsonify({'success': False, 'message': 'Indirim degeri gerekli.'}), 400
+            if discount_type == 'percent':
+                manual_due = base_total * (1 - dv / 100)
+            elif discount_type == 'amount':
+                manual_due = base_total - dv
+            else:
+                return jsonify({'success': False, 'message': 'Indirim tipi gecersiz.'}), 400
+        if manual_due < 0:
+            return jsonify({'success': False, 'message': 'Tahsil tutari 0 olamaz.'}), 400
+        manual_due = round(manual_due, 2)
+        order['durum'] = 'kapali'
+        order['kapanma_zamani'] = now_tr().strftime('%H:%M')
+        order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
+        order['odeme_breakdown'] = { pay_type: manual_due }
+        order['paid_total'] = manual_due
+        order['is_paid'] = True
+        order['paid_at'] = now_tr().isoformat()
+        actor = get_actor_info(order.get('staff_id'), order.get('garson'))
+        order['odeme_turu'] = payment_label_from_type(pay_type)
+        order['indirimli_tutar'] = manual_due
+        order['indirim'] = round(max(0, order.get('toplam', 0) - manual_due), 2)
+        order['manual_payment'] = {
+            'payment_type': pay_type,
+            'discount_enabled': discount_enabled,
+            'discount_type': discount_type,
+            'discount_value': discount_value,
+            'override_total': override_total,
+            'note': note
+        }
+        order['paid_by_staff_id'] = actor.get('staff_id')
+        order['paid_by_staff_name'] = actor.get('staff_name')
+        archive_closed_order(order, actor)
+
+        payments_store = load_payments()
+        payments_store.append({
+            'id': len(payments_store) + 1,
+            'order_id': order_id,
+            'table_id': order.get('masa'),
+            'type': pay_type,
+            'amount': manual_due,
+            'meta_json': {
+                'manual': True,
+                'discount_enabled': discount_enabled,
+                'discount_type': discount_type,
+                'discount_value': discount_value,
+                'override_total': override_total,
+                'note': note
+            },
+            'created_at': now_tr().isoformat(),
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
+        save_payments(payments_store)
+        save_orders(orders)
+        append_activity('MANUAL_PAYMENT', {
+            'order_id': order_id,
+            'table_id': order.get('masa'),
+            'total': manual_due,
+            'payment_type': pay_type,
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
+        return jsonify({'success': True})
     payments_input = data.get('payments')
     if not payments_input:
         return jsonify({'success': False, 'message': 'Odeme listesi gerekli.'}), 400
@@ -1952,6 +2230,7 @@ def order_payments(order_id):
     except ValueError as exc:
         return jsonify({'success': False, 'message': str(exc)}), 400
 
+    actor = get_actor_info(order.get('staff_id'), order.get('garson'))
     breakdown = result['breakdowns'].get(order['id'], {})
     cash_only = result['cash_only']
     card_only = result['card_only']
@@ -1973,6 +2252,10 @@ def order_payments(order_id):
         order['indirim'] = 0
         order['indirimli_tutar'] = order.get('toplam', 0)
 
+    order['paid_by_staff_id'] = actor.get('staff_id')
+    order['paid_by_staff_name'] = actor.get('staff_name')
+    archive_closed_order(order, actor)
+
     save_orders(orders)
 
     bill_requests = load_bill_requests()
@@ -1988,9 +2271,20 @@ def order_payments(order_id):
             'type': payment['type'],
             'amount': round(payment['amount'], 2),
             'meta_json': payment.get('meta') or {},
-            'created_at': now_tr().isoformat()
+            'created_at': now_tr().isoformat(),
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
         })
     save_payments(payments_store)
+
+    append_activity('PAYMENT', {
+        'order_id': order_id,
+        'table_id': order.get('masa'),
+        'total': order.get('indirimli_tutar', order.get('toplam', 0)),
+        'payment_type': order.get('odeme_turu'),
+        'staff_id': actor.get('staff_id'),
+        'staff_name': actor.get('staff_name')
+    })
 
     return jsonify({'success': True})
 
@@ -2022,6 +2316,12 @@ def order_discount(order_id):
                 o['discount_applied_at'] = None
                 o['discount_amount'] = 0
         save_orders(orders)
+        actor = get_actor_info()
+        append_activity('DISCOUNT_REMOVE', {
+            'table_id': table_id,
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
         return jsonify({'success': True})
 
     data = request.json or {}
@@ -2198,6 +2498,8 @@ def hesap_kapat(masa):
 
     masa_rehber_durumu = rehber_masalar.get(str(masa), False)
     masa_orders = [o for o in orders if o.get('masa') == masa and o.get('durum') == 'aktif']
+    fallback_staff_id = masa_orders[0].get('staff_id') if masa_orders else None
+    fallback_staff_name = masa_orders[0].get('garson') if masa_orders else None
 
     if not masa_orders:
         return jsonify({'success': False, 'message': 'Aktif siparis bulunamadi.'}), 400
@@ -2216,6 +2518,105 @@ def hesap_kapat(masa):
         adjusted_orders.append({**order, 'toplam': round(order.get('toplam', 0) - share_amount, 2)})
         discount_shares[order['id']] = share_amount
 
+    manual = data.get('manual')
+    if manual:
+        pay_type = normalize_payment_type(manual.get('payment_type') or manual.get('type') or manual.get('odeme_turu'))
+        if pay_type not in ['cash', 'card', 'qr', 'other']:
+            return jsonify({'success': False, 'message': 'Odeme turu gecersiz.'}), 400
+        override_total = manual.get('override_total')
+        discount_enabled = bool(manual.get('discount_enabled'))
+        discount_type = manual.get('discount_type')
+        discount_value = manual.get('discount_value')
+        note = (manual.get('note') or '').strip()
+
+        base_total = discounted_subtotal
+        manual_due = base_total
+        if override_total not in [None, '']:
+            try:
+                manual_due = float(override_total)
+            except Exception:
+                return jsonify({'success': False, 'message': 'Tahsil tutari gecersiz.'}), 400
+        elif discount_enabled:
+            try:
+                dv = float(discount_value or 0)
+            except Exception:
+                return jsonify({'success': False, 'message': 'Indirim degeri gecersiz.'}), 400
+            if dv <= 0:
+                return jsonify({'success': False, 'message': 'Indirim degeri gerekli.'}), 400
+            if discount_type == 'percent':
+                manual_due = base_total * (1 - dv / 100)
+            elif discount_type == 'amount':
+                manual_due = base_total - dv
+            else:
+                return jsonify({'success': False, 'message': 'Indirim tipi gecersiz.'}), 400
+
+        if manual_due < 0:
+            return jsonify({'success': False, 'message': 'Tahsil tutari 0 olamaz.'}), 400
+
+        manual_due = round(manual_due, 2)
+        actor = get_actor_info(fallback_staff_id, fallback_staff_name)
+        for order in masa_orders:
+            share = (order.get('toplam', 0) / toplam_tutar) if toplam_tutar > 0 else 0
+            order_due = round(manual_due * share, 2)
+            order['durum'] = 'kapali'
+            order['kapanma_zamani'] = now_tr().strftime('%H:%M')
+            order['kapanma_tarih'] = now_tr().strftime('%d.%m.%Y')
+            order['rehber_masa'] = masa_rehber_durumu
+            order['odeme_breakdown'] = { pay_type: order_due }
+            order['paid_total'] = order_due
+            order['is_paid'] = True
+            order['paid_at'] = now_tr().isoformat()
+            order['odeme_turu'] = payment_label_from_type(pay_type)
+            order['indirimli_tutar'] = round(order_due, 2)
+            order['indirim'] = round(max(0, order.get('toplam', 0) - order_due), 2)
+            order['manual_payment'] = {
+                'payment_type': pay_type,
+                'discount_enabled': discount_enabled,
+                'discount_type': discount_type,
+                'discount_value': discount_value,
+                'override_total': override_total,
+                'note': note
+            }
+            order['paid_by_staff_id'] = actor.get('staff_id')
+            order['paid_by_staff_name'] = actor.get('staff_name')
+            archive_closed_order(order, actor)
+
+            payments_store.append({
+                'id': len(payments_store) + 1,
+                'order_id': order.get('id'),
+                'table_id': order.get('masa'),
+                'type': pay_type,
+                'amount': round(order_due, 2),
+                'meta_json': {
+                    'manual': True,
+                    'discount_enabled': discount_enabled,
+                    'discount_type': discount_type,
+                    'discount_value': discount_value,
+                    'override_total': override_total,
+                    'note': note
+                },
+                'created_at': now_tr().isoformat(),
+                'staff_id': actor.get('staff_id'),
+                'staff_name': actor.get('staff_name')
+            })
+
+        bill_requests = load_bill_requests()
+        bill_requests.pop(str(masa), None)
+        save_bill_requests(bill_requests)
+        save_orders(orders)
+        save_payments(payments_store)
+        finalize_table_session(masa, orders)
+        append_activity('MANUAL_PAYMENT', {
+            'table_id': masa,
+            'total': manual_due,
+            'payment_type': pay_type,
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
+        return jsonify({'success': True, 'manual_total': manual_due})
+
+
+    actor = get_actor_info(fallback_staff_id, fallback_staff_name)
     if payments:
         discount_flag = data.get('discount_applied')
         allow_discount = False if discount_flag is False else True
@@ -2250,13 +2651,16 @@ def hesap_kapat(masa):
                 order['discount_applied_by'] = table_discount.get('applied_by')
                 order['discount_applied_at'] = table_discount.get('applied_at')
                 order['discount_amount'] = discount_shares.get(order['id'], 0)
+            order['paid_by_staff_id'] = actor.get('staff_id')
+            order['paid_by_staff_name'] = actor.get('staff_name')
+            archive_closed_order(order, actor)
 
         bill_requests = load_bill_requests()
         bill_requests.pop(str(masa), None)
         save_bill_requests(bill_requests)
 
         for payment in result['payments']:
-            for idx, order in enumerate(masa_orders):
+            for order in masa_orders:
                 payment_amount = breakdowns.get(order['id'], {}).get(payment['type'], 0)
                 if payment_amount <= 0:
                     continue
@@ -2267,10 +2671,19 @@ def hesap_kapat(masa):
                     'type': payment['type'],
                     'amount': round(payment_amount, 2),
                     'meta_json': payment.get('meta') or {},
-                    'created_at': now_tr().isoformat()
+                    'created_at': now_tr().isoformat(),
+                    'staff_id': actor.get('staff_id'),
+                    'staff_name': actor.get('staff_name')
                 })
 
         save_payments(payments_store)
+        append_activity('PAYMENT', {
+            'table_id': masa,
+            'payment_type': 'split' if not (cash_only or card_only) else ('cash' if cash_only else 'card'),
+            'total': sum(o.get('indirimli_tutar', 0) for o in masa_orders),
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
     else:
         if odeme_turu not in ['nakit', 'kart']:
             return jsonify({'success': False, 'message': 'Odeme turu gerekli.'}), 400
@@ -2287,6 +2700,10 @@ def hesap_kapat(masa):
             order['rehber_masa'] = masa_rehber_durumu
             order['indirimli_tutar'] = round(due_map.get(order['id'], order.get('toplam', 0)), 2)
             order['indirim'] = round(order.get('toplam', 0) - order['indirimli_tutar'], 2)
+            order['odeme_breakdown'] = { normalize_payment_type(odeme_turu): order['indirimli_tutar'] }
+            order['paid_total'] = order['indirimli_tutar']
+            order['is_paid'] = True
+            order['paid_at'] = now_tr().isoformat()
             if table_discount:
                 order['discount_type'] = table_discount.get('type')
                 order['discount_value'] = table_discount.get('value')
@@ -2295,6 +2712,29 @@ def hesap_kapat(masa):
                 order['discount_applied_by'] = table_discount.get('applied_by')
                 order['discount_applied_at'] = table_discount.get('applied_at')
                 order['discount_amount'] = discount_shares.get(order['id'], 0)
+            order['paid_by_staff_id'] = actor.get('staff_id')
+            order['paid_by_staff_name'] = actor.get('staff_name')
+            archive_closed_order(order, actor)
+            payments_store.append({
+                'id': len(payments_store) + 1,
+                'order_id': order.get('id'),
+                'table_id': masa,
+                'type': normalize_payment_type(odeme_turu),
+                'amount': round(order['indirimli_tutar'], 2),
+                'meta_json': {},
+                'created_at': now_tr().isoformat(),
+                'staff_id': actor.get('staff_id'),
+                'staff_name': actor.get('staff_name')
+            })
+
+        save_payments(payments_store)
+        append_activity('PAYMENT', {
+            'table_id': masa,
+            'payment_type': normalize_payment_type(odeme_turu),
+            'total': sum(o.get('indirimli_tutar', 0) for o in masa_orders),
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name')
+        })
 
     save_orders(orders)
 
@@ -2563,10 +3003,6 @@ def dashboard_data():
         saatlik_satis[f"{i:02d}:00"] = 0
     
     urun_satis = {}
-    masa_kullanim = {}
-    for i in range(1, 26):
-        masa_kullanim[i] = 0
-    
     bugun_orders = []
     for o in orders:
         if o.get('durum') != 'kapali':
@@ -2574,13 +3010,6 @@ def dashboard_data():
         order_date = to_iso_date(get_order_date(o))
         if order_date == bugun_iso:
             bugun_orders.append(o)
-    
-    for order in bugun_orders:
-        masa_key = order.get('masa')
-        if isinstance(masa_key, str) and masa_key.isdigit():
-            masa_key = int(masa_key)
-        if masa_key in masa_kullanim:
-            masa_kullanim[masa_key] += 1
     
     for order in bugun_orders:
         saat_str = order.get('kapanma_zamani') or order.get('zaman', '00:00')
@@ -2604,15 +3033,6 @@ def dashboard_data():
     
     populer_urunler = sorted(urun_satis.items(), key=lambda x: x[1]['adet'], reverse=True)[:5]
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
-    populer_masalar = sorted(masa_kullanim.items(), key=lambda x: x[1], reverse=True)[:10]
-    day_key = business_day_key(now_tr()).isoformat()
-    table_usage = load_table_usage()
-    day_usage = table_usage.get(day_key, {})
-    if not day_usage and day_key != bugun_iso:
-        day_usage = table_usage.get(bugun_iso, {})
-    longest_tables = sorted(day_usage.items(), key=lambda x: x[1], reverse=True)[:10]
-    longest_tables = [{'masa': k, 'sure_dk': int(max(1, round(v / 60)))} for k, v in longest_tables]
-    
     toplam_gider = sum_expenses_for_date(bugun_iso)
     toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
     net_ciro = toplam_ciro - toplam_gider
@@ -2623,9 +3043,7 @@ def dashboard_data():
         'toplam_siparis': len(bugun_orders),
         'toplam_ciro': net_ciro,
         'toplam_gider': toplam_gider,
-        'karli_saatler': karli_saatler,
-        'masa_kullanim': populer_masalar,
-        'masa_sureleri': longest_tables
+        'karli_saatler': karli_saatler
     })
 
 @app.route('/api/siparis-iptal/<int:masa>', methods=['POST'])
@@ -2635,15 +3053,27 @@ def siparis_iptal(masa):
     
     orders = load_orders()
     iptal_count = 0
+    first_staff_id = None
+    first_staff_name = None
     
     for order in orders:
         if order['masa'] == masa and order['durum'] == 'aktif':
             iptal_count += 1
+            if first_staff_id is None:
+                first_staff_id = order.get('staff_id')
+                first_staff_name = order.get('garson')
     
     finalize_table_session(masa, orders)
     orders = [o for o in orders if not (o['masa'] == masa and o['durum'] == 'aktif')]
     
     save_orders(orders)
+    actor = get_actor_info(first_staff_id, first_staff_name)
+    append_activity('ORDER_CANCEL', {
+        'table_id': masa,
+        'count': iptal_count,
+        'staff_id': actor.get('staff_id'),
+        'staff_name': actor.get('staff_name')
+    })
     
     return jsonify({
         'success': True,
@@ -2654,30 +3084,45 @@ def siparis_iptal(masa):
 @app.route('/api/hesap-item-guncelle', methods=['POST'])
 def hesap_item_guncelle():
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
     
-    data = request.json
-
+    data = request.json or {}
     orders = load_orders()
-    
+    removed_item = None
+    target_order = None
+
     for order in orders:
-        if str(order['id']) == str(data['siparis_id']) and order['durum'] == 'aktif':
-            for item in order['items']:
-                if item['id'] == data['item_id']:
-                    if data['action'] == 'arttir':
+        if str(order.get('id')) == str(data.get('siparis_id')) and order.get('durum') == 'aktif':
+            target_order = order
+            for idx, item in enumerate(order.get('items', [])):
+                if item.get('id') == data.get('item_id'):
+                    action = data.get('action')
+                    if action == 'arttir':
                         item['adet'] += 1
-                    elif data['action'] == 'azalt' and item['adet'] > 1:
+                    elif action == 'azalt' and item.get('adet', 1) > 1:
                         item['adet'] -= 1
-                    
-                    order['toplam'] = sum(i['price'] * i['adet'] for i in order['items'])
+                    elif action == 'sil':
+                        removed_item = order['items'].pop(idx)
+                    order['toplam'] = sum(i.get('price', 0) * i.get('adet', 0) for i in order.get('items', []))
                     break
             break
-    
+
     save_orders(orders)
+    if removed_item and target_order:
+        actor = get_actor_info(target_order.get('staff_id'), target_order.get('garson'))
+        append_activity('VOID_ITEM', {
+            'order_id': target_order.get('id'),
+            'table_id': target_order.get('masa'),
+            'staff_id': actor.get('staff_id'),
+            'staff_name': actor.get('staff_name'),
+            'item': {
+                'id': removed_item.get('id'),
+                'name': removed_item.get('name'),
+                'adet': removed_item.get('adet'),
+                'price': removed_item.get('price')
+            }
+        })
     return jsonify({'success': True})
-
-
-
 
 @app.route('/tip-havuzu')
 def tip_havuzu_page():

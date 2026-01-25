@@ -670,8 +670,14 @@
             align-items: center;
             justify-content: center;
         }
+        .quantity-btn.remove {
+            background: #ef4444;
+        }
         .quantity-btn:hover {
             background: #2c5282;
+        }
+        .quantity-btn.remove:hover {
+            background: #c53030;
         }
         .bill-total {
             background: #f7fafc;
@@ -758,6 +764,12 @@
             background: transparent;
             border: 2px dashed #cbd5f5;
             color: #374151;
+            box-shadow: none;
+        }
+        .payment-main-btn.manual {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            color: #1f2937;
             box-shadow: none;
         }
         .payment-main-btn.print {
@@ -1043,6 +1055,21 @@
         .discount-modal-grid {
             display: grid;
             gap: 12px;
+        }
+        .manual-modal-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+        }
+        .manual-modal-grid .full-row {
+            grid-column: 1 / -1;
+        }
+        .manual-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #475569;
         }
         .discount-type {
             display: inline-flex;
@@ -1744,6 +1771,38 @@
             </div>
         </div>
     </div>
+    <div id="manual-payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Manuel Duzenleme</h3>
+                <button class="close-btn" onclick="UI.ManualPaymentModal.close()">&times;</button>
+            </div>
+            <div class="manual-modal-grid">
+                <select id="manual-payment-type">
+                    <option value="cash">Nakit</option>
+                    <option value="card">Kart</option>
+                    <option value="other">Diger</option>
+                </select>
+                <label class="manual-toggle">
+                    <input type="checkbox" id="manual-discount-enabled">
+                    Indirim uygula
+                </label>
+                <div class="discount-type full-row" id="manual-discount-type">
+                    <input type="radio" name="manual-discount-type" id="manual-discount-percent" value="percent" checked>
+                    <label for="manual-discount-percent">%</label>
+                    <input type="radio" name="manual-discount-type" id="manual-discount-amount" value="amount">
+                    <label for="manual-discount-amount">&#8378;</label>
+                </div>
+                <input type="number" id="manual-discount-value" placeholder="Indirim Degeri" min="0" step="0.01">
+                <input type="number" id="manual-override-total" class="full-row" placeholder="Tahsil Edilecek Tutar (opsiyonel)" min="0" step="0.01">
+                <input type="text" id="manual-note" class="full-row" placeholder="Not (opsiyonel)">
+                <div class="full-row" style="text-align: right;">
+                    <button class="btn btn-secondary" onclick="UI.ManualPaymentModal.close()">Iptal</button>
+                    <button class="btn btn-success" id="manual-payment-save">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="masa-modal" class="modal">
         <div class="modal-content">
@@ -2144,6 +2203,7 @@
                                         <div class="item-controls">
                                             <button class="quantity-btn" onclick="hesapItemAzalt('${siparis.id}', ${item.id})">-</button>
                                             <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', ${item.id})">+</button>
+                                            <button class="quantity-btn remove" onclick="hesapItemSil('${siparis.id}', ${item.id})">&#10005;</button>
                                         </div>
                                     </div>
                                     <span>${item.price * item.adet} TL</span>
@@ -2242,6 +2302,9 @@
 
                             <button class="payment-main-btn split" onclick="toggleSplitArea()">
                                 Parcali Odeme
+                            </button>
+                            <button class="payment-main-btn manual" onclick="UI.ManualPaymentModal.open()">
+                                Manuel Duzenleme
                             </button>
                         </div>
 
@@ -2497,6 +2560,87 @@
             };
           })();
 
+          UI.ManualPaymentModal = (function () {
+            let initDone = false;
+
+            function open() {
+              if (!currentBill) return;
+              const modal = document.getElementById('manual-payment-modal');
+              const typeEl = document.getElementById('manual-payment-type');
+              const discountToggle = document.getElementById('manual-discount-enabled');
+              const discountType = document.getElementById('manual-discount-type');
+              const discountValue = document.getElementById('manual-discount-value');
+              const overrideEl = document.getElementById('manual-override-total');
+              const noteEl = document.getElementById('manual-note');
+              if (!modal || !typeEl || !discountToggle || !discountType || !discountValue || !overrideEl || !noteEl) return;
+              typeEl.value = 'cash';
+              discountToggle.checked = false;
+              discountType.style.display = 'none';
+              discountValue.value = '';
+              overrideEl.value = '';
+              noteEl.value = '';
+              modal.style.display = 'block';
+              bindOnce();
+            }
+
+            function close() {
+              const modal = document.getElementById('manual-payment-modal');
+              if (modal) modal.style.display = 'none';
+            }
+
+            function onToggleDiscount() {
+              const discountToggle = document.getElementById('manual-discount-enabled');
+              const discountType = document.getElementById('manual-discount-type');
+              if (!discountToggle || !discountType) return;
+              discountType.style.display = discountToggle.checked ? 'inline-flex' : 'none';
+            }
+
+            function submit() {
+              if (!currentBill || !window.UI || !UI.Api) return;
+              const typeEl = document.getElementById('manual-payment-type');
+              const discountToggle = document.getElementById('manual-discount-enabled');
+              const discountValueEl = document.getElementById('manual-discount-value');
+              const overrideEl = document.getElementById('manual-override-total');
+              const noteEl = document.getElementById('manual-note');
+              const discountTypeChecked = document.querySelector('input[name="manual-discount-type"]:checked');
+              if (!typeEl || !discountToggle || !discountValueEl || !overrideEl || !noteEl) return;
+
+              const manual = {
+                payment_type: typeEl.value,
+                discount_enabled: discountToggle.checked,
+                discount_type: discountTypeChecked ? discountTypeChecked.value : null,
+                discount_value: discountValueEl.value,
+                override_total: overrideEl.value,
+                note: noteEl.value
+              };
+
+              UI.Api.closeTablePayments(currentBill.tableId, [], { manual: manual }).then(() => {
+                close();
+                handlePaymentSuccess();
+              }).catch(err => {
+                alert('Hata: ' + (err && err.message ? err.message : 'Odeme alinamadi.'));
+              });
+            }
+
+            function bindOnce() {
+              if (initDone) return;
+              const discountToggle = document.getElementById('manual-discount-enabled');
+              const saveBtn = document.getElementById('manual-payment-save');
+              if (discountToggle) {
+                discountToggle.addEventListener('change', onToggleDiscount);
+              }
+              if (saveBtn) {
+                saveBtn.addEventListener('click', submit);
+              }
+              initDone = true;
+            }
+
+            return {
+              open,
+              close
+            };
+          })();
+
           function toggleSplitArea() {
             const splitArea = document.getElementById('payment-split-area');
             if (!splitArea || !window.UI || !UI.PaymentModal) return;
@@ -2739,6 +2883,30 @@
                         yenile();
                     }
                 });
+        }
+
+        function hesapItemSil(siparisId, itemId) {
+            if (!confirm('Bu urunu tamamen silmek istiyor musunuz?')) return;
+            fetch(`/api/hesap-item-guncelle`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    siparis_id: siparisId,
+                    item_id: itemId,
+                    action: 'sil'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    refreshHesapModal();
+                } else {
+                    alert('Hata: ' + result.message);
+                }
+            })
+            .catch(error => {
+                alert('Bir hata olustu: ' + error.message);
+            });
         }
 
         

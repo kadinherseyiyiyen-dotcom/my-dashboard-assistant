@@ -1,0 +1,20 @@
+[
+  {
+    "check_id": 1,
+    "order_id": 2,
+    "item_id": 1,
+    "name": "Serpme Kahvaltı",
+    "adet": 2,
+    "price": 1290,
+    "total": 2580
+  },
+  {
+    "check_id": 1,
+    "order_id": 2,
+    "item_id": 13,
+    "name": "Su",
+    "adet": 2,
+    "price": 60,
+    "total": 120
+  }
+]

@@ -154,5 +154,23 @@
     "amount": 1290.0,
     "meta_json": {},
     "created_at": "2026-01-24T01:15:04.312734+03:00"
+  },
+  {
+    "id": 17,
+    "order_id": 2,
+    "table_id": 4,
+    "type": "cash",
+    "amount": 2700.0,
+    "meta_json": {
+      "manual": true,
+      "discount_enabled": false,
+      "discount_type": "percent",
+      "discount_value": "",
+      "override_total": "2700",
+      "note": ""
+    },
+    "created_at": "2026-01-26T01:32:31.936858+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
   }
 ]

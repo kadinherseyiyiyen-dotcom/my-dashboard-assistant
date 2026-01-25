@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "order_id": 2,
+    "table_id": 4,
+    "table_name": "Masa 4",
+    "opened_at": "2026-01-26T01:31:52.570344+03:00",
+    "closed_at": "2026-01-26T01:32:31.932547+03:00",
+    "total": 2700.0,
+    "payment_type": "nakit",
+    "payment_breakdown": {
+      "cash": 2700.0
+    },
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  }
+]

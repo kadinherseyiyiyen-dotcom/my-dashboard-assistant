@@ -244,6 +244,9 @@
     if (options && Object.prototype.hasOwnProperty.call(options, 'discount_applied')) {
       payload.discount_applied = options.discount_applied;
     }
+    if (options && options.manual) {
+      payload.manual = options.manual;
+    }
     return requestJson('/api/hesap_kapat/' + tableId, 'POST', payload, {
       errorMessage: 'Odeme alinamadi.'
     }).then(function (data) {

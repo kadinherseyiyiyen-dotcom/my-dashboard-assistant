@@ -282,6 +282,28 @@
             roleIcon.textContent = '\uD83D\uDC68\u200D\uD83C\uDF73';
             roleInfo.textContent = 'Garson paneline eri\u015fim i\u00e7in \u015fifrenizi girin';
             nameGroup.style.display = 'block';
+            fetch('/api/public-staff')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('name');
+                    if (!select) return;
+                    select.innerHTML = '';
+                    const staffList = (data && data.staff) || [];
+                    if (staffList.length === 0) {
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'Garson bulunamadi';
+                        select.appendChild(opt);
+                        return;
+                    }
+                    staffList.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.name;
+                        opt.textContent = item.name;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(() => {});
         } else if (role === 'kasa') {
             loginTitle.textContent = 'Kasa Giri\u015fi';
             roleIcon.textContent = '\uD83D\uDCBC';

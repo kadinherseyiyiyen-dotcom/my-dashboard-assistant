@@ -230,6 +230,57 @@
             font-size: 0.875rem;
             color: #718096;
         }
+        .expenses-toolbar,
+        .closed-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .expenses-list,
+        .closed-list {
+            padding: 1.5rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+        .expense-row,
+        .closed-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            padding: 0.9rem 1rem;
+            background: #f7fafc;
+            border-radius: 0.6rem;
+            border-left: 4px solid #ff8c00;
+        }
+        .expense-row h4,
+        .closed-row h4 {
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.2rem;
+        }
+        .expense-meta,
+        .closed-meta {
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        .expense-amount,
+        .closed-amount {
+            font-weight: 800;
+            color: #ff6a00;
+            white-space: nowrap;
+        }
+        .closed-items {
+            margin-top: 0.75rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: none;
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+        .closed-items.show {
+            display: block;
+        }
         .loading {
             text-align: center;
             padding: 3rem;
@@ -669,6 +720,44 @@
             <div class="staff-stats" id="staff-stats">Yukleniyor...</div>
         </div>
 
+        
+        <div class="section" id="expenses-section">
+            <div class="section-header">
+                <h2 class="section-title">Giderler</h2>
+                <div class="expenses-toolbar">
+                    <label for="expense-start">Baslangic</label>
+                    <input type="date" id="expense-start">
+                    <label for="expense-end">Bitis</label>
+                    <input type="date" id="expense-end">
+                    <select id="expense-category">
+                        <option value="">Tum Kategoriler</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="giderleriYukle()">Guncelle</button>
+                </div>
+            </div>
+            <div class="expenses-list" id="expenses-list">
+                <div class="loading">Veriler yukleniyor...</div>
+            </div>
+            <div class="section-header" style="border-top: 1px solid #e2e8f0;">
+                <div class="section-title">Toplam Gider: <span id="expense-total">0 TL</span></div>
+            </div>
+        </div>
+
+        <div class="section" id="closed-checks-section">
+            <div class="section-header">
+                <h2 class="section-title">Kapanan Masalar / Odemeler</h2>
+                <div class="closed-toolbar">
+                    <label for="closed-date">Tarih</label>
+                    <input type="date" id="closed-date">
+                    <button class="btn btn-primary" onclick="kapananMasalariYukle()">Getir</button>
+                </div>
+            </div>
+            <div class="closed-list" id="closed-checks-list">
+                <div class="loading">Veriler yukleniyor...</div>
+            </div>
+        </div>
+
+
         <!-- Satış Grafikleri -->
         <div class="section">
             <div class="section-header">
@@ -744,6 +833,12 @@
             const rangeEnd = document.getElementById('staff-range-end');
             if (rangeStart) rangeStart.value = `${yil}-${ay}-${gun}`;
             if (rangeEnd) rangeEnd.value = `${yil}-${ay}-${gun}`;
+            const expenseStart = document.getElementById('expense-start');
+            const expenseEnd = document.getElementById('expense-end');
+            const closedDate = document.getElementById('closed-date');
+            if (expenseStart) expenseStart.value = `${yil}-${ay}-${gun}`;
+            if (expenseEnd) expenseEnd.value = `${yil}-${ay}-${gun}`;
+            if (closedDate) closedDate.value = `${yil}-${ay}-${gun}`;
             istatistikYukle();
         }
 
@@ -797,12 +892,176 @@
 
                     // Grafikleri guncelle
                     grafikYukle();
+                    giderleriYukle();
+                    kapananMasalariYukle();
                 })
                 .catch(error => {
                     console.error('Hata:', error);
                     document.getElementById('urun-listesi').innerHTML =
                         '<div class="loading" style="color: #e53e3e;">Veriler yuklenirken hata olustu!</div>';
                 });
+        }
+
+        let expenseCategoriesLoaded = false;
+        function formatCurrency(value) {
+            const num = Number(value || 0);
+            return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' TL';
+        }
+
+        function giderleriYukle() {
+            const listEl = document.getElementById('expenses-list');
+            const totalEl = document.getElementById('expense-total');
+            if (listEl) listEl.innerHTML = '<div class="loading">Veriler yukleniyor...</div>';
+
+            const start = (document.getElementById('expense-start') || {}).value || (document.getElementById('staff-range-start') || {}).value || '';
+            const end = (document.getElementById('expense-end') || {}).value || (document.getElementById('staff-range-end') || {}).value || '';
+            const dateVal = (document.getElementById('tarih-sec') || {}).value || '';
+            const category = (document.getElementById('expense-category') || {}).value || '';
+
+            let url = '/api/giderler';
+            if (start || end) {
+                const qs = new URLSearchParams();
+                if (start) qs.set('start', start);
+                if (end) qs.set('end', end || start);
+                if (category) qs.set('kategori', category);
+                url += '?' + qs.toString();
+            } else if (dateVal) {
+                url += '?date=' + dateVal;
+                if (category) url += '&kategori=' + encodeURIComponent(category);
+            }
+
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || data.success === false) throw new Error(data.message || 'Giderler alinamadi');
+                    renderExpenses(data.records || []);
+                    const sumUrl = (start || end)
+                        ? `/api/giderler/summary?start=${encodeURIComponent(start || end)}&end=${encodeURIComponent(end || start)}`
+                        : (dateVal ? `/api/giderler/summary?date=${encodeURIComponent(dateVal)}` : null);
+                    if (!sumUrl) return;
+                    return fetch(sumUrl).then(r => r.json()).then(sumData => {
+                        if (sumData && sumData.success) {
+                            if (totalEl) totalEl.textContent = formatCurrency(sumData.toplam_gider || 0);
+                        }
+                    });
+                })
+                .catch(err => {
+                    if (listEl) listEl.innerHTML = '<div class="loading" style="color:#e53e3e;">Giderler yuklenemedi.</div>';
+                    if (totalEl) totalEl.textContent = '0 TL';
+                    console.error('Gider yukleme hatasi:', err);
+                });
+        }
+
+        function renderExpenses(records) {
+            const listEl = document.getElementById('expenses-list');
+            const categorySelect = document.getElementById('expense-category');
+            if (!listEl) return;
+            if (!records || records.length === 0) {
+                listEl.innerHTML = '<div class="loading">Gider kaydi yok.</div>';
+                return;
+            }
+
+            if (categorySelect && !expenseCategoriesLoaded) {
+                const cats = Array.from(new Set(records.map(r => r.kategori).filter(Boolean)));
+                cats.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    categorySelect.appendChild(opt);
+                });
+                expenseCategoriesLoaded = true;
+            }
+
+            listEl.innerHTML = records.map(r => {
+                const dateText = r.date || '';
+                const note = r.aciklama ? ` - ${r.aciklama}` : '';
+                const kategori = r.kategori || 'Genel';
+                return `
+                    <div class="expense-row">
+                        <div>
+                            <h4>${kategori}</h4>
+                            <div class="expense-meta">${dateText}${note}</div>
+                        </div>
+                        <div class="expense-amount">${formatCurrency(r.tutar)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function kapananMasalariYukle() {
+            const listEl = document.getElementById('closed-checks-list');
+            if (listEl) listEl.innerHTML = '<div class="loading">Veriler yukleniyor...</div>';
+
+            const dateVal = (document.getElementById('closed-date') || {}).value || (document.getElementById('tarih-sec') || {}).value || '';
+            if (!dateVal) {
+                if (listEl) listEl.innerHTML = '<div class="loading">Lutfen tarih seciniz.</div>';
+                return;
+            }
+            fetch(`/api/closed-checks?date=${encodeURIComponent(dateVal)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || data.success === false) throw new Error(data.message || 'Veri alinamadi');
+                    renderClosedChecks(data.records || []);
+                })
+                .catch(err => {
+                    if (listEl) listEl.innerHTML = '<div class="loading" style="color:#e53e3e;">Kapanan masalar yuklenemedi.</div>';
+                    console.error('Kapanan masalar hatasi:', err);
+                });
+        }
+
+        function renderClosedChecks(records) {
+            const listEl = document.getElementById('closed-checks-list');
+            if (!listEl) return;
+            if (!records || records.length === 0) {
+                listEl.innerHTML = '<div class="loading">Kayit bulunamadi.</div>';
+                return;
+            }
+            listEl.innerHTML = records.map(rec => {
+                const opened = rec.opened_at || '--';
+                const closed = rec.closed_at ? rec.closed_at.replace('T', ' ').slice(0, 16) : '--';
+                const staff = rec.staff_name || 'Bilinmiyor';
+                return `
+                    <div class="closed-row" data-check-id="${rec.id}">
+                        <div>
+                            <h4>${rec.table_name || ('Masa ' + rec.table_id)}</h4>
+                            <div class="closed-meta">Acilis: ${opened} | Kapanis: ${closed}</div>
+                            <div class="closed-meta">Odeme: ${rec.payment_type || 'bilinmiyor'} | Garson: ${staff}</div>
+                            <div class="closed-items" id="closed-items-${rec.id}">Yukleniyor...</div>
+                        </div>
+                        <div class="closed-amount">${formatCurrency(rec.total)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            listEl.querySelectorAll('.closed-row').forEach(row => {
+                row.addEventListener('click', function () {
+                    const checkId = this.getAttribute('data-check-id');
+                    const target = document.getElementById(`closed-items-${checkId}`);
+                    if (!target) return;
+                    if (target.classList.contains('show')) {
+                        target.classList.remove('show');
+                        return;
+                    }
+                    fetch(`/api/closed-checks/${checkId}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data || data.success === false) throw new Error('Detay alinamadi');
+                            if (!data.items || data.items.length === 0) {
+                                target.innerHTML = 'Urun kaydi yok.';
+                            } else {
+                                target.innerHTML = data.items.map(item => {
+                                    const total = (item.total || (item.price || 0) * (item.adet || 0));
+                                    return `<div>${item.name} x${item.adet} - ${formatCurrency(total)}</div>`;
+                                }).join('');
+                            }
+                            target.classList.add('show');
+                        })
+                        .catch(() => {
+                            target.innerHTML = 'Detay yuklenemedi.';
+                            target.classList.add('show');
+                        });
+                });
+            });
         }
 
         function grafikYukle() {

@@ -2,50 +2,57 @@
   {
     "id": 1,
     "name": "ahmet",
-    "is_active": true,
+    "is_active": false,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-22T21:58:58.616309+03:00"
+    "updated_at": "2026-01-25T23:31:50.997096+03:00",
+    "pin_hash": "scrypt:32768:8:1$3V4Nm4ngFCfhNAVr$b692386a5fa606aee45feb445c120d3a166de2de9b4a0e114fa427649b3867596fe9717d17f2d6b3badfd89d252baea26b716bbb89fadb06c87715c60be4da84"
   },
   {
     "id": 2,
     "name": "selim",
     "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-22T14:44:29.801467+03:00"
+    "updated_at": "2026-01-25T23:31:51.108502+03:00",
+    "pin_hash": "scrypt:32768:8:1$NEPHQfdrLA9AxiCi$6de22f85dee6c08486b4f150ded8886b06fee7a83a6740878828bf7e239efffea5480b20014f60e97b80d87332b42e690ed2efc5fb9759b9fc81edcf7a459e8f"
   },
   {
     "id": 3,
     "name": "burak",
     "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-22T14:44:29.801467+03:00"
+    "updated_at": "2026-01-25T23:31:51.210980+03:00",
+    "pin_hash": "scrypt:32768:8:1$Ivc0zr2iUU2nMvKj$7a7f10e97e30034eb4eb9738607228645b37767ed24017012920476d0328849f8f29558c763ae08d1e76435387684bcc4ea935ca396b5f9736111109ea4d22d5"
   },
   {
     "id": 4,
     "name": "beytullah",
     "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-22T14:44:29.801467+03:00"
+    "updated_at": "2026-01-25T23:31:51.311486+03:00",
+    "pin_hash": "scrypt:32768:8:1$uM2rHdUyBLUPWfLY$4873acbe8d2d72f4e062531845916d97c0a72b8f36b249f5e1934cac6f5bf36d296538be301fe6729dd39a9dbf2a1a0b7f30486957915f74f1326cb87f213cb1"
   },
   {
     "id": 5,
     "name": "talha",
     "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-22T14:44:29.801467+03:00"
+    "updated_at": "2026-01-25T23:31:51.412635+03:00",
+    "pin_hash": "scrypt:32768:8:1$FQJ6zVqPzRN2ge2b$b5ed814c37149e201b679124d18b5d1b64031b368f2fbb4f22f62e50c392c8a4f8b305b1bf0a37ce91520ae401c6a7e3b8ae08f8c6323cfdb365fa68bb327c62"
   },
   {
     "id": 6,
     "name": "muhammet",
     "is_active": true,
     "created_at": "2026-01-22T21:26:29.804885+03:00",
-    "updated_at": "2026-01-22T22:08:15.039987+03:00"
+    "updated_at": "2026-01-25T23:31:51.513355+03:00",
+    "pin_hash": "scrypt:32768:8:1$FRfL78x2RDNRjoi2$470f458d05f2bde4796af24c66d2c3cf4d8ce5b55f29b55e8806f69a1eabf51b9f7ba22973eee0a35afccc269347d07986ed2b15499d9f2390112e7bb3ba6fc6"
   },
   {
     "id": 7,
     "name": "yenal",
     "is_active": true,
     "created_at": "2026-01-22T21:58:56.888008+03:00",
-    "updated_at": "2026-01-22T22:08:15.347011+03:00"
+    "updated_at": "2026-01-25T23:31:51.631560+03:00",
+    "pin_hash": "scrypt:32768:8:1$ntMzMG2drZRQ5jan$6105012b981c142fd4195a4c045c12345d9f62ef3572ca483e3a362a859c01c004ea2149f7813e45905094f8e4440f56c21b1595f1e05a664463bd39c352476d"
   }
 ]

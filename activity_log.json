@@ -1,0 +1,55 @@
+[
+  {
+    "id": 1,
+    "action": "AUTO_WATER",
+    "created_at": "2026-01-26T01:31:52.572393+03:00",
+    "data": {
+      "order_id": 2,
+      "table_id": 4,
+      "staff_id": 2,
+      "staff_name": "selim",
+      "count": 2
+    }
+  },
+  {
+    "id": 2,
+    "action": "MANUAL_PAYMENT",
+    "created_at": "2026-01-26T01:32:31.957533+03:00",
+    "data": {
+      "table_id": 4,
+      "total": 2700.0,
+      "payment_type": "cash",
+      "staff_id": 2,
+      "staff_name": "Kasiyer"
+    }
+  },
+  {
+    "id": 3,
+    "action": "AUTO_WATER",
+    "created_at": "2026-01-26T01:32:48.127961+03:00",
+    "data": {
+      "order_id": 3,
+      "table_id": 4,
+      "staff_id": 2,
+      "staff_name": "selim",
+      "count": 2
+    }
+  },
+  {
+    "id": 4,
+    "action": "VOID_ITEM",
+    "created_at": "2026-01-26T01:32:56.556170+03:00",
+    "data": {
+      "order_id": 3,
+      "table_id": 4,
+      "staff_id": 2,
+      "staff_name": "Kasiyer",
+      "item": {
+        "id": 13,
+        "name": "Su",
+        "adet": 2,
+        "price": 60
+      }
+    }
+  }
+]

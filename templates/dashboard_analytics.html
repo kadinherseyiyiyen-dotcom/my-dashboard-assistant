@@ -287,23 +287,9 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="chart-card">
-                <h3 class="chart-title">🎯 Müşteri Yoğunluk Haritası</h3>
-                <div id="table-usage">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler yükleniyor...
-                    </div>
-                </div>
+
             </div>
 
-            <div class="chart-card">
-                <h3 class="chart-title">&#x23F1;&#xFE0F; En Uzun Sure Kullanilan Masalar</h3>
-                <div id="longest-tables">
-                    <div style="text-align: center; padding: 2rem; color: #718096;">
-                        Veriler y??kleniyor...
-                    </div>
-                </div>
             </div>
 
         </div>
@@ -333,12 +319,6 @@
                     
                     // En karlı saatler
                     updateProfitableHours(data.karli_saatler);
-                    
-                    // Masa kullanım analizi
-                    updateTableUsage(data.masa_kullanim);
-
-                    // En uzun sure kullanilan masalar
-                    updateLongestTables(data.masa_sureleri || []);
                 })
                 .catch(error => {
                     console.error('Dashboard veri yükleme hatası:', error);
@@ -462,14 +442,6 @@
             
             container.innerHTML = html;
         }
-        
-        function updateTableUsage(masaKullanim) {
-            const container = document.getElementById('table-usage');
-            
-            if (masaKullanim.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
-                return;
-            }
             
             let html = '';
             masaKullanim.forEach((item, index) => {
@@ -498,14 +470,6 @@
                 container.innerHTML = html;
             }
         }
-
-        function updateLongestTables(list) {
-            const container = document.getElementById('longest-tables');
-            if (!container) return;
-            if (!list || list.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Veri yok</div>';
-                return;
-            }
             let html = '';
             list.forEach((item, index) => {
                 html += `
