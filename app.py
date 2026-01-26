@@ -23,6 +23,8 @@ app.config['JSON_AS_ASCII'] = False
 def _t0():
     from flask import g
     g._start = time.time()
+    if os.getenv("LOG_REQS", "0") == "1":
+        print(f"REQ {request.method} {request.path}", flush=True)
 
 @app.after_request
 def _t1(resp):
