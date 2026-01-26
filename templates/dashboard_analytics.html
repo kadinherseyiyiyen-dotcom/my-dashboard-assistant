@@ -296,13 +296,27 @@
     </div>
 
     <script>
+        window.DASHBOARD_SEED = {{ dashboard_seed | tojson }};
+
         let salesChart;
         
         function updateTime() {
             const now = new Date();
             document.getElementById('live-time').textContent = now.toLocaleTimeString('tr-TR');
         }
-        function emptyHourlyData() {
+        function applyDashboardSeed() {
+            const seed = (window.DASHBOARD_SEED && typeof window.DASHBOARD_SEED === 'object')
+                ? normalizeDashboardData(window.DASHBOARD_SEED)
+                : null;
+            if (!seed) return;
+            document.getElementById('total-orders').textContent = seed.toplam_siparis;
+            document.getElementById('total-revenue').textContent = seed.toplam_ciro + ' TL';
+            updateSalesChart(seed.saatlik_satis);
+            updatePopularItems(seed.populer_urunler);
+            updateProfitableHours(seed.karli_saatler);
+        }
+
+function emptyHourlyData() {
             const data = {};
             for (let i = 0; i < 24; i += 1) {
                 data[String(i).padStart(2, '0') + ':00'] = 0;
@@ -463,58 +477,9 @@
             
             container.innerHTML = html;
         }
-            
-            let html = '';
-            masaKullanim.forEach((item, index) => {
-                const [masaNo, kullanim] = item;
-                if (kullanim > 0) {
-                    html += `
-                        <div class="table-item">
-                            <div class="item-info">
-                                <div class="table-rank">${index + 1}</div>
-                                <div>
-                                    <div style="font-weight: 600; color: #1a202c;">Masa ${masaNo}</div>
-                                    <div style="font-size: 0.75rem; color: #718096;">Son 7 gün</div>
-                                </div>
-                            </div>
-                            <div class="table-stats">
-                                <div class="table-count">${kullanim} kez</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            
-            if (html === '') {
-                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #718096;">Henüz kullanım verisi yok</div>';
-            } else {
-                container.innerHTML = html;
-            }
-        }
-            let html = '';
-            list.forEach((item, index) => {
-                html += `
-                    <div class="table-item">
-                        <div class="item-info">
-                            <div class="table-rank">${index + 1}</div>
-                            <div>
-                                <div style="font-weight: 600; color: #1a202c;">Masa ${item.masa}</div>
-                                <div style="font-size: 0.75rem; color: #718096;">Bugun toplam</div>
-                            </div>
-                        </div>
-                        <div class="table-stats">
-                            <div class="table-count">${item.sure_dk} dk</div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-
-        
         // Sayfa yüklendiğinde
         updateTime();
+        applyDashboardSeed();
         loadDashboardData();
         
         // Her saniye saati güncelle
