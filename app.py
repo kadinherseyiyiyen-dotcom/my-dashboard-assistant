@@ -74,6 +74,7 @@ ORDERS_CACHE_TTL = int(os.environ.get('ORDERS_CACHE_TTL', '10'))
 MENU_CACHE_TTL = int(os.environ.get('MENU_CACHE_TTL', '60'))
 TABLES_CACHE_TTL = int(os.environ.get('TABLES_CACHE_TTL', '60'))
 REHBER_CACHE_TTL = int(os.environ.get('REHBER_CACHE_TTL', '60'))
+DB_CONNECT_TIMEOUT = int(os.environ.get('DB_CONNECT_TIMEOUT', '5'))
 
 def cached_load(key, loader, ttl_seconds):
     now = time.time()
@@ -107,7 +108,8 @@ def init_db_pool():
         minconn=minconn,
         maxconn=maxconn,
         dsn=db_url,
-        sslmode=os.environ.get('DB_SSLMODE', 'require')
+        sslmode=os.environ.get('DB_SSLMODE', 'require'),
+        connect_timeout=DB_CONNECT_TIMEOUT
     )
 
 def get_db_conn():
