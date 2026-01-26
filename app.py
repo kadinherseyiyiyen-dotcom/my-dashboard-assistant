@@ -255,6 +255,9 @@ CLOSED_CHECK_ITEMS_FILE = 'closed_check_items.json'
 ACTIVITY_LOG_FILE = 'activity_log.json'
 STAFF_CACHE_TTL = int(os.environ.get('STAFF_CACHE_TTL', '60'))
 PRINTER_NAME = os.environ.get('PRINTER_NAME')
+KITCHEN_PRINTER_NAME = os.environ.get('KITCHEN_PRINTER_NAME')
+KITCHEN_PRINTER_ENABLED = os.environ.get('KITCHEN_PRINTER_ENABLED', '0') == '1'
+KITCHEN_PRINT_MODE = os.environ.get('KITCHEN_PRINT_MODE', 'printer')
 WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '55d81da9d6c54f39ae3222425262301')
 WEATHER_LOCATION = os.environ.get('WEATHER_LOCATION', 'Istanbul Sisli')
 WEATHER_TTL = int(os.environ.get('WEATHER_TTL', '600'))
@@ -1143,14 +1146,20 @@ def save_employees(names):
 
     save_staff(staff)
 
-def get_printer():
+def get_printer_by_name(printer_name):
     try:
         from escpos.printer import Win32Raw
     except Exception as exc:
         raise RuntimeError('python-escpos yuklu degil.') from exc
-    if not PRINTER_NAME:
+    if not printer_name:
         raise RuntimeError('PRINTER_NAME ayari bulunamadi.')
-    return Win32Raw(PRINTER_NAME)
+    return Win32Raw(printer_name)
+
+def get_printer():
+    return get_printer_by_name(PRINTER_NAME)
+
+def get_kitchen_printer():
+    return get_printer_by_name(KITCHEN_PRINTER_NAME)
 
 def build_bill_payload(table_id, orders):
     items_map = {}
@@ -1165,14 +1174,15 @@ def build_bill_payload(table_id, orders):
             name = item.get('name') or 'Urun'
             price = float(item.get('price', 0))
             qty = int(item.get('adet', 0) or 0)
-            key = (name, price)
+            is_complimentary = bool(item.get('is_complimentary'))
+            key = (name, price, is_complimentary)
             items_map[key] = items_map.get(key, 0) + qty
     items = []
     total = 0.0
-    for (name, price), qty in items_map.items():
-        line_total = price * qty
+    for (name, price, is_complimentary), qty in items_map.items():
+        line_total = 0.0 if is_complimentary else (price * qty)
         total += line_total
-        items.append({'name': name, 'qty': qty, 'price': price, 'line_total': line_total})
+        items.append({'name': name, 'qty': qty, 'price': price, 'line_total': line_total, 'is_complimentary': is_complimentary})
     if total == 0:
         total = sum(float(o.get('toplam', 0)) for o in orders if o.get('durum') == 'aktif')
     items.sort(key=lambda i: i['name'])
@@ -1240,9 +1250,10 @@ def build_bill_text(payload, width=32, lang='tr'):
     for item in sorted(payload['items'], key=lambda i: (-i['line_total'], i['name'])):
         name = translate_item(item['name'])
         qty = item['qty']
+        is_complimentary = bool(item.get('is_complimentary'))
         line_total = item['line_total']
         label = f"{name} x{qty}"
-        amount = f"{line_total:.0f} TL"
+        amount = "IKRAM" if is_complimentary else f"{line_total:.0f} TL"
         lines.append(label.ljust(width - len(amount)) + amount)
     lines.append(sep)
     subtotal_text = f"{payload.get('subtotal', payload['total']):.0f} TL"
@@ -1278,6 +1289,61 @@ def print_bill(table_id, orders, lang='tr'):
         printer.cut()
     except Exception:
         pass
+
+def build_kitchen_text(order, width=32, is_additional=False):
+    sep = '-' * width
+    table_id = order.get('masa')
+    table_name = load_tables().get(str(table_id)) or f"Masa {table_id}"
+    header = 'EK SIPARIS' if is_additional else 'SIPARIS'
+    lines = [sep, header, f"{table_name}", f"Garson: {order.get('garson') or 'Bilinmiyor'}"]
+    if order.get('zaman'):
+        lines.append(f"Saat: {order.get('zaman')}")
+    lines.append(sep)
+    items_map = {}
+    for item in order.get('items') or []:
+        name = item.get('name') or 'Urun'
+        qty = int(item.get('adet') or 0)
+        if qty <= 0:
+            continue
+        note = (item.get('note') or '').strip()
+        is_complimentary = bool(item.get('is_complimentary'))
+        key = (name, note, is_complimentary)
+        items_map[key] = items_map.get(key, 0) + qty
+    for (name, note, is_complimentary) in sorted(items_map.keys(), key=lambda k: (k[0], k[1], k[2])):
+        qty = items_map[(name, note, is_complimentary)]
+        label = f"{name} x{qty}"
+        if is_complimentary:
+            label = f"{label} (IKRAM)"
+        lines.append(label[:width])
+        if note:
+            lines.append(("  * " + note)[:width])
+    lines.append(sep)
+    return '\n'.join(lines)
+
+def print_kitchen_order(order, is_additional=False):
+    if not KITCHEN_PRINTER_ENABLED:
+        return False
+    text = build_kitchen_text(order, 32, is_additional)
+    if KITCHEN_PRINT_MODE != 'printer':
+        print("KITCHEN_TICKET:\n" + text, flush=True)
+        return True
+    if not KITCHEN_PRINTER_NAME:
+        print("KITCHEN_PRINTER_NAME ayari bulunamadi.", flush=True)
+        return False
+    printer = get_kitchen_printer()
+    try:
+        printer.charcode('CP857')
+    except Exception:
+        try:
+            printer.charcode('CP1254')
+        except Exception:
+            pass
+    printer.text(text + '\n')
+    try:
+        printer.cut()
+    except Exception:
+        pass
+    return True
 
 def load_expenses():
     return load_json_storage(EXPENSES_FILE, [])
@@ -1621,10 +1687,15 @@ def siparis_ekle():
                     'id': water_item.get('id'),
                     'name': water_item.get('name'),
                     'price': water_item.get('price'),
-                    'adet': 2
+                    'adet': 2,
+                    'is_complimentary': False
                 })
                 auto_water_added = True
-    toplam = sum((i.get('price') or 0) * (i.get('adet') or 0) for i in items)
+    toplam = 0
+    for i in items:
+        if i.get('is_complimentary'):
+            continue
+        toplam += (i.get('price') or 0) * (i.get('adet') or 0)
     
     new_order = {
         'id': len(orders) + 1,
@@ -1652,6 +1723,19 @@ def siparis_ekle():
             'staff_name': garson_name,
             'count': 2
         })
+
+    try:
+        printed = print_kitchen_order(new_order, is_additional=bool(existing_active))
+        if printed:
+            append_activity('KITCHEN_PRINT', {
+                'order_id': new_order['id'],
+                'table_id': masa,
+                'staff_id': staff_id,
+                'staff_name': garson_name,
+                'is_additional': bool(existing_active)
+            })
+    except Exception as exc:
+        print(f"KITCHEN_PRINT_ERROR: {exc!r}", flush=True)
     
     return jsonify({'success': True, 'order_id': new_order['id']})
 

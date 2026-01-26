@@ -5,7 +5,7 @@
   /*
     Public API:
       Api.getTables() -> Promise<{ orders, tables, rehber, table_sessions }>
-      Api.getFxRates() -> Promise<{ usd, eur }>
+      Api.getFxRates() -> Promise<{ usd, eur, sar }>
       Api.getDensity(orders) -> { activeTables, lastOrders5m, score, label }
       Api.getStaff() -> Promise<Array>
       Api.createStaff(name) -> Promise<Object>
@@ -57,20 +57,24 @@
     var state = global.APP && global.APP.state;
     var usdUrl = 'https://api.frankfurter.app/latest?from=USD&to=TRY';
     var eurUrl = 'https://api.frankfurter.app/latest?from=EUR&to=TRY';
+    var sarUrl = 'https://api.exchangerate.host/latest?base=SAR&symbols=TRY';
     return Promise.all([
       global.APP.safeFetch(usdUrl, null, { cacheKey: 'fx_usd', errorMessage: 'Kur alinamadi.' }),
-      global.APP.safeFetch(eurUrl, null, { cacheKey: 'fx_eur', errorMessage: 'Kur alinamadi.' })
+      global.APP.safeFetch(eurUrl, null, { cacheKey: 'fx_eur', errorMessage: 'Kur alinamadi.' }),
+      global.APP.safeFetch(sarUrl, null, { cacheKey: 'fx_sar', errorMessage: 'Kur alinamadi.' })
     ]).then(function (results) {
       var usdData = results[0];
       var eurData = results[1];
+      var sarData = results[2];
       var usd = usdData && usdData.rates ? usdData.rates.TRY : null;
       var eur = eurData && eurData.rates ? eurData.rates.TRY : null;
+      var sar = sarData && sarData.rates ? sarData.rates.TRY : null;
       if (!usd || !eur) throw new Error('Kur alinamadi');
       if (state) {
         state.lastFetchTimes.fx = Date.now();
         state.lastError = null;
       }
-      return { usd: usd, eur: eur };
+      return { usd: usd, eur: eur, sar: sar };
     });
   }
 

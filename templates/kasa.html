@@ -652,6 +652,19 @@
             padding: 0.75rem 0;
             border-bottom: 1px solid #e2e8f0;
         }
+        .item-complimentary-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(251, 191, 36, 0.18);
+            color: #b45309;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
         .item-controls {
             display: flex;
             gap: 0.25rem;
@@ -2196,17 +2209,21 @@
                             <strong>${siparis.garson}</strong> - ${siparis.zaman}<br>`;
                         
                         siparis.items.forEach(item => {
+                            const isIkram = !!item.is_complimentary;
+                            const lineTotal = item.price * item.adet;
+                            const priceText = isIkram ? 'IKRAM' : `${lineTotal} TL`;
+                            const ikramTag = isIkram ? '<span class="item-complimentary-tag">IKRAM</span>' : '';
                             hesapHTML += `
                                 <div class="bill-item">
                                     <div>
-                                        <span>${item.name} x${item.adet}</span>
+                                        <span>${item.name} x${item.adet} ${ikramTag}</span>
                                         <div class="item-controls">
                                             <button class="quantity-btn" onclick="hesapItemAzalt('${siparis.id}', ${item.id})">-</button>
                                             <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', ${item.id})">+</button>
                                             <button class="quantity-btn remove" onclick="hesapItemSil('${siparis.id}', ${item.id})">&#10005;</button>
                                         </div>
                                     </div>
-                                    <span>${item.price * item.adet} TL</span>
+                                    <span>${priceText}</span>
                                 </div>
                             `;
                         });

@@ -64,6 +64,11 @@
             outline: none;
             border-color: #4CAF50;
         }
+        select:disabled {
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
         .menu-section {
             background: white;
             padding: 25px;
@@ -167,6 +172,25 @@
         .siparis-item:last-child {
             border-bottom: none;
         }
+        .item-note-input {
+            margin-top: 6px;
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .item-complimentary {
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #b45309;
+        }
+        .item-complimentary input {
+            width: auto;
+        }
         .quantity-controls {
             display: flex;
             align-items: center;
@@ -246,7 +270,7 @@
                 <div class="form-group">
                     <label>Masa Numarası:</label>
                     <select id="masa">
-                        {% for i in range(1, 16) %}
+                        {% for i in range(1, 26) %}
                         <option value="{{ i }}">Masa {{ i }}</option>
                         {% endfor %}
                     </select>
@@ -356,18 +380,23 @@
         function renderStaffOptions() {
             const select = document.getElementById('garson');
             if (!select) return;
-            select.innerHTML = '<option value="">Garson secin</option>';
-            staffList.forEach(staff => {
-                if (!staff || staff.is_active === false) return;
-                const option = document.createElement('option');
-                option.value = staff.id;
-                option.textContent = staff.name;
-                select.appendChild(option);
-            });
+            select.innerHTML = '';
             const match = staffList.find(s => s && s.is_active !== false && s.name === currentUserName);
-            if (match) {
-                select.value = match.id;
+            const fallback = staffList.find(s => s && s.is_active !== false);
+            const active = match || fallback;
+            if (active) {
+                const option = document.createElement('option');
+                option.value = active.id;
+                option.textContent = active.name;
+                select.appendChild(option);
+                select.value = active.id;
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Garson bulunamadÄ±';
+                select.appendChild(option);
             }
+            select.disabled = true;
         }
 
         function loadStaff() {
@@ -393,7 +422,7 @@
                 if (existing) {
                     existing.adet++;
                 } else {
-                    siparis.push({id, name, price, adet: 1});
+                    siparis.push({id, name, price, adet: 1, is_complimentary: false, note: ''});
                 }
                 
                 siparisGuncelle();
@@ -411,7 +440,12 @@
                 div.innerHTML = `
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small>${item.price} ₺ x ${item.adet}</small>
+                        <small>${item.price} ₺ x ${item.adet}</small><br>
+                        <input type=\"text\" class=\"item-note-input\" placeholder=\"Not\" value=\"${item.note || ''}\" oninput=\"notGuncelle(${index}, this.value)\">
+                        <label class=\"item-complimentary\">
+                            <input type=\"checkbox\" ${item.is_complimentary ? 'checked' : ''} onchange=\"ikramGuncelle(${index}, this.checked)\">
+                            Ikram
+                        </label>
                     </div>
                     <div class="quantity-controls">
                         <button class="quantity-btn" onclick="azalt(${index})">-</button>
@@ -421,7 +455,9 @@
                     </div>
                 `;
                 listesi.appendChild(div);
-                toplam += item.price * item.adet;
+                if (!item.is_complimentary) {
+                    toplam += item.price * item.adet;
+                }
             });
 
             document.getElementById('toplam').textContent = toplam;
@@ -443,6 +479,15 @@
 
         function sil(index) {
             siparis.splice(index, 1);
+            siparisGuncelle();
+        }
+
+        function notGuncelle(index, value) {
+            siparis[index].note = value;
+        }
+
+        function ikramGuncelle(index, checked) {
+            siparis[index].is_complimentary = !!checked;
             siparisGuncelle();
         }
 

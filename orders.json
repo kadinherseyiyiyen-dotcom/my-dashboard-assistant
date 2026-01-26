@@ -556,5 +556,58 @@
     "indirim": 141.0,
     "paid_by_staff_id": 2,
     "paid_by_staff_name": "Kasiyer"
+  },
+  {
+    "id": 14,
+    "masa": 1,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [],
+    "toplam": 0,
+    "zaman": "14:51",
+    "tarih": "26.01.2026",
+    "durum": "aktif",
+    "kaynak": "garson",
+    "masa_acilis_ts": "2026-01-26T14:51:40.935423+03:00",
+    "auto_water_added": true
+  },
+  {
+    "id": 15,
+    "masa": 1,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1,
+        "is_complimentary": true,
+        "note": ""
+      },
+      {
+        "id": 3,
+        "name": "Hellim",
+        "price": 350,
+        "adet": 1,
+        "is_complimentary": false,
+        "note": ""
+      },
+      {
+        "id": 2,
+        "name": "Patates Kızartması",
+        "price": 350,
+        "adet": 1,
+        "is_complimentary": false,
+        "note": ""
+      }
+    ],
+    "toplam": 700,
+    "zaman": "15:19",
+    "tarih": "26.01.2026",
+    "durum": "aktif",
+    "kaynak": "garson",
+    "masa_acilis_ts": "2026-01-26T14:51:40.935423+03:00",
+    "auto_water_added": false
   }
 ]

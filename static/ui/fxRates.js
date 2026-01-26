@@ -4,22 +4,25 @@
 
   /*
     Public API:
-      FxRates.render({ usd, eur }, { usdId, eurId, liveId })
+      FxRates.render({ usd, eur, sar }, { usdId, eurId, sarId, liveId })
   */
 
   function render(data, ids) {
     var usdEl = document.getElementById(ids.usdId);
     var eurEl = document.getElementById(ids.eurId);
+    var sarEl = ids.sarId ? document.getElementById(ids.sarId) : null;
     var liveEl = document.getElementById(ids.liveId);
     if (!usdEl || !eurEl || !liveEl) return;
     if (!data || typeof data.usd !== 'number' || typeof data.eur !== 'number') {
       usdEl.textContent = 'Kur alinamadi';
       eurEl.textContent = '--';
+      if (sarEl) sarEl.textContent = '--';
       liveEl.innerHTML = '<span class="fx-dot">&#9679;</span> Canl\u0131';
       return;
     }
     usdEl.textContent = data.usd.toFixed(2);
     eurEl.textContent = data.eur.toFixed(2);
+    if (sarEl && typeof data.sar === 'number') sarEl.textContent = data.sar.toFixed(2);
     liveEl.innerHTML = '<span class="fx-dot">&#9679;</span> Canl\u0131';
   }
 
@@ -34,6 +37,7 @@
       var ids = (payload && payload.ids) ? payload.ids : {
         usdId: 'fx-usd',
         eurId: 'fx-eur',
+        sarId: 'fx-sar',
         liveId: 'fx-live'
       };
       render(payload, ids);

@@ -280,7 +280,7 @@
                 <h4>G&#220;NCEL KURLAR <span class="fx-live"><span class="fx-dot"></span>CANLI</span></h4>
                 <div class="fx-row"><span>USD</span><span id="fx-usd">--</span></div>
                 <div class="fx-row"><span>EUR</span><span id="fx-eur">--</span></div>
-                <div class="fx-row"><span>GBP</span><span id="fx-gbp">--</span></div>
+                <div class="fx-row"><span>SAR</span><span id="fx-sar">--</span></div>
             </div>
         </div>
         <div class="grid">
@@ -369,9 +369,9 @@
             fetch('https://api.frankfurter.app/latest?from=EUR&to=TRY')
                 .then(r => r.json())
                 .then(d => { const el = document.getElementById('fx-eur'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
-            fetch('https://api.frankfurter.app/latest?from=GBP&to=TRY')
+            fetch('https://api.exchangerate.host/latest?base=SAR&symbols=TRY')
                 .then(r => r.json())
-                .then(d => { const el = document.getElementById('fx-gbp'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
+                .then(d => { const el = document.getElementById('fx-sar'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
         }
         function ensureWeatherCard() {
             var panel = document.querySelector('.left-panel');

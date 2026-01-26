@@ -291,5 +291,51 @@
       "staff_id": 2,
       "staff_name": "Kasiyer"
     }
+  },
+  {
+    "id": 25,
+    "action": "AUTO_WATER",
+    "created_at": "2026-01-26T14:51:40.938423+03:00",
+    "data": {
+      "order_id": 14,
+      "table_id": 1,
+      "staff_id": 2,
+      "staff_name": "selim",
+      "count": 2
+    }
+  },
+  {
+    "id": 26,
+    "action": "VOID_ITEM",
+    "created_at": "2026-01-26T15:19:57.872241+03:00",
+    "data": {
+      "order_id": 14,
+      "table_id": 1,
+      "staff_id": 2,
+      "staff_name": "Kasiyer",
+      "item": {
+        "id": 6,
+        "name": "Göz Yumurta",
+        "adet": 1,
+        "price": 350
+      }
+    }
+  },
+  {
+    "id": 27,
+    "action": "VOID_ITEM",
+    "created_at": "2026-01-26T15:19:59.499156+03:00",
+    "data": {
+      "order_id": 14,
+      "table_id": 1,
+      "staff_id": 2,
+      "staff_name": "Kasiyer",
+      "item": {
+        "id": 13,
+        "name": "Su",
+        "adet": 2,
+        "price": 60
+      }
+    }
   }
 ]
