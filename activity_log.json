@@ -243,5 +243,53 @@
       "staff_name": "selim",
       "count": 2
     }
+  },
+  {
+    "id": 21,
+    "action": "PAYMENT",
+    "created_at": "2026-01-26T12:52:37.872877+03:00",
+    "data": {
+      "table_id": 4,
+      "payment_type": "cash",
+      "total": 1269.0,
+      "staff_id": 2,
+      "staff_name": "Kasiyer"
+    }
+  },
+  {
+    "id": 22,
+    "action": "PAYMENT",
+    "created_at": "2026-01-26T13:01:49.031286+03:00",
+    "data": {
+      "table_id": 2,
+      "payment_type": "cash",
+      "total": 1269.0,
+      "staff_id": 2,
+      "staff_name": "Kasiyer"
+    }
+  },
+  {
+    "id": 23,
+    "action": "AUTO_WATER",
+    "created_at": "2026-01-26T13:11:36.865640+03:00",
+    "data": {
+      "order_id": 13,
+      "table_id": 5,
+      "staff_id": 2,
+      "staff_name": "selim",
+      "count": 2
+    }
+  },
+  {
+    "id": 24,
+    "action": "PAYMENT",
+    "created_at": "2026-01-26T13:11:42.170105+03:00",
+    "data": {
+      "table_id": 5,
+      "payment_type": "cash",
+      "total": 1269.0,
+      "staff_id": 2,
+      "staff_name": "Kasiyer"
+    }
   }
 ]

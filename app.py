@@ -300,7 +300,26 @@ def api_weather():
     return jsonify(data)
 
 def get_order_date(order):
-    return order.get('kapanma_tarih') or order.get('tarih')
+    return order.get('kapanma_tarih') or order.get('paid_at') or order.get('tarih')
+
+def get_order_time(order):
+    if order.get('kapanma_zamani'):
+        return order.get('kapanma_zamani')
+    paid_at = order.get('paid_at')
+    if paid_at:
+        try:
+            return datetime.fromisoformat(paid_at).strftime('%H:%M')
+        except Exception:
+            return None
+    return order.get('zaman')
+
+def is_order_closed(order):
+    return bool(
+        order.get('durum') == 'kapali'
+        or order.get('is_paid')
+        or order.get('paid_at')
+        or order.get('kapanma_tarih')
+    )
 
 def to_iso_date(date_str):
     if not date_str:
@@ -3094,9 +3113,11 @@ def istatistik_data():
 @app.route('/api/dashboard-data')
 def dashboard_data():
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
+        return jsonify({'success': False, 'message': 'Yetkisiz eri?im!'}), 403
     
     orders = load_orders()
+    closed_checks = load_closed_checks()
+    closed_items = load_closed_check_items()
     bugun_iso = now_tr().date().isoformat()
     
     saatlik_satis = {}
@@ -3104,44 +3125,82 @@ def dashboard_data():
         saatlik_satis[f"{i:02d}:00"] = 0
     
     urun_satis = {}
-    bugun_orders = []
-    for o in orders:
-        if o.get('durum') != 'kapali':
+    items_by_check = {}
+    for item in closed_items:
+        check_id = item.get('check_id')
+        if check_id is None:
             continue
-        order_date = to_iso_date(get_order_date(o))
-        if order_date == bugun_iso:
-            bugun_orders.append(o)
-    
-    for order in bugun_orders:
-        saat_str = order.get('kapanma_zamani') or order.get('zaman', '00:00')
-        try:
-            saat = int(saat_str.split(':')[0])
-        except ValueError:
-            saat = None
+        items_by_check.setdefault(str(check_id), []).append(item)
+
+    bugun_checks = []
+    for check in closed_checks:
+        dt = parse_iso_datetime(check.get('closed_at') or '')
+        if dt and dt.date().isoformat() == bugun_iso:
+            bugun_checks.append(check)
+
+    for check in bugun_checks:
+        dt = parse_iso_datetime(check.get('closed_at') or '')
+        saat = dt.hour if dt else None
         if saat is not None and 0 <= saat <= 23:
-            saatlik_satis[f"{saat:02d}:00"] += order.get('indirimli_tutar', order.get('toplam', 0))
-        
-        for item in order.get('items', []):
+            saatlik_satis[f"{saat:02d}:00"] += check.get('total', 0) or 0
+        for item in items_by_check.get(str(check.get('id')), []):
             name = item.get('name')
             if not name:
                 continue
             if name not in urun_satis:
                 urun_satis[name] = {'adet': 0, 'tutar': 0}
-            adet = item.get('adet', 0)
-            fiyat = item.get('price', item.get('fiyat', 0))
+            adet = item.get('adet', 0) or 0
+            tutar = item.get('total')
+            if tutar is None:
+                fiyat = item.get('price', 0) or 0
+                tutar = fiyat * adet
             urun_satis[name]['adet'] += adet
-            urun_satis[name]['tutar'] += fiyat * adet
-    
+            urun_satis[name]['tutar'] += tutar
+
+    bugun_orders = []
+    if not bugun_checks:
+        for o in orders:
+            if not is_order_closed(o):
+                continue
+            order_date = to_iso_date(get_order_date(o))
+            if order_date == bugun_iso:
+                bugun_orders.append(o)
+        
+        for order in bugun_orders:
+            saat_str = get_order_time(order) or '00:00'
+            try:
+                saat = int(saat_str.split(':')[0])
+            except ValueError:
+                saat = None
+            if saat is not None and 0 <= saat <= 23:
+                saatlik_satis[f"{saat:02d}:00"] += order.get('indirimli_tutar', order.get('toplam', 0))
+            
+            for item in order.get('items', []):
+                name = item.get('name')
+                if not name:
+                    continue
+                if name not in urun_satis:
+                    urun_satis[name] = {'adet': 0, 'tutar': 0}
+                adet = item.get('adet', 0)
+                fiyat = item.get('price', item.get('fiyat', 0))
+                urun_satis[name]['adet'] += adet
+                urun_satis[name]['tutar'] += fiyat * adet
+
     populer_urunler = sorted(urun_satis.items(), key=lambda x: x[1]['adet'], reverse=True)[:5]
     karli_saatler = sorted(saatlik_satis.items(), key=lambda x: x[1], reverse=True)[:5]
     toplam_gider = sum_expenses_for_date(bugun_iso)
-    toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
+    if bugun_checks:
+        toplam_ciro = sum(c.get('total', 0) or 0 for c in bugun_checks)
+        toplam_siparis = len(bugun_checks)
+    else:
+        toplam_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in bugun_orders)
+        toplam_siparis = len(bugun_orders)
     net_ciro = toplam_ciro - toplam_gider
 
     return jsonify({
         'saatlik_satis': saatlik_satis,
         'populer_urunler': populer_urunler,
-        'toplam_siparis': len(bugun_orders),
+        'toplam_siparis': toplam_siparis,
         'toplam_ciro': net_ciro,
         'toplam_gider': toplam_gider,
         'karli_saatler': karli_saatler

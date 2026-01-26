@@ -1009,6 +1009,21 @@
                 });
         }
 
+                function formatDateTime(value) {
+            if (!value) return '--';
+            try {
+                const dt = new Date(value);
+                if (!isNaN(dt.getTime())) {
+                    return dt.toLocaleString('tr-TR', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                }
+            } catch (e) {}
+            const cleaned = String(value).replace('T', ' ').replace(/\+\d{2}:?\d{2}$/, '');
+            return cleaned.slice(0, 16);
+        }
+
         function renderClosedChecks(records) {
             const listEl = document.getElementById('closed-checks-list');
             if (!listEl) return;
@@ -1019,8 +1034,8 @@
             const showAll = listEl.getAttribute('data-show-all') === 'true';
             const visibleRecords = showAll ? records : records.slice(0, 3);
             listEl.innerHTML = visibleRecords.map(rec => {
-                const opened = rec.opened_at || '--';
-                const closed = rec.closed_at ? rec.closed_at.replace('T', ' ').slice(0, 16) : '--';
+                const opened = formatDateTime(rec.opened_at);
+                const closed = formatDateTime(rec.closed_at);
                 const staff = rec.staff_name || 'Bilinmiyor';
                 return `
                     <div class="closed-row" data-check-id="${rec.id}">

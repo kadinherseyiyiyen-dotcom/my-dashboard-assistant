@@ -302,29 +302,50 @@
             const now = new Date();
             document.getElementById('live-time').textContent = now.toLocaleTimeString('tr-TR');
         }
-        
+        function emptyHourlyData() {
+            const data = {};
+            for (let i = 0; i < 24; i += 1) {
+                data[String(i).padStart(2, '0') + ':00'] = 0;
+            }
+            return data;
+        }
+
+        function normalizeDashboardData(payload) {
+            const data = payload && typeof payload === 'object' ? payload : {};
+            return {
+                toplam_siparis: Number(data.toplam_siparis || 0),
+                toplam_ciro: Number(data.toplam_ciro || 0),
+                saatlik_satis: data.saatlik_satis || emptyHourlyData(),
+                populer_urunler: Array.isArray(data.populer_urunler) ? data.populer_urunler : [],
+                karli_saatler: Array.isArray(data.karli_saatler) ? data.karli_saatler : []
+            };
+        }
+
         function loadDashboardData() {
             fetch('/api/dashboard-data')
-                .then(response => response.json())
-                .then(data => {
-                    // İstatistik kartlarını güncelle
+                .then(response => {
+                    if (!response.ok) {
+                        return {};
+                    }
+                    return response.json();
+                })
+                .then(payload => {
+                    const data = normalizeDashboardData(payload);
                     document.getElementById('total-orders').textContent = data.toplam_siparis;
                     document.getElementById('total-revenue').textContent = data.toplam_ciro + ' TL';
-                    
-                    // Saatlik satış grafiği
                     updateSalesChart(data.saatlik_satis);
-                    
-                    // Popüler ürünler
                     updatePopularItems(data.populer_urunler);
-                    
-                    // En karlı saatler
                     updateProfitableHours(data.karli_saatler);
                 })
                 .catch(error => {
                     console.error('Dashboard veri yükleme hatası:', error);
+                    const data = normalizeDashboardData(null);
+                    updateSalesChart(data.saatlik_satis);
+                    updatePopularItems(data.populer_urunler);
+                    updateProfitableHours(data.karli_saatler);
                 });
         }
-        
+
         function updateSalesChart(saatlikData) {
             const ctx = document.getElementById('salesChart').getContext('2d');
             

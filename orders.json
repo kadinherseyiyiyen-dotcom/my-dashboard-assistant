@@ -447,10 +447,27 @@
     "toplam": 1410,
     "zaman": "01:38",
     "tarih": "26.01.2026",
-    "durum": "aktif",
+    "durum": "kapali",
     "kaynak": "kasa",
     "masa_acilis_ts": "2026-01-26T01:38:41.982871+03:00",
-    "auto_water_added": true
+    "auto_water_added": true,
+    "kapanma_zamani": "13:01",
+    "kapanma_tarih": "26.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 1269.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 1269.0,
+    "is_paid": true,
+    "paid_at": "2026-01-26T13:01:49.013113+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 1269.0,
+    "indirim": 141.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
   },
   {
     "id": 12,
@@ -474,9 +491,70 @@
     "toplam": 1410,
     "zaman": "02:26",
     "tarih": "26.01.2026",
-    "durum": "aktif",
+    "durum": "kapali",
     "kaynak": "kasa",
     "masa_acilis_ts": "2026-01-26T02:26:07.074957+03:00",
-    "auto_water_added": true
+    "auto_water_added": true,
+    "kapanma_zamani": "12:52",
+    "kapanma_tarih": "26.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 1269.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 1269.0,
+    "is_paid": true,
+    "paid_at": "2026-01-26T12:52:37.837204+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 1269.0,
+    "indirim": 141.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
+  },
+  {
+    "id": 13,
+    "masa": 5,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1
+      },
+      {
+        "id": 13,
+        "name": "Su",
+        "price": 60,
+        "adet": 2
+      }
+    ],
+    "toplam": 1410,
+    "zaman": "13:11",
+    "tarih": "26.01.2026",
+    "durum": "kapali",
+    "kaynak": "kasa",
+    "masa_acilis_ts": "2026-01-26T13:11:36.859851+03:00",
+    "auto_water_added": true,
+    "kapanma_zamani": "13:11",
+    "kapanma_tarih": "26.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 1269.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 1269.0,
+    "is_paid": true,
+    "paid_at": "2026-01-26T13:11:42.135285+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 1269.0,
+    "indirim": 141.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
   }
 ]
