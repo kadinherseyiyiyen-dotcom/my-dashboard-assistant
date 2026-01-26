@@ -8,7 +8,10 @@ import os
 import urllib.parse
 import urllib.request
 from werkzeug.security import generate_password_hash, check_password_hash
-import resource
+try:
+    import resource
+except Exception:
+    resource = None
 import traceback
 
 app = Flask(__name__)
@@ -43,6 +46,8 @@ def add_charset(response):
     return response
 
 def _mem_mb():
+    if resource is None:
+        return 0.0
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 @app.after_request

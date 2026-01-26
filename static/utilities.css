@@ -734,3 +734,30 @@ body {
     }
   }
 }
+
+/* Mobile scroll + fixed action buttons: final overrides */
+@media (max-width: 768px) {
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Keep main content scrolling on body, not a nested container */
+  .layout {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px) !important;
+  }
+
+  /* Bottom fixed buttons stay anchored on iOS */
+  .settings-btn,
+  .logout {
+    position: fixed !important;
+    bottom: calc(env(safe-area-inset-bottom) + 12px) !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+}
