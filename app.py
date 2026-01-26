@@ -386,7 +386,11 @@ def finalize_table_session(masa, orders):
     save_table_sessions(sessions)
 
 def load_config():
-    return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
+    try:
+        return load_json_storage(CONFIG_FILE, {'kasa_sifre': 'kasa123'})
+    except Exception as e:
+        print("CONFIG_LOAD_ERROR:", repr(e), flush=True)
+        return {'kasa_sifre': 'kasa123'}
 
 
 def default_menu_seed():
@@ -1287,12 +1291,11 @@ def login():
 
 @app.route('/auth', methods=['POST'])
 def auth():
-    data = request.json or {}
-
-    role = data.get('role')
-    password = data.get('password')
-
     try:
+        data = request.get_json(silent=True) or {}
+        role = data.get('role')
+        password = data.get('password')
+
         if role == 'garson':
             staff_list = load_staff()
             staff_item = find_staff_by_name(staff_list, data.get('name'))
