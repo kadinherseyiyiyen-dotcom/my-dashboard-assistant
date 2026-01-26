@@ -8,6 +8,7 @@ import os
 import urllib.parse
 import urllib.request
 from werkzeug.security import generate_password_hash, check_password_hash
+import resource
 import traceback
 
 app = Flask(__name__)
@@ -38,6 +39,15 @@ def add_charset(response):
     if response.mimetype == 'application/json':
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
     return response
+
+def _mem_mb():
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+
+@app.after_request
+def _log_mem(resp):
+    if os.getenv("LOG_MEM", "0") == "1":
+        print(f"MEM {_mem_mb():.1f} MB {resp.status_code} {resp.content_length or 0}B", flush=True)
+    return resp
 
 DATA_DIR = os.environ.get('DATA_DIR')
 if not DATA_DIR:
