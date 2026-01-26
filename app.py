@@ -18,6 +18,19 @@ def health():
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-12345')
 app.config['JSON_AS_ASCII'] = False
 
+@app.before_request
+def _t0():
+    from flask import g
+    g._start = time.time()
+
+@app.after_request
+def _t1(resp):
+    from flask import g, request
+    dt = time.time() - getattr(g, "_start", time.time())
+    if dt > 2.0:
+        print(f"SLOW {dt:.2f}s {request.method} {request.path}", flush=True)
+    return resp
+
 @app.after_request
 def add_charset(response):
     if response.mimetype == 'text/html':
