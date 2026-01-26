@@ -250,6 +250,46 @@ WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '55d81da9d6c54f39ae322242526
 WEATHER_LOCATION = os.environ.get('WEATHER_LOCATION', 'Istanbul Sisli')
 WEATHER_TTL = int(os.environ.get('WEATHER_TTL', '600'))
 
+def fetch_weather():
+    now = time.time()
+    cached = _WEATHER_CACHE.get('data')
+    if cached and (now - _WEATHER_CACHE.get('ts', 0)) < WEATHER_TTL:
+        return cached
+    if not WEATHER_API_KEY:
+        return None
+    query = urllib.parse.urlencode({
+        "key": WEATHER_API_KEY,
+        "q": WEATHER_LOCATION,
+        "lang": "tr",
+    })
+    url = f"https://api.weatherapi.com/v1/current.json?{query}"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        current = payload.get("current", {}) if isinstance(payload, dict) else {}
+        condition = current.get("condition", {}) if isinstance(current, dict) else {}
+        icon = condition.get("icon") or ""
+        if icon.startswith("//"):
+            icon = "https:" + icon
+        data = {
+            "temp": current.get("temp_c"),
+            "condition": condition.get("text") or "",
+            "icon": icon,
+        }
+        _WEATHER_CACHE["ts"] = now
+        _WEATHER_CACHE["data"] = data
+        return data
+    except Exception as e:
+        print(f"WEATHER_ERROR: {e!r}", flush=True)
+        return None
+
+@app.route("/api/weather")
+def api_weather():
+    data = fetch_weather()
+    if not data:
+        return jsonify({"temp": None, "condition": "", "icon": ""})
+    return jsonify(data)
+
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('tarih')
 
