@@ -155,6 +155,17 @@
             color: #64748b;
             margin-top: 6px;
         }
+        .staff-stats-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .staff-stats-toolbar label {
+            font-size: 0.85rem;
+            color: #475569;
+            font-weight: 600;
+        }
         .chart-tabs {
             display: flex;
             gap: 0.5rem;
@@ -716,6 +727,11 @@
             <div class="section-header">
                 <h2 class="section-title">Garson Istatistikleri</h2>
                 <div class="staff-stats-date" id="staff-stats-date"></div>
+                <div class="staff-stats-toolbar">
+                    <label for="staff-date">Tarih</label>
+                    <input type="date" id="staff-date">
+                    <button class="btn btn-primary" onclick="staffTarihGuncelle()">Guncelle</button>
+                </div>
             </div>
             <div class="staff-stats" id="staff-stats">Yukleniyor...</div>
         </div>
@@ -823,12 +839,24 @@
                 });
         }
 
+        function staffTarihGuncelle() {
+            const staffDateInput = document.getElementById('staff-date');
+            const selected = staffDateInput ? staffDateInput.value : '';
+            if (!selected) {
+                alert('Lutfen garson tarihi seciniz!');
+                return;
+            }
+            fetchStaffStats(selected);
+        }
+
         function bugunuSec() {
             const bugun = new Date();
             const yil = bugun.getFullYear();
             const ay = String(bugun.getMonth() + 1).padStart(2, '0');
             const gun = String(bugun.getDate()).padStart(2, '0');
             document.getElementById('tarih-sec').value = `${yil}-${ay}-${gun}`;
+            const staffDate = document.getElementById('staff-date');
+            if (staffDate) staffDate.value = `${yil}-${ay}-${gun}`;
             const rangeStart = document.getElementById('staff-range-start');
             const rangeEnd = document.getElementById('staff-range-end');
             if (rangeStart) rangeStart.value = `${yil}-${ay}-${gun}`;
@@ -857,15 +885,19 @@
             const rangeEnd = document.getElementById('staff-range-end');
             const startVal = rangeStart ? rangeStart.value : '';
             const endVal = rangeEnd ? rangeEnd.value : '';
-            if (startVal && endVal) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const rangeIsDefaultToday = startVal && endVal && startVal === todayStr && endVal === todayStr;
+            const staffDateInput = document.getElementById('staff-date');
+            if (staffDateInput) staffDateInput.value = secilenTarih;
+            if (startVal && endVal && !rangeIsDefaultToday && (startVal !== secilenTarih || endVal !== secilenTarih)) {
                 fetchStaffStats({ start: startVal, end: endVal });
             } else {
                 fetchStaffStats(secilenTarih);
+                if (rangeStart) rangeStart.value = secilenTarih;
+                if (rangeEnd) rangeEnd.value = secilenTarih;
             }
 
-            const istatistikUrl = (startVal && endVal)
-                ? `/api/istatistik-data?start=${startVal}&end=${endVal}`
-                : `/api/istatistik-data?tarih=${formatliTarih}`;
+            const istatistikUrl = `/api/istatistik-data?tarih=${encodeURIComponent(secilenTarih)}`;
 
             fetch(istatistikUrl)
                 .then(response => response.json())
@@ -1020,7 +1052,19 @@
                     });
                 }
             } catch (e) {}
-            const cleaned = String(value).replace('T', ' ').replace(/\+\d{2}:?\d{2}$/, '');
+            const raw = String(value);
+            const cleaned = raw
+                .replace('T', ' ')
+                .replace(/\.\d+/, '')
+                .replace(/\+\d{2}:?\d{2}$/, '')
+                .trim();
+            const parts = cleaned.split(' ');
+            if (parts.length >= 2 && parts[0].includes('-')) {
+                const dateBits = parts[0].split('-');
+                if (dateBits.length === 3) {
+                    return `${dateBits[2]}.${dateBits[1]}.${dateBits[0]} ${parts[1].slice(0, 5)}`;
+                }
+            }
             return cleaned.slice(0, 16);
         }
 

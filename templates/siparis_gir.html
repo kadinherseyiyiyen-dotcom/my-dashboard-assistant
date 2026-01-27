@@ -307,6 +307,78 @@
         .siparis-item:last-child {
             border-bottom: none;
         }
+        .free-addons {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border: 1px dashed #e2e8f0;
+            border-radius: 0.75rem;
+            background: #fffaf0;
+        }
+        .free-addons-title {
+            font-weight: 700;
+            color: #9c4221;
+            margin-bottom: 0.5rem;
+        }
+        .free-addons-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .free-addons-input input {
+            flex: 1;
+            padding: 0.45rem 0.6rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.6rem;
+            font-size: 0.9rem;
+        }
+        .free-addons-input button {
+            padding: 0.45rem 0.75rem;
+            border-radius: 0.6rem;
+            border: none;
+            background: #f59e0b;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .free-addons-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.4rem;
+        }
+        .free-addon-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: #ffffff;
+            border-radius: 0.6rem;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        }
+        .free-addon-name {
+            font-weight: 600;
+        }
+        .free-addon-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .free-addon-controls .qty {
+            min-width: 24px;
+            text-align: center;
+            font-weight: 700;
+        }
+        .free-addon-controls button {
+            border: none;
+            background: #f59e0b;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+        }
         .quantity-controls {
             display: flex;
             align-items: center;
@@ -466,6 +538,14 @@
                         <div id="mevcut-siparisler-listesi"></div>
                     </div>
                     <div id="siparis-listesi"></div>
+                    <div id="freeSerpmeAddons" class="free-addons" style="display:none;">
+                        <div class="free-addons-title">&#220;cretsiz S&#305;cak Eklemeler</div>
+                        <div class="free-addons-input">
+                            <input id="freeHotInput" type="text" placeholder="Ücretsiz sıcak ürün adı">
+                            <button type="button" onclick="addFreeHotManual()">Ekle</button>
+                        </div>
+                        <div id="freeAddonsList" class="free-addons-list"></div>
+                    </div>
                     <div class="toplam-section">
                         <div>Toplam</div><div class="toplam-amount"><span id="toplam">0</span> TL</div>
                     </div>
@@ -498,6 +578,7 @@
         let tablesCache = {};
         let tableSessions = {};
         let staffList = [];
+        let menuCache = {};
 
         function getQueryParam(name) {
             const params = new URLSearchParams(window.location.search);
@@ -691,7 +772,9 @@
 
                 const mr = await fetch('/api/menu');
                 const menu = await mr.json();
-                renderMenu(menu || {});
+                menuCache = menu || {};
+                renderMenu(menuCache);
+                renderFreeAddons();
             } catch (err) {
                 console.error('Init hata:', err);
                 const tablesEl = document.getElementById('tablesGrid');
@@ -781,13 +864,94 @@
             const id = parseInt(el.dataset.id);
             const name = el.dataset.name;
             const price = parseInt(el.dataset.price);
-            const existing = siparis.find(s => s.id === id);
+            const existing = siparis.find(s => s.id === id && !s.is_complimentary && !s.is_free_hot);
             if (existing) {
                 existing.adet++;
             } else {
-                siparis.push({ id, name, price, adet: 1, is_complimentary: false, note: '' });
+                siparis.push({ id, name, price, adet: 1, is_complimentary: false, is_free_hot: false, note: '' });
             }
             siparisGuncelle();
+        }
+
+        function getSerpmeCount() {
+            let count = 0;
+            siparis.forEach(item => {
+                const name = String(item.name || '').toLowerCase();
+                if (name.includes('serpme')) {
+                    count += Number(item.adet || 0);
+                }
+            });
+            return count;
+        }
+
+        function addFreeHotManual() {
+            const serpmeCount = getSerpmeCount();
+            if (serpmeCount <= 0) {
+                notify('?nce Serpme Kahvalt? se?melisin.');
+                return;
+            }
+            const input = document.getElementById('freeHotInput');
+            if (!input) return;
+            const name = String(input.value || '').trim();
+            if (!name) return;
+            const id = `freehot_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+            siparis.push({ id, name, price: 0, adet: 1, is_complimentary: false, is_free_hot: true, note: '' });
+            input.value = '';
+            siparisGuncelle();
+        }
+
+        function addFreeHotManualFrom(name) {
+            const serpmeCount = getSerpmeCount();
+            if (serpmeCount <= 0) {
+                notify('?nce Serpme Kahvalt? se?melisin.');
+                return;
+            }
+            const existing = siparis.find(s => s.is_free_hot && s.name === name);
+            if (existing) {
+                existing.adet++;
+            } else {
+                const id = `freehot_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                siparis.push({ id, name, price: 0, adet: 1, is_complimentary: false, is_free_hot: true, note: '' });
+            }
+            siparisGuncelle();
+        }
+
+        function removeFreeHotById(itemId) {
+            const idx = siparis.findIndex(s => s.id === itemId && s.is_free_hot);
+            if (idx === -1) return;
+            if (siparis[idx].adet > 1) {
+                siparis[idx].adet--;
+            } else {
+                siparis.splice(idx, 1);
+            }
+            siparisGuncelle();
+        }
+
+        function renderFreeAddons() {
+            const box = document.getElementById('freeSerpmeAddons');
+            const listEl = document.getElementById('freeAddonsList');
+            if (!box || !listEl) return;
+            const serpmeCount = getSerpmeCount();
+            if (!serpmeCount) {
+                box.style.display = 'none';
+                return;
+            }
+            box.style.display = 'block';
+            listEl.innerHTML = '';
+            const freeItems = siparis.filter(s => s.is_free_hot);
+            freeItems.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'free-addon-row';
+                row.innerHTML = `
+                    <div class="free-addon-name">${item.name}</div>
+                    <div class="free-addon-controls">
+                        <button onclick="removeFreeHotById('${item.id}')">-</button>
+                        <span class="qty">${item.adet || 0}</span>
+                        <button onclick="addFreeHotManualFrom('${String(item.name).replace(/'/g, "\'")}')">+</button>
+                    </div>
+                `;
+                listEl.appendChild(row);
+            });
         }
 
         function siparisGuncelle() {
@@ -795,16 +959,20 @@
             if (!listesi) return;
             listesi.innerHTML = '';
             toplam = 0;
+            const serpmeCount = getSerpmeCount();
+            if (serpmeCount === 0) {
+                siparis = siparis.filter(item => !item.is_free_hot);
+            }
             siparis.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'siparis-item';
                 div.innerHTML = `
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small>${item.is_complimentary ? 'Ikram' : (item.price + ' TL x ' + item.adet)}</small><br>
+                        <small>${item.is_complimentary ? 'Ikram' : (item.is_free_hot ? '&#220;cretsiz S&#305;cak' : (item.price + ' TL x ' + item.adet))}</small><br>
                         <input type="text" class="item-note-input" placeholder="Not" value="${item.note || ''}" oninput="notGuncelle(${index}, this.value)">
                         <label class="item-complimentary">
-                            <input type="checkbox" ${item.is_complimentary ? 'checked' : ''} onchange="ikramGuncelle(${index}, this.checked)">
+                            <input type="checkbox" ${item.is_complimentary ? 'checked' : ''} ${item.is_free_hot ? 'disabled' : ''} onchange="ikramGuncelle(${index}, this.checked)">
                             Ikram
                         </label>
                     </div>
@@ -816,11 +984,12 @@
                     </div>
                 `;
                 listesi.appendChild(div);
-                if (!item.is_complimentary) {
+                if (!item.is_complimentary && !item.is_free_hot) {
                     toplam += item.price * item.adet;
                 }
             });
             document.getElementById('toplam').textContent = toplam;
+            renderFreeAddons();
         }
 
         function arttir(index) {

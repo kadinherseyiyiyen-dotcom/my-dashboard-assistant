@@ -2210,9 +2210,10 @@
                         
                         siparis.items.forEach(item => {
                             const isIkram = !!item.is_complimentary;
+                            const isFreeHot = !!item.is_free_hot;
                             const lineTotal = item.price * item.adet;
-                            const priceText = isIkram ? 'IKRAM' : `${lineTotal} TL`;
-                            const ikramTag = isIkram ? '<span class="item-complimentary-tag">IKRAM</span>' : '';
+                            const priceText = isIkram ? 'IKRAM' : (isFreeHot ? '&#220;CRETS&#304;Z SICAK' : `${lineTotal} TL`);
+                            const ikramTag = isIkram ? '<span class="item-complimentary-tag">IKRAM</span>' : (isFreeHot ? '<span class="item-complimentary-tag">UCRETSIZ</span>' : '');
                             hesapHTML += `
                                 <div class="bill-item">
                                     <div>

@@ -229,5 +229,59 @@
     },
     "staff_id": 2,
     "staff_name": "Kasiyer"
+  },
+  {
+    "id": 14,
+    "order_id": 14,
+    "table_id": 1,
+    "table_name": "Masa 1",
+    "opened_at": "2026-01-26T14:51:40.935423+03:00",
+    "closed_at": "2026-01-26T23:38:16.176758+03:00",
+    "total": 0,
+    "payment_type": "nakit",
+    "payment_breakdown": {
+      "cash": 0.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 15,
+    "order_id": 15,
+    "table_id": 1,
+    "table_name": "Masa 1",
+    "opened_at": "2026-01-26T14:51:40.935423+03:00",
+    "closed_at": "2026-01-26T23:38:16.221415+03:00",
+    "total": 630.0,
+    "payment_type": "nakit",
+    "payment_breakdown": {
+      "cash": 630.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 16,
+    "order_id": 16,
+    "table_id": 3,
+    "table_name": "Masa 3",
+    "opened_at": "2026-01-27T00:11:30.372469+03:00",
+    "closed_at": "2026-01-27T00:11:37.734218+03:00",
+    "total": 1584.0,
+    "payment_type": "nakit",
+    "payment_breakdown": {
+      "cash": 1584.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
   }
 ]

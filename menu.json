@@ -131,5 +131,175 @@
       "price": 300
     }
   ],
-  "sarkuteri": []
+  "sarkuteri": [],
+  "sicak_ucretsiz": [
+    {
+      "category": "sicak_ucretsiz",
+      "id": 100,
+      "image": "",
+      "name": "Menemen Küçük",
+      "price": 1
+    },
+    {
+      "id": 100,
+      "name": "Göz Yumurta",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 101,
+      "name": "Sucuklu Karışık Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 102,
+      "name": "Pastırmalı Çırpılmış Küçük",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 103,
+      "name": "Çırpılmış Küçük",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 104,
+      "name": "Haşlanmış Yumurtalı Menemen",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 105,
+      "name": "Menemen Normal",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 106,
+      "name": "Sucuklu Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 107,
+      "name": "Hellim",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 108,
+      "name": "Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 109,
+      "name": "Mantarlı Çırpılmış Küçük",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 110,
+      "name": "Sucuklu Çırpılmış Küçük",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 111,
+      "name": "Pastırmalı Çırpılmış ",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 112,
+      "name": "Sucuklu Çırpılmış",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 113,
+      "name": "Sebzeli Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 114,
+      "name": "Göz Yumurta Küçük",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 115,
+      "name": "Peynirli Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 116,
+      "name": "Mantarlı Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 117,
+      "name": "Haşlanmış Yumurta",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 118,
+      "name": "Peynirli Menemen",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 119,
+      "name": "Peynirli Sucuklu Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 120,
+      "name": "Peynirli Sebzeli Omlet",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 121,
+      "name": "Sucuklu Yumurta",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    },
+    {
+      "id": 122,
+      "name": "Kavurmalı Yumurta",
+      "price": 1,
+      "category": "sicak_ucretsiz",
+      "image": ""
+    }
+  ]
 }

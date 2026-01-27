@@ -326,6 +326,7 @@
                     <option value="ekstralar">Ekstralar</option>
                     <option value="icecekler">İçecekler</option>
                     <option value="sarkuteri">Şarküteri</option>
+                    <option value="sicak_ucretsiz">Sıcak Ücretsiz</option>
                 </select>
                 <button class="btn btn-muted" onclick="menuKaydet()">Kaydet</button>
             </div>
@@ -409,6 +410,7 @@
                     <option value="ekstralar">Ekstralar</option>
                     <option value="icecekler">İçecekler</option>
                     <option value="sarkuteri">Şarküteri</option>
+                    <option value="sicak_ucretsiz">Sıcak Ücretsiz</option>
                 </select>
             </div>
             <div class="modal-actions">
@@ -432,7 +434,8 @@
             ana_menu: 'Ana Menü',
             ekstralar: 'Ekstralar',
             icecekler: 'İçecekler',
-            sarkuteri: 'Şarküteri'
+            sarkuteri: 'Şarküteri',
+            sicak_ucretsiz: 'Sıcak Ücretsiz'
         };
 
         function notify(message) {
@@ -449,6 +452,7 @@
                 .then(data => {
                     menu = data || {};
                     menu.sarkuteri = menu.sarkuteri || [];
+                    menu.sicak_ucretsiz = menu.sicak_ucretsiz || [];
                     renderMenu();
                 });
         }
@@ -507,6 +511,7 @@
                         <option value="ekstralar">Ekstralar</option>
                         <option value="icecekler">İçecekler</option>
                         <option value="sarkuteri">Şarküteri</option>
+                        <option value="sicak_ucretsiz">Sıcak Ücretsiz</option>
                     </select>
                     <button class="btn-delete" data-id="${item.id}" data-cat="${item.category}">Sil</button>
                 `;

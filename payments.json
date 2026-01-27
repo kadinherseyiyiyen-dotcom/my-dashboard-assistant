@@ -304,5 +304,27 @@
     "created_at": "2026-01-26T13:11:42.143050+03:00",
     "staff_id": 2,
     "staff_name": "Kasiyer"
+  },
+  {
+    "id": 30,
+    "order_id": 15,
+    "table_id": 1,
+    "type": "cash",
+    "amount": 630.0,
+    "meta_json": {},
+    "created_at": "2026-01-26T23:38:16.231705+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
+  },
+  {
+    "id": 31,
+    "order_id": 16,
+    "table_id": 3,
+    "type": "cash",
+    "amount": 1584.0,
+    "meta_json": {},
+    "created_at": "2026-01-27T00:11:37.739220+03:00",
+    "staff_id": 2,
+    "staff_name": "Kasiyer"
   }
 ]

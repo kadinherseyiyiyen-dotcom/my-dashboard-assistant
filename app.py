@@ -257,7 +257,9 @@ STAFF_CACHE_TTL = int(os.environ.get('STAFF_CACHE_TTL', '60'))
 PRINTER_NAME = os.environ.get('PRINTER_NAME')
 KITCHEN_PRINTER_NAME = os.environ.get('KITCHEN_PRINTER_NAME')
 KITCHEN_PRINTER_ENABLED = os.environ.get('KITCHEN_PRINTER_ENABLED', '0') == '1'
-KITCHEN_PRINT_MODE = os.environ.get('KITCHEN_PRINT_MODE', 'printer')
+KITCHEN_PRINT_MODE = os.environ.get('KITCHEN_PRINT_MODE', 'printer')  # printer | console | queue
+PRINT_AGENT_TOKEN = os.environ.get('PRINT_AGENT_TOKEN', '2024Family').strip()
+PRINT_QUEUE_MAX = int(os.environ.get('PRINT_QUEUE_MAX', '500'))
 WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '55d81da9d6c54f39ae3222425262301')
 WEATHER_LOCATION = os.environ.get('WEATHER_LOCATION', 'Istanbul Sisli')
 WEATHER_TTL = int(os.environ.get('WEATHER_TTL', '600'))
@@ -301,6 +303,179 @@ def api_weather():
     if not data:
         return jsonify({"temp": None, "condition": "", "icon": ""})
     return jsonify(data)
+
+# -----------------------------
+# Print Queue (for "agent" mode)
+# -----------------------------
+#
+# Render cannot print to a USB/LAN printer in your shop. In "queue" mode we enqueue
+# printable jobs here, and a shop-PC agent pulls and prints them locally.
+#
+# Storage: kv_store rows with key prefix "print_job:" so we don't need a new table.
+
+def _require_agent_token():
+    if not PRINT_AGENT_TOKEN:
+        return False
+    token = request.headers.get('X-Agent-Token', '')
+    return token and token == PRINT_AGENT_TOKEN
+
+def _now_iso():
+    return datetime.now(ZoneInfo("Europe/Istanbul")).isoformat()
+
+def _list_print_jobs(limit=50):
+    """Return list of job dicts (may include old/done). Ordered newest first."""
+    limit = max(1, min(int(limit or 50), 200))
+    prefix = "print_job:"
+    if USE_DB:
+        ensure_kv_table()
+        conn = get_db_conn()
+        if conn is None:
+            return []
+        cur = conn.cursor()
+        # Key is indexed; fetch a bounded set and filter in python.
+        cur.execute(
+            "select key, data, updated_at from kv_store where key like %s order by updated_at desc limit %s",
+            (prefix + "%", limit),
+        )
+        rows = cur.fetchall() or []
+        cur.close()
+        release_db_conn(conn)
+        out = []
+        for _key, data, _updated_at in rows:
+            try:
+                obj = json.loads(data) if isinstance(data, str) else (data or {})
+            except Exception:
+                continue
+            if isinstance(obj, dict):
+                out.append(obj)
+        return out
+    # File-mode: scan directory for print jobs.
+    out = []
+    try:
+        for name in os.listdir(DATA_DIR):
+            if not name.startswith(prefix):
+                continue
+            try:
+                obj = load_json_storage(name, None)
+            except Exception:
+                obj = None
+            if isinstance(obj, dict):
+                out.append(obj)
+    except Exception:
+        return []
+    out.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+    return out[:limit]
+
+def _save_print_job(job):
+    save_json_storage(f"print_job:{job['id']}", job)
+
+def enqueue_print_job(target, job_type, payload):
+    """Create a print job and store it. Returns job dict."""
+    import uuid
+    job_id = uuid.uuid4().hex
+    job = {
+        "id": job_id,
+        "status": "pending",  # pending | claimed | done | error
+        "target": target,     # kitchen | cashier | ...
+        "type": job_type,     # kitchen_ticket | bill | ...
+        "payload": payload or {},
+        "created_at": _now_iso(),
+        "claimed_at": None,
+        "claimed_by": None,
+        "done_at": None,
+        "error": None,
+    }
+    _save_print_job(job)
+
+    # Best-effort retention cap (delete oldest jobs if > PRINT_QUEUE_MAX).
+    try:
+        jobs = _list_print_jobs(limit=PRINT_QUEUE_MAX + 50)
+        if len(jobs) > PRINT_QUEUE_MAX:
+            # jobs are newest-first; drop tail
+            to_drop = jobs[PRINT_QUEUE_MAX:]
+            for j in to_drop:
+                jid = j.get("id")
+                if not jid:
+                    continue
+                key = f"print_job:{jid}"
+                if USE_DB:
+                    ensure_kv_table()
+                    conn = get_db_conn()
+                    if conn:
+                        cur = conn.cursor()
+                        cur.execute("delete from kv_store where key = %s", (key,))
+                        conn.commit()
+                        cur.close()
+                        release_db_conn(conn)
+                else:
+                    try:
+                        os.remove(data_path(key))
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+    return job
+
+@app.route('/api/print-jobs', methods=['GET'])
+def api_print_jobs_list():
+    if not _require_agent_token():
+        return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    status = (request.args.get('status') or 'pending').strip()
+    target = (request.args.get('target') or 'kitchen').strip()
+    limit = request.args.get('limit') or 20
+    jobs = _list_print_jobs(limit=200)
+    out = []
+    for j in jobs:
+        if status and j.get("status") != status:
+            continue
+        if target and j.get("target") != target:
+            continue
+        out.append(j)
+        if len(out) >= int(limit):
+            break
+    return jsonify({"success": True, "jobs": out})
+
+@app.route('/api/print-jobs/<job_id>/claim', methods=['POST'])
+def api_print_jobs_claim(job_id):
+    if not _require_agent_token():
+        return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    job = load_json_storage(f"print_job:{job_id}", None)
+    if not isinstance(job, dict):
+        return jsonify({"success": False, "error": "NOT_FOUND"}), 404
+    if job.get("status") not in ("pending",):
+        return jsonify({"success": False, "error": "NOT_PENDING", "status": job.get("status")}), 409
+    agent_id = (request.json or {}).get("agent_id") or request.headers.get("X-Agent-Id") or "agent"
+    job["status"] = "claimed"
+    job["claimed_at"] = _now_iso()
+    job["claimed_by"] = agent_id
+    _save_print_job(job)
+    return jsonify({"success": True, "job": job})
+
+@app.route('/api/print-jobs/<job_id>/done', methods=['POST'])
+def api_print_jobs_done(job_id):
+    if not _require_agent_token():
+        return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    job = load_json_storage(f"print_job:{job_id}", None)
+    if not isinstance(job, dict):
+        return jsonify({"success": False, "error": "NOT_FOUND"}), 404
+    job["status"] = "done"
+    job["done_at"] = _now_iso()
+    _save_print_job(job)
+    return jsonify({"success": True})
+
+@app.route('/api/print-jobs/<job_id>/error', methods=['POST'])
+def api_print_jobs_error(job_id):
+    if not _require_agent_token():
+        return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    job = load_json_storage(f"print_job:{job_id}", None)
+    if not isinstance(job, dict):
+        return jsonify({"success": False, "error": "NOT_FOUND"}), 404
+    payload = request.json or {}
+    job["status"] = "error"
+    job["done_at"] = _now_iso()
+    job["error"] = payload.get("error") or "unknown"
+    _save_print_job(job)
+    return jsonify({"success": True})
 
 def get_order_date(order):
     return order.get('kapanma_tarih') or order.get('paid_at') or order.get('tarih')
@@ -448,7 +623,8 @@ def default_menu_seed():
             {"id": 17, "name": "Su", "price": 60, "category": "icecek", "image": "??"},
             {"id": 18, "name": "Nar Suyu", "price": 300, "category": "icecek", "image": "??"}
         ],
-        "sarkuteri": []
+        "sarkuteri": [],
+        "sicak_ucretsiz": []
     }
 
 def init_data():
@@ -576,6 +752,10 @@ def load_menu():
         menu = default_menu_seed()
         save_json_storage(MENU_FILE, menu)
         invalidate_cache('menu')
+    # ensure new groups exist
+    if isinstance(menu, dict):
+        menu.setdefault("sarkuteri", [])
+        menu.setdefault("sicak_ucretsiz", [])
     return menu
 
 def find_menu_item_by_name(menu, name):
@@ -888,7 +1068,10 @@ def compute_staff_stats(date_param=None, start_param=None, end_param=None):
         start_date = end_date
     if not target_date and not start_date:
         target_date = now_tr().date().isoformat()
+
     orders = load_orders()
+    closed_checks = load_closed_checks()
+    closed_items = load_closed_check_items()
     staff_list = load_staff()
     staff_map = {str(s.get('id')): s for s in staff_list}
     stats = {}
@@ -923,49 +1106,102 @@ def compute_staff_stats(date_param=None, start_param=None, end_param=None):
         except Exception:
             return 0.0
 
-    for order in orders:
-        order_date = to_iso_date(get_order_date(order))
+    def in_range(day_iso):
+        if not day_iso:
+            return False
         if start_date and end_date:
-            if not order_date:
+            return start_date <= day_iso <= end_date
+        return day_iso == target_date
+
+    selected_checks = []
+    if closed_checks:
+        for check in closed_checks:
+            dt = parse_iso_datetime(check.get('closed_at') or check.get('opened_at') or '')
+            if not dt:
                 continue
-            if order_date < start_date or order_date > end_date:
+            if in_range(dt.date().isoformat()):
+                selected_checks.append(check)
+
+    if selected_checks:
+        items_by_check = {}
+        for item in closed_items or []:
+            cid = item.get('check_id')
+            if cid is None:
                 continue
-        else:
-            if order_date != target_date:
+            items_by_check.setdefault(cid, []).append(item)
+
+        for check in selected_checks:
+            staff_id = check.get('staff_id')
+            if staff_id is None:
+                key = 'unknown'
+                name = normalize_staff_name(check.get('staff_name')) or 'Bilinmiyor'
+            else:
+                key = str(staff_id)
+                staff_item = staff_map.get(key)
+                name = (staff_item.get('name') if staff_item else None) or normalize_staff_name(check.get('staff_name')) or 'Bilinmiyor'
+
+            ensure_stat(key, staff_id, name)
+            stats[key]['order_count'] += 1
+            try:
+                stats[key]['revenue'] += float(check.get('total') or 0)
+            except Exception:
+                pass
+
+            table_val = check.get('table_id')
+            if table_val is not None:
+                stats[key]['_tables'].add(table_val)
+
+            for item in items_by_check.get(check.get('id'), []):
+                item_name = str(item.get('name') or '').lower()
+                if 'serpme' in item_name:
+                    try:
+                        stats[key]['serpme_count'] += int(item.get('adet') or 0)
+                    except Exception:
+                        pass
+
+            dt = parse_iso_datetime(check.get('closed_at') or '')
+            if dt:
+                last_dt = stats[key]['_last_dt']
+                if not last_dt or dt > last_dt:
+                    stats[key]['_last_dt'] = dt
+    else:
+        for order in orders:
+            order_date = to_iso_date(get_order_date(order))
+            if not in_range(order_date):
                 continue
 
-        staff_id = order.get('staff_id')
-        if staff_id is None:
-            key = 'unknown'
-            name = normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
-        else:
-            key = str(staff_id)
-            staff_item = staff_map.get(key)
-            name = (staff_item.get('name') if staff_item else None) or normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
+            staff_id = order.get('staff_id')
+            if staff_id is None:
+                key = 'unknown'
+                name = normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
+            else:
+                key = str(staff_id)
+                staff_item = staff_map.get(key)
+                name = (staff_item.get('name') if staff_item else None) or normalize_staff_name(order.get('garson')) or 'Bilinmiyor'
 
-        ensure_stat(key, staff_id, name)
-        stats[key]['order_count'] += 1
-        stats[key]['revenue'] += order_total(order)
+            ensure_stat(key, staff_id, name)
+            stats[key]['order_count'] += 1
+            stats[key]['revenue'] += order_total(order)
 
-        table_val = order.get('masa')
-        if table_val is not None:
-            stats[key]['_tables'].add(table_val)
-            if order.get('durum') == 'aktif':
-                stats[key]['_active_tables'].add(table_val)
+            table_val = order.get('masa')
+            if table_val is not None:
+                stats[key]['_tables'].add(table_val)
+                if order.get('durum') == 'aktif':
+                    stats[key]['_active_tables'].add(table_val)
 
-        for item in order.get('items') or []:
-            item_name = str(item.get('name') or '').lower()
-            if 'serpme' in item_name:
-                try:
-                    stats[key]['serpme_count'] += int(item.get('adet') or 0)
-                except Exception:
-                    pass
+            for item in order.get('items') or []:
+                item_name = str(item.get('name') or '').lower()
+                if 'serpme' in item_name:
+                    try:
+                        stats[key]['serpme_count'] += int(item.get('adet') or 0)
+                    except Exception:
+                        pass
 
-        dt = parse_order_datetime(order)
-        if dt:
-            last_dt = stats[key]['_last_dt']
-            if not last_dt or dt > last_dt:
-                stats[key]['_last_dt'] = dt
+            dt = parse_order_datetime(order)
+            if dt:
+                last_dt = stats[key]['_last_dt']
+                if not last_dt or dt > last_dt:
+                    stats[key]['_last_dt'] = dt
 
     result = []
     for key, data in stats.items():
@@ -992,6 +1228,7 @@ def compute_staff_stats(date_param=None, start_param=None, end_param=None):
 
     result.sort(key=lambda x: (-(x.get('order_count') or 0), -(x.get('revenue') or 0), str(x.get('name') or '')))
     return (target_date or start_date or now_tr().date().isoformat()), result
+
 def default_tables_layout(area):
     layout = {}
     cols = 5
@@ -1175,14 +1412,22 @@ def build_bill_payload(table_id, orders):
             price = float(item.get('price', 0))
             qty = int(item.get('adet', 0) or 0)
             is_complimentary = bool(item.get('is_complimentary'))
-            key = (name, price, is_complimentary)
+            is_free_hot = bool(item.get('is_free_hot'))
+            key = (name, price, is_complimentary, is_free_hot)
             items_map[key] = items_map.get(key, 0) + qty
     items = []
     total = 0.0
-    for (name, price, is_complimentary), qty in items_map.items():
-        line_total = 0.0 if is_complimentary else (price * qty)
+    for (name, price, is_complimentary, is_free_hot), qty in items_map.items():
+        line_total = 0.0 if (is_complimentary or is_free_hot) else (price * qty)
         total += line_total
-        items.append({'name': name, 'qty': qty, 'price': price, 'line_total': line_total, 'is_complimentary': is_complimentary})
+        items.append({
+            'name': name,
+            'qty': qty,
+            'price': price,
+            'line_total': line_total,
+            'is_complimentary': is_complimentary,
+            'is_free_hot': is_free_hot
+        })
     if total == 0:
         total = sum(float(o.get('toplam', 0)) for o in orders if o.get('durum') == 'aktif')
     items.sort(key=lambda i: i['name'])
@@ -1251,9 +1496,10 @@ def build_bill_text(payload, width=32, lang='tr'):
         name = translate_item(item['name'])
         qty = item['qty']
         is_complimentary = bool(item.get('is_complimentary'))
+        is_free_hot = bool(item.get('is_free_hot'))
         line_total = item['line_total']
         label = f"{name} x{qty}"
-        amount = "IKRAM" if is_complimentary else f"{line_total:.0f} TL"
+        amount = "IKRAM" if is_complimentary else ("UCRETSIZ" if is_free_hot else f"{line_total:.0f} TL")
         lines.append(label.ljust(width - len(amount)) + amount)
     lines.append(sep)
     subtotal_text = f"{payload.get('subtotal', payload['total']):.0f} TL"
@@ -1307,13 +1553,16 @@ def build_kitchen_text(order, width=32, is_additional=False):
             continue
         note = (item.get('note') or '').strip()
         is_complimentary = bool(item.get('is_complimentary'))
-        key = (name, note, is_complimentary)
+        is_free_hot = bool(item.get('is_free_hot'))
+        key = (name, note, is_complimentary, is_free_hot)
         items_map[key] = items_map.get(key, 0) + qty
-    for (name, note, is_complimentary) in sorted(items_map.keys(), key=lambda k: (k[0], k[1], k[2])):
-        qty = items_map[(name, note, is_complimentary)]
+    for (name, note, is_complimentary, is_free_hot) in sorted(items_map.keys(), key=lambda k: (k[0], k[1], k[2], k[3])):
+        qty = items_map[(name, note, is_complimentary, is_free_hot)]
         label = f"{name} x{qty}"
         if is_complimentary:
             label = f"{label} (IKRAM)"
+        elif is_free_hot:
+            label = f"{label} (UCRETSIZ SICAK)"
         lines.append(label[:width])
         if note:
             lines.append(("  * " + note)[:width])
@@ -1324,6 +1573,13 @@ def print_kitchen_order(order, is_additional=False):
     if not KITCHEN_PRINTER_ENABLED:
         return False
     text = build_kitchen_text(order, 32, is_additional)
+    if KITCHEN_PRINT_MODE == 'queue':
+        enqueue_print_job("kitchen", "kitchen_ticket", {
+            "text": text,
+            "cut": True,
+            "charcode": "CP857",
+        })
+        return True
     if KITCHEN_PRINT_MODE != 'printer':
         print("KITCHEN_TICKET:\n" + text, flush=True)
         return True
@@ -3017,6 +3273,8 @@ def get_komisyonlar_tarih():
     start_param = request.args.get('start')
     end_param = request.args.get('end')
     orders = load_orders()
+    closed_checks = load_closed_checks()
+    closed_items = load_closed_check_items()
     
     start_date = to_iso_date(start_param) if start_param else None
     end_date = to_iso_date(end_param) if end_param else None
@@ -3098,6 +3356,8 @@ def istatistik_data():
     start_param = request.args.get('start')
     end_param = request.args.get('end')
     orders = load_orders()
+    closed_checks = load_closed_checks()
+    closed_items = load_closed_check_items()
 
     start_date = to_iso_date(start_param) if start_param else None
     end_date = to_iso_date(end_param) if end_param else None
@@ -3123,24 +3383,64 @@ def istatistik_data():
                 if len(parts) >= 3:
                     tarih = f"{parts[2]}.{parts[1]}.{parts[0]}"
 
+    def _filter_closed_checks(records, start_iso, end_iso, single_iso):
+        selected = []
+        for check in records or []:
+            dt = parse_iso_datetime(check.get('closed_at') or check.get('opened_at') or '')
+            if not dt:
+                continue
+            day = dt.date().isoformat()
+            if start_iso and end_iso:
+                if day < start_iso or day > end_iso:
+                    continue
+            else:
+                if day != single_iso:
+                    continue
+            selected.append(check)
+        return selected
+
+    def _get_check_payment_amount(check, kind):
+        pb = check.get('payment_breakdown') or {}
+        if kind in pb:
+            try:
+                return float(pb.get(kind) or 0)
+            except Exception:
+                return 0
+        ptype = (check.get('payment_type') or '').lower()
+        total = check.get('total') or 0
+        if kind == 'cash' and ptype in ['nakit', 'cash']:
+            return total
+        if kind == 'card' and ptype in ['kart', 'card']:
+            return total
+        if kind == 'qr' and ptype in ['qr']:
+            return total
+        if kind == 'other' and ptype in ['diger', 'other']:
+            return total
+        return 0
+
     tarih_orders = []
-    for order in orders:
-        if order.get('durum') != 'kapali':
-            continue
+    tarih_checks = _filter_closed_checks(closed_checks, start_date, end_date, tarih_iso) if closed_checks else []
 
-        order_date = to_iso_date(get_order_date(order))
-        if start_date and end_date:
-            if not order_date:
-                continue
-            if order_date < start_date or order_date > end_date:
-                continue
-        else:
-            if order_date != tarih_iso:
+    if tarih_checks:
+        toplam_ciro = sum((c.get('total') or 0) for c in tarih_checks)
+    else:
+        for order in orders:
+            if order.get('durum') != 'kapali':
                 continue
 
-        tarih_orders.append(order)
+            order_date = to_iso_date(get_order_date(order))
+            if start_date and end_date:
+                if not order_date:
+                    continue
+                if order_date < start_date or order_date > end_date:
+                    continue
+            else:
+                if order_date != tarih_iso:
+                    continue
 
-    toplam_ciro = sum(o.get('indirimli_tutar', o.get('toplam', 0)) for o in tarih_orders)
+            tarih_orders.append(order)
+
+        toplam_ciro = sum(o.get('indirimli_tutar', o.get('toplam', 0)) for o in tarih_orders)
 
     if start_date and end_date:
         toplam_gider = 0
@@ -3156,20 +3456,16 @@ def istatistik_data():
         tarih_str = tarih
 
     net_ciro = toplam_ciro - toplam_gider
-    nakit_satis = sum(get_payment_amount(o, 'cash') for o in tarih_orders)
-    kart_satis = sum(get_payment_amount(o, 'card') for o in tarih_orders)
 
-    toplam_komisyon = 0
-    for order in tarih_orders:
-        if order.get('rehber_masa', False):
-            for item in order.get('items', []):
-                name = str(item.get('name') or '').lower()
-                if 'serpme' in name:
-                    toplam_komisyon += item.get('adet', 0) * 100
-
-    urun_satislari = {}
-    for order in tarih_orders:
-        for item in order.get('items', []):
+    if tarih_checks:
+        nakit_satis = sum(_get_check_payment_amount(c, 'cash') for c in tarih_checks)
+        kart_satis = sum(_get_check_payment_amount(c, 'card') for c in tarih_checks)
+        toplam_komisyon = 0
+        urun_satislari = {}
+        selected_ids = {c.get('id') for c in tarih_checks}
+        for item in closed_items or []:
+            if item.get('check_id') not in selected_ids:
+                continue
             name = item.get('name')
             if not name:
                 continue
@@ -3182,6 +3478,37 @@ def istatistik_data():
                 }
             urun_satislari[name]['adet'] += item.get('adet', 0)
             urun_satislari[name]['toplam_tutar'] += birim_fiyat * item.get('adet', 0)
+            if 'serpme' in str(name).lower():
+                toplam_komisyon += item.get('adet', 0) * 100
+        siparis_sayisi = len(tarih_checks)
+    else:
+        nakit_satis = sum(get_payment_amount(o, 'cash') for o in tarih_orders)
+        kart_satis = sum(get_payment_amount(o, 'card') for o in tarih_orders)
+
+        toplam_komisyon = 0
+        for order in tarih_orders:
+            if order.get('rehber_masa', False):
+                for item in order.get('items', []):
+                    name = str(item.get('name') or '').lower()
+                    if 'serpme' in name:
+                        toplam_komisyon += item.get('adet', 0) * 100
+
+        urun_satislari = {}
+        for order in tarih_orders:
+            for item in order.get('items', []):
+                name = item.get('name')
+                if not name:
+                    continue
+                birim_fiyat = item.get('price', item.get('fiyat', 0))
+                if name not in urun_satislari:
+                    urun_satislari[name] = {
+                        'adet': 0,
+                        'toplam_tutar': 0,
+                        'birim_fiyat': birim_fiyat
+                    }
+                urun_satislari[name]['adet'] += item.get('adet', 0)
+                urun_satislari[name]['toplam_tutar'] += birim_fiyat * item.get('adet', 0)
+        siparis_sayisi = len(tarih_orders)
 
     return jsonify({
         'tarih': tarih_str,
@@ -3190,7 +3517,7 @@ def istatistik_data():
         'kart_satis': kart_satis,
         'toplam_komisyon': toplam_komisyon,
         'toplam_gider': toplam_gider,
-        'siparis_sayisi': len(tarih_orders),
+        'siparis_sayisi': siparis_sayisi,
         'urun_satislari': urun_satislari
     })
 

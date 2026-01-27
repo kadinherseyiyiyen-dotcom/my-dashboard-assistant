@@ -566,10 +566,27 @@
     "toplam": 0,
     "zaman": "14:51",
     "tarih": "26.01.2026",
-    "durum": "aktif",
+    "durum": "kapali",
     "kaynak": "garson",
     "masa_acilis_ts": "2026-01-26T14:51:40.935423+03:00",
-    "auto_water_added": true
+    "auto_water_added": true,
+    "kapanma_zamani": "23:38",
+    "kapanma_tarih": "26.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 0.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 0.0,
+    "is_paid": true,
+    "paid_at": "2026-01-26T23:38:16.175754+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 0.0,
+    "indirim": 0.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
   },
   {
     "id": 15,
@@ -605,9 +622,81 @@
     "toplam": 700,
     "zaman": "15:19",
     "tarih": "26.01.2026",
-    "durum": "aktif",
+    "durum": "kapali",
     "kaynak": "garson",
     "masa_acilis_ts": "2026-01-26T14:51:40.935423+03:00",
-    "auto_water_added": false
+    "auto_water_added": false,
+    "kapanma_zamani": "23:38",
+    "kapanma_tarih": "26.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 630.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 630.0,
+    "is_paid": true,
+    "paid_at": "2026-01-26T23:38:16.182754+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 630.0,
+    "indirim": 70.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
+  },
+  {
+    "id": 16,
+    "masa": 3,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1,
+        "is_complimentary": false,
+        "note": ""
+      },
+      {
+        "id": 4,
+        "name": "Falafel",
+        "price": 350,
+        "adet": 1,
+        "is_complimentary": false,
+        "note": ""
+      },
+      {
+        "id": 13,
+        "name": "Su",
+        "price": 60,
+        "adet": 2,
+        "is_complimentary": false
+      }
+    ],
+    "toplam": 1760,
+    "zaman": "00:11",
+    "tarih": "27.01.2026",
+    "durum": "kapali",
+    "kaynak": "kasa",
+    "masa_acilis_ts": "2026-01-27T00:11:30.372469+03:00",
+    "auto_water_added": true,
+    "kapanma_zamani": "00:11",
+    "kapanma_tarih": "27.01.2026",
+    "rehber_masa": false,
+    "odeme_breakdown": {
+      "cash": 1584.0,
+      "card": 0.0,
+      "qr": 0.0,
+      "other": 0.0
+    },
+    "paid_total": 1584.0,
+    "is_paid": true,
+    "paid_at": "2026-01-27T00:11:37.733220+03:00",
+    "odeme_turu": "nakit",
+    "indirimli_tutar": 1584.0,
+    "indirim": 176.0,
+    "paid_by_staff_id": 2,
+    "paid_by_staff_name": "Kasiyer"
   }
 ]
