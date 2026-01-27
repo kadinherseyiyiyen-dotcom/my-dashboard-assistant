@@ -3757,7 +3757,7 @@ def hesap_item_guncelle():
         if str(order.get('id')) == str(data.get('siparis_id')) and order.get('durum') == 'aktif':
             target_order = order
             for idx, item in enumerate(order.get('items', [])):
-                if item.get('id') == data.get('item_id'):
+                if str(item.get('id')) == str(data.get('item_id')):
                     action = data.get('action')
                     if action == 'arttir':
                         item['adet'] += 1

@@ -698,5 +698,36 @@
     "indirim": 176.0,
     "paid_by_staff_id": 2,
     "paid_by_staff_name": "Kasiyer"
+  },
+  {
+    "id": 17,
+    "masa": 1,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1,
+        "is_complimentary": false,
+        "is_free_hot": false,
+        "note": ""
+      },
+      {
+        "id": 13,
+        "name": "Su",
+        "price": 60,
+        "adet": 2,
+        "is_complimentary": false
+      }
+    ],
+    "toplam": 1410,
+    "zaman": "15:58",
+    "tarih": "27.01.2026",
+    "durum": "aktif",
+    "kaynak": "kasa",
+    "masa_acilis_ts": "2026-01-27T15:58:13.791065+03:00",
+    "auto_water_added": true
   }
 ]

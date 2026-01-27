@@ -2214,14 +2214,15 @@
                             const lineTotal = item.price * item.adet;
                             const priceText = isIkram ? 'IKRAM' : (isFreeHot ? '&#220;CRETS&#304;Z SICAK' : `${lineTotal} TL`);
                             const ikramTag = isIkram ? '<span class="item-complimentary-tag">IKRAM</span>' : (isFreeHot ? '<span class="item-complimentary-tag">UCRETSIZ</span>' : '');
+                            const itemIdSafe = String(item.id).replace(/'/g, "\\'");
                             hesapHTML += `
                                 <div class="bill-item">
                                     <div>
                                         <span>${item.name} x${item.adet} ${ikramTag}</span>
                                         <div class="item-controls">
-                                            <button class="quantity-btn" onclick="hesapItemAzalt('${siparis.id}', ${item.id})">-</button>
-                                            <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', ${item.id})">+</button>
-                                            <button class="quantity-btn remove" onclick="hesapItemSil('${siparis.id}', ${item.id})">&#10005;</button>
+                                            <button class="quantity-btn" onclick="hesapItemAzalt('${siparis.id}', '${itemIdSafe}')">-</button>
+                                            <button class="quantity-btn" onclick="hesapItemArttir('${siparis.id}', '${itemIdSafe}')">+</button>
+                                            <button class="quantity-btn remove" onclick="hesapItemSil('${siparis.id}', '${itemIdSafe}')">&#10005;</button>
                                         </div>
                                     </div>
                                     <span>${priceText}</span>
