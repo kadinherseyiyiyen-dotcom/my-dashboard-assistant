@@ -1758,64 +1758,183 @@ def debug_orders():
 @app.route('/api/satis-grafik')
 def satis_grafik():
     if session.get('role') != 'kasa':
-        return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
-    
-    orders = load_orders()
-    from datetime import datetime, timedelta
-    
-    # Rehber masalarını yükle
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+
+    from datetime import datetime, timedelta, date
+
+    # Rehber masalari yukle
     try:
         rehber_masalar = load_rehber_masalar()
-    except:
+    except Exception:
         rehber_masalar = {}
-    
-    # Son 7 günün verilerini hazırla
-    bugun = now_tr()
+
+    closed_checks = load_closed_checks()
+    closed_items = load_closed_check_items()
+
+    items_by_check = {}
+    for item in closed_items or []:
+        cid = item.get('check_id')
+        if cid is None:
+            continue
+        items_by_check.setdefault(str(cid), []).append(item)
+
+    def serpme_count_for_check(check_id):
+        count = 0
+        for item in items_by_check.get(str(check_id), []):
+            name = str(item.get('name') or '').lower()
+            if 'serpme' in name:
+                count += int(item.get('adet') or 0)
+        return count
+
+    def is_rehber_check(check):
+        if check.get('rehber_masa'):
+            return True
+        masa = check.get('table_id') or check.get('masa')
+        return rehber_masalar.get(str(masa), False)
+
+    def checks_for_date(target_date):
+        selected = []
+        for check in closed_checks or []:
+            dt = parse_iso_datetime(check.get('closed_at') or '')
+            if not dt:
+                continue
+            if dt.date() == target_date:
+                selected.append(check)
+        return selected
+
+    def sum_expenses_for_month(year, month):
+        start = date(year, month, 1)
+        if month == 12:
+            end = date(year + 1, 1, 1)
+        else:
+            end = date(year, month + 1, 1)
+        total = 0
+        cursor = start
+        while cursor < end:
+            total += sum_expenses_for_date(cursor.strftime('%Y-%m-%d'))
+            cursor += timedelta(days=1)
+        return total
+
+    bugun = now_tr().date()
     haftalik_data = []
-    
-    for i in range(6, -1, -1):
-        tarih = bugun - timedelta(days=i)
-        tarih_str = tarih.strftime('%d.%m.%Y')
-        
-        # Hem tarih hem de kapanma_tarih alanlarını kontrol et
-        gunluk_orders = []
-        for o in orders:
-            if o['durum'] == 'kapali':
-                # Önce kapanma_tarih'i kontrol et, yoksa tarih'i kullan
-                order_tarih = o.get('kapanma_tarih')
-                if not order_tarih:
-                    order_tarih = o.get('tarih', '')
-                
-                # Tarih eşleştirmesi yap
-                if order_tarih == tarih_str:
-                    gunluk_orders.append(o)
-        
-        gunluk_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in gunluk_orders)
-        
-        # Komisyon hesapla
-        gunluk_komisyon = 0
-        for order in gunluk_orders:
-            # Eğer rehber masa ise komisyon hesapla
-            if order.get('rehber_masa') or rehber_masalar.get(str(order['masa'])):
-                for item in order['items']:
-                    if item['name'] == 'Serpme Kahvaltı':
-                        gunluk_komisyon += item['adet'] * 100
-        
-        # Gider hesaplamalarını ekle
-        gunluk_gider = 0
-        for order in gunluk_orders:
-            if order.get('tip') == 'gider':
-                gunluk_gider += abs(order['toplam'])
-        
-        net_kar = gunluk_ciro - gunluk_komisyon - gunluk_gider
-        
-        haftalik_data.append({
-            'tarih': tarih.strftime('%d.%m'),
-            'ciro': gunluk_ciro,
-            'komisyon': gunluk_komisyon,
-            'net_kar': net_kar,
-            'siparis_sayisi': len(gunluk_orders)
-        })
+
+    if closed_checks:
+        for i in range(6, -1, -1):
+            day = bugun - timedelta(days=i)
+            daily_checks = checks_for_date(day)
+            gunluk_ciro = sum((c.get('total') or 0) for c in daily_checks)
+            gunluk_komisyon = 0
+            for check in daily_checks:
+                if is_rehber_check(check):
+                    gunluk_komisyon += serpme_count_for_check(check.get('id')) * 100
+            gunluk_gider = sum_expenses_for_date(day.isoformat())
+            net_kar = gunluk_ciro - gunluk_komisyon - gunluk_gider
+            haftalik_data.append({
+                'tarih': day.strftime('%d.%m'),
+                'ciro': gunluk_ciro,
+                'komisyon': gunluk_komisyon,
+                'net_kar': net_kar,
+                'siparis_sayisi': len(daily_checks)
+            })
+    else:
+        orders = load_orders()
+        for i in range(6, -1, -1):
+            tarih = bugun - timedelta(days=i)
+            tarih_str = tarih.strftime('%d.%m.%Y')
+            gunluk_orders = []
+            for o in orders:
+                if o['durum'] == 'kapali':
+                    order_tarih = o.get('kapanma_tarih') or o.get('tarih', '')
+                    if order_tarih == tarih_str:
+                        gunluk_orders.append(o)
+            gunluk_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in gunluk_orders)
+            gunluk_komisyon = 0
+            for order in gunluk_orders:
+                if order.get('rehber_masa') or rehber_masalar.get(str(order['masa'])):
+                    for item in order['items']:
+                        if item['name'] == 'Serpme Kahvalt?':
+                            gunluk_komisyon += item['adet'] * 100
+            gunluk_gider = 0
+            for order in gunluk_orders:
+                if order.get('tip') == 'gider':
+                    gunluk_gider += abs(order['toplam'])
+            net_kar = gunluk_ciro - gunluk_komisyon - gunluk_gider
+            haftalik_data.append({
+                'tarih': tarih.strftime('%d.%m'),
+                'ciro': gunluk_ciro,
+                'komisyon': gunluk_komisyon,
+                'net_kar': net_kar,
+                'siparis_sayisi': len(gunluk_orders)
+            })
+
+    aylik_data = []
+    for i in range(11, -1, -1):
+        if i == 0:
+            ay_tarih = bugun
+        else:
+            ay = bugun.month - i
+            yil = bugun.year
+            while ay <= 0:
+                ay += 12
+                yil -= 1
+            ay_tarih = bugun.replace(year=yil, month=ay, day=1)
+
+        ay_label = ay_tarih.strftime('%m/%Y')
+        if closed_checks:
+            aylik_checks = []
+            for check in closed_checks or []:
+                dt = parse_iso_datetime(check.get('closed_at') or '')
+                if not dt:
+                    continue
+                if dt.year == ay_tarih.year and dt.month == ay_tarih.month:
+                    aylik_checks.append(check)
+            aylik_ciro = sum((c.get('total') or 0) for c in aylik_checks)
+            aylik_komisyon = 0
+            for check in aylik_checks:
+                if is_rehber_check(check):
+                    aylik_komisyon += serpme_count_for_check(check.get('id')) * 100
+            aylik_gider = sum_expenses_for_month(ay_tarih.year, ay_tarih.month)
+            aylik_net_kar = aylik_ciro - aylik_komisyon - aylik_gider
+            aylik_data.append({
+                'ay': ay_label,
+                'ciro': aylik_ciro,
+                'komisyon': aylik_komisyon,
+                'net_kar': aylik_net_kar,
+                'siparis_sayisi': len(aylik_checks)
+            })
+        else:
+            orders = load_orders()
+            ay_str = ay_tarih.strftime('%m.%Y')
+            aylik_orders = []
+            for o in orders:
+                if o['durum'] == 'kapali':
+                    order_tarih = o.get('kapanma_tarih') or o.get('tarih', '')
+                    if order_tarih and order_tarih.endswith(ay_str):
+                        aylik_orders.append(o)
+            aylik_ciro = sum(o.get('indirimli_tutar', o['toplam']) for o in aylik_orders)
+            aylik_komisyon = 0
+            for order in aylik_orders:
+                if order.get('rehber_masa') or rehber_masalar.get(str(order['masa'])):
+                    for item in order['items']:
+                        if item['name'] == 'Serpme Kahvalt?':
+                            aylik_komisyon += item['adet'] * 100
+            aylik_gider = 0
+            for order in aylik_orders:
+                if order.get('tip') == 'gider':
+                    aylik_gider += abs(order['toplam'])
+            aylik_net_kar = aylik_ciro - aylik_komisyon - aylik_gider
+            aylik_data.append({
+                'ay': ay_label,
+                'ciro': aylik_ciro,
+                'komisyon': aylik_komisyon,
+                'net_kar': aylik_net_kar,
+                'siparis_sayisi': len(aylik_orders)
+            })
+
+    return jsonify({
+        'haftalik': haftalik_data,
+        'aylik': aylik_data
+    })
     
     # Son 12 ayın verilerini hazırla
     aylik_data = []

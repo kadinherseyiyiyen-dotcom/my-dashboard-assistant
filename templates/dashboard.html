@@ -369,7 +369,7 @@
             fetch('https://api.frankfurter.app/latest?from=EUR&to=TRY')
                 .then(r => r.json())
                 .then(d => { const el = document.getElementById('fx-eur'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
-            fetch('https://api.exchangerate.host/latest?base=SAR&symbols=TRY')
+            fetch('https://open.er-api.com/v6/latest/SAR')
                 .then(r => r.json())
                 .then(d => { const el = document.getElementById('fx-sar'); if (el && d && d.rates) el.textContent = d.rates.TRY.toFixed(2); });
         }

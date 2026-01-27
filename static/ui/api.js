@@ -57,7 +57,7 @@
     var state = global.APP && global.APP.state;
     var usdUrl = 'https://api.frankfurter.app/latest?from=USD&to=TRY';
     var eurUrl = 'https://api.frankfurter.app/latest?from=EUR&to=TRY';
-    var sarUrl = 'https://api.exchangerate.host/latest?base=SAR&symbols=TRY';
+    var sarUrl = 'https://open.er-api.com/v6/latest/SAR';
     return Promise.all([
       global.APP.safeFetch(usdUrl, null, { cacheKey: 'fx_usd', errorMessage: 'Kur alinamadi.' }),
       global.APP.safeFetch(eurUrl, null, { cacheKey: 'fx_eur', errorMessage: 'Kur alinamadi.' }),
