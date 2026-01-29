@@ -466,12 +466,84 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+    
+        /* Mobile sticky order actions */
+        @media (max-width: 768px) {
+            .action-buttons {
+                display: none;
+            }
+            .action-buttons .btn {
+                flex: 1;
+            }
+            .siparis-ozet {
+                padding-bottom: 0;
+                position: sticky;
+                top: 0.75rem;
+                max-height: 60vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            body { overflow-x: hidden; }
+            /* Mobile quick order bar */
+            .mobile-order-bar {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                padding: 10px 12px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                display: none;
+                gap: 10px;
+                align-items: center;
+                z-index: 999;
+            }
+            .mobile-order-bar .mob-summary {
+                flex: 1;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+            }
+            .mobile-order-bar .mob-actions {
+                display: flex;
+                gap: 8px;
+            }
+            .mobile-order-bar .mob-btn {
+                padding: 8px 12px;
+                border-radius: 10px;
+                border: none;
+                font-weight: 600;
+                font-size: 13px;
+                cursor: pointer;
+            }
+            .mobile-order-bar .mob-btn.send {
+                background: #ff7a00;
+                color: #fff;
+            }
+            .mobile-order-bar .mob-btn.clear {
+                background: #e5e7eb;
+                color: #111827;
+            }
+            .has-mobile-bar .container {
+                padding-bottom: 90px;
+            }
+        }
+
     </style>
 </head>
 <body>
     <div class="page-actions">
         <a href="/dashboard" class="page-action-back">&#8592; Geri</a>
         <a href="/logout" class="page-action-exit">&#199;&#305;k&#305;&#351;</a>
+    </div>
+    <div class="mobile-order-bar" id="mobileOrderBar">
+        <div class="mob-summary" id="mobSummary">0 ₺ • 0 ürün</div>
+        <div class="mob-actions">
+            <button class="mob-btn clear" onclick="siparisTemizle()">Temizle</button>
+            <button class="mob-btn send" onclick="siparisGonder()">Gönder</button>
+        </div>
     </div>
 
     <div class="header">
@@ -573,6 +645,21 @@
         let siparisInFlight = false;
         let siparisSubmitInFlight = false;
         let initSiparisGirInFlight = false;
+        function updateMobileBar() {
+            const bar = document.getElementById('mobileOrderBar');
+            const sum = document.getElementById('mobSummary');
+            if (!bar || !sum) return;
+            const totalItems = siparis.reduce((acc, it) => acc + (Number(it.adet) || 0), 0);
+            const totalPrice = siparis.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.adet) || 0), 0);
+            if (window.innerWidth <= 768 && totalItems > 0) {
+                bar.style.display = 'flex';
+                document.body.classList.add('has-mobile-bar');
+            } else {
+                bar.style.display = 'none';
+                document.body.classList.remove('has-mobile-bar');
+            }
+            sum.textContent = `${totalPrice} ₺ • ${totalItems} ürün`;
+        }
         let layoutViewInstance = null;
         let tableProgressInstance = null;
         let tablesCache = {};
@@ -990,6 +1077,7 @@
             });
             document.getElementById('toplam').textContent = toplam;
             renderFreeAddons();
+            updateMobileBar();
         }
 
         function arttir(index) {
@@ -1068,9 +1156,10 @@
             .catch(err => {
                 notify('Hata: ' + err.message);
             })
-            .finally(() => {
-                siparisSubmitInFlight = false;
-            });
+                .finally(() => {
+                    siparisSubmitInFlight = false;
+                    updateMobileBar();
+                });
         }
 
         document.addEventListener('click', function(e) {

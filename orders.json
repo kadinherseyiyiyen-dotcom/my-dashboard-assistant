@@ -729,5 +729,47 @@
     "kaynak": "kasa",
     "masa_acilis_ts": "2026-01-27T15:58:13.791065+03:00",
     "auto_water_added": true
+  },
+  {
+    "id": 18,
+    "masa": 1,
+    "garson": "selim",
+    "staff_id": 2,
+    "items": [
+      {
+        "id": 1,
+        "name": "Serpme Kahvaltı",
+        "price": 1290,
+        "adet": 1,
+        "is_complimentary": false,
+        "is_free_hot": false,
+        "note": ""
+      },
+      {
+        "id": 3,
+        "name": "Hellim",
+        "price": 350,
+        "adet": 1,
+        "is_complimentary": false,
+        "is_free_hot": false,
+        "note": ""
+      },
+      {
+        "id": 4,
+        "name": "Falafel",
+        "price": 350,
+        "adet": 1,
+        "is_complimentary": false,
+        "is_free_hot": false,
+        "note": ""
+      }
+    ],
+    "toplam": 1990,
+    "zaman": "18:30",
+    "tarih": "29.01.2026",
+    "durum": "aktif",
+    "kaynak": "garson",
+    "masa_acilis_ts": "2026-01-27T15:58:13.791065+03:00",
+    "auto_water_added": false
   }
 ]
