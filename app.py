@@ -1586,8 +1586,6 @@ def build_kitchen_text(order, width=32, is_additional=False):
     return '\n'.join(lines)
 
 def print_kitchen_order(order, is_additional=False):
-    if not KITCHEN_PRINTER_ENABLED:
-        return False
     text = build_kitchen_text(order, 32, is_additional)
     if KITCHEN_PRINT_MODE == 'queue':
         enqueue_print_job("kitchen", "kitchen_ticket", {
@@ -1596,6 +1594,8 @@ def print_kitchen_order(order, is_additional=False):
             "charcode": "CP857",
         })
         return True
+    if not KITCHEN_PRINTER_ENABLED:
+        return False
     if KITCHEN_PRINT_MODE != 'printer':
         print("KITCHEN_TICKET:\n" + text, flush=True)
         return True

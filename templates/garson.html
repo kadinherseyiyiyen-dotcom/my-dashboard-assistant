@@ -542,11 +542,7 @@
         }
         function scrollToSummary() {
             if (window.innerWidth > 768) return;
-            const summary = document.querySelector('.siparis-ozet');
-            if (!summary) return;
-            requestAnimationFrame(() => {
-                summary.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
+            updateMobileBar();
         }
 
         function renderStaffOptions() {
