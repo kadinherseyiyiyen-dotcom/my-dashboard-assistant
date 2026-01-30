@@ -435,6 +435,22 @@ def api_print_jobs_list():
             break
     return jsonify({"success": True, "jobs": out})
 
+
+@app.route('/api/print-jobs/mock', methods=['POST'])
+def api_print_jobs_mock():
+    """Create a mock print job for testing without a printer."""
+    if not _require_agent_token():
+        return jsonify({"success": False, "error": "FORBIDDEN"}), 403
+    payload = request.json or {}
+    target = (payload.get("target") or "kitchen").strip()
+    text = payload.get("text") or "TEST MUTFAK FISI"
+    job = enqueue_print_job(target, "kitchen_ticket", {
+        "text": text,
+        "lines": payload.get("lines") or [],
+        "meta": {"mock": True}
+    })
+    return jsonify({"success": True, "job": job})
+
 @app.route('/api/print-jobs/<job_id>/claim', methods=['POST'])
 def api_print_jobs_claim(job_id):
     if not _require_agent_token():
