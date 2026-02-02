@@ -151,8 +151,10 @@
     });
   }
 
-  function createStaff(name) {
-    return requestJson('/api/staff', 'POST', { name: name }, {
+  function createStaff(name, pin) {
+    var payload = { name: name };
+    if (pin) payload.pin = pin;
+    return requestJson('/api/staff', 'POST', payload, {
       errorMessage: 'Garson eklenemedi.'
     }).then(function (data) {
       if (data && data.success === false) throw new Error(data.message || 'Kaydetme hatasi');

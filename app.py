@@ -1585,6 +1585,73 @@ def build_kitchen_text(order, width=32, is_additional=False):
     lines.append(sep)
     return '\n'.join(lines)
 
+
+
+def build_kitchen_revision_text(order, changes, note='', width=32):
+    sep = '-' * width
+    table_id = order.get('masa')
+    table_name = load_tables().get(str(table_id)) or f"Masa {table_id}"
+    header = 'DUZELTME'
+    garson_name = order.get('garson') or 'Bilinmiyor'
+    lines = [sep, header, f"{table_name}", f"Garson: {garson_name}"]
+    lines.append(f"Saat: {now_tr().strftime('%H:%M')}")
+    lines.append(sep)
+    for ch in changes or []:
+        delta = int(ch.get('delta') or 0)
+        if delta == 0:
+            continue
+        sign = '+' if delta > 0 else '-'
+        qty = abs(delta)
+        name = ch.get('name') or 'Urun'
+        label = f"{sign} {name} x{qty}"
+        if ch.get('is_complimentary'):
+            label = f"{label} (IKRAM)"
+        elif ch.get('is_free_hot'):
+            label = f"{label} (UCRETSIZ SICAK)"
+        lines.append(label[:width])
+        ch_note = (ch.get('note') or '').strip()
+        if ch_note:
+            lines.append(("  * " + ch_note)[:width])
+    if note:
+        lines.append(("NOT: " + str(note))[:width])
+    lines.append(sep)
+    return '\n'.join(lines)
+
+
+def print_kitchen_revision(order, changes, note=''):
+    if not changes:
+        return False
+    text = build_kitchen_revision_text(order, changes, note, 32)
+    if KITCHEN_PRINT_MODE == 'queue':
+        enqueue_print_job('kitchen', 'kitchen_revision', {
+            'text': text,
+            'cut': True,
+            'charcode': 'CP857',
+        })
+        return True
+    if not KITCHEN_PRINTER_ENABLED:
+        return False
+    if KITCHEN_PRINT_MODE != 'printer':
+        print("KITCHEN_REVISION:\n" + text, flush=True)
+        return True
+    if not KITCHEN_PRINTER_NAME:
+        print("KITCHEN_PRINTER_NAME ayari bulunamadi.", flush=True)
+        return False
+    printer = get_kitchen_printer()
+    try:
+        printer.charcode('CP857')
+    except Exception:
+        try:
+            printer.charcode('CP1254')
+        except Exception:
+            pass
+    printer.text(text + '\n')
+    try:
+        printer.cut()
+    except Exception:
+        pass
+    return True
+
 def print_kitchen_order(order, is_additional=False):
     text = build_kitchen_text(order, 32, is_additional)
     if KITCHEN_PRINT_MODE == 'queue':
@@ -2084,10 +2151,50 @@ def siparis_ekle():
                 auto_water_added = True
     toplam = 0
     for i in items:
-        if i.get('is_complimentary'):
+        if i.get('is_complimentary') or i.get('is_free_hot'):
             continue
         toplam += (i.get('price') or 0) * (i.get('adet') or 0)
-    
+
+    if existing_active:
+        target = existing_active[0]
+        merged_items = list(target.get('items') or [])
+        merged_items.extend(items)
+        target['items'] = merged_items
+        if not target.get('garson'):
+            target['garson'] = garson_name
+        if not target.get('staff_id'):
+            target['staff_id'] = staff_id
+        target_total = 0
+        for it in merged_items:
+            if it.get('is_complimentary') or it.get('is_free_hot'):
+                continue
+            target_total += (it.get('price') or 0) * (it.get('adet') or 0)
+        target['toplam'] = target_total
+        target['zaman'] = now_tr().strftime('%H:%M')
+        save_orders(orders)
+
+        try:
+            add_order = {
+                'id': target.get('id'),
+                'masa': masa,
+                'garson': garson_name,
+                'items': items,
+                'zaman': now_tr().strftime('%H:%M')
+            }
+            printed = print_kitchen_order(add_order, is_additional=True)
+            if printed:
+                append_activity('KITCHEN_PRINT', {
+                    'order_id': target.get('id'),
+                    'table_id': masa,
+                    'staff_id': staff_id,
+                    'staff_name': garson_name,
+                    'is_additional': True
+                })
+        except Exception as exc:
+            print(f"KITCHEN_PRINT_ERROR: {exc!r}", flush=True)
+
+        return jsonify({'success': True, 'order_id': target.get('id'), 'merged': True})
+
     new_order = {
         'id': len(orders) + 1,
         'masa': masa,
@@ -2130,12 +2237,105 @@ def siparis_ekle():
     
     return jsonify({'success': True, 'order_id': new_order['id']})
 
+
+@app.route('/api/siparis/<int:order_id>/revise', methods=['POST'])
+def siparis_revise(order_id):
+    if session.get('role') not in ['garson', 'kasa']:
+        return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+    data = request.get_json(silent=True) or {}
+    new_items = list(data.get('items') or [])
+    note = (data.get('note') or '').strip()
+    orders = load_orders()
+    order = next((o for o in orders if int(o.get('id', 0)) == int(order_id)), None)
+    if not order or order.get('durum') != 'aktif':
+        return jsonify({'success': False, 'message': 'Siparis bulunamadi.'}), 404
+    if session.get('role') == 'garson':
+        if normalize_staff_name(order.get('garson')) != normalize_staff_name(session.get('user')):
+            return jsonify({'success': False, 'message': 'Yetkisiz erisim!'}), 403
+
+    def _key(item):
+        name = (item.get('name') or item.get('urun') or '').strip()
+        note = (item.get('note') or '').strip()
+        is_comp = bool(item.get('is_complimentary'))
+        is_free = bool(item.get('is_free_hot'))
+        return (name, note, is_comp, is_free)
+
+    def _map(items):
+        m = {}
+        for it in items:
+            qty = int(it.get('adet') or 0)
+            if qty <= 0:
+                continue
+            key = _key(it)
+            m[key] = m.get(key, 0) + qty
+        return m
+
+    old_items = order.get('items') or []
+    old_map = _map(old_items)
+    new_map = _map(new_items)
+    changes = []
+    for key in set(old_map.keys()) | set(new_map.keys()):
+        old_qty = old_map.get(key, 0)
+        new_qty = new_map.get(key, 0)
+        delta = new_qty - old_qty
+        if delta != 0:
+            name, note_i, is_comp, is_free = key
+            changes.append({
+                'name': name,
+                'note': note_i,
+                'is_complimentary': is_comp,
+                'is_free_hot': is_free,
+                'delta': delta
+            })
+
+    total = 0
+    for it in new_items:
+        if it.get('is_complimentary') or it.get('is_free_hot'):
+            continue
+        total += (it.get('price') or 0) * (it.get('adet') or 0)
+
+    order['items'] = new_items
+    order['toplam'] = total
+    order['revized_at'] = now_tr().isoformat()
+    save_orders(orders)
+
+    if changes:
+        append_activity('ORDER_REVISION', {
+            'order_id': order.get('id'),
+            'table_id': order.get('masa'),
+            'staff_id': order.get('staff_id') or session.get('waiter_id'),
+            'staff_name': order.get('garson') or session.get('user'),
+            'changes': changes,
+            'note': note
+        })
+        try:
+            print_kitchen_revision(order, changes, note)
+        except Exception as exc:
+            print(f"KITCHEN_REVISION_ERROR: {exc!r}", flush=True)
+
+    return jsonify({'success': True, 'changes': changes})
+
 @app.route('/api/siparisler')
 def siparisler():
     if session.get('role') != 'kasa':
         return jsonify({'success': False, 'message': 'Yetkisiz erişim!'}), 403
     orders = load_orders()
     return jsonify(orders)
+
+@app.route('/api/garson/siparisler')
+def garson_siparisler():
+    if session.get('role') != 'garson':
+        return jsonify([])
+    orders = load_orders()
+    user_name = normalize_staff_name(session.get('user'))
+    if not user_name:
+        return jsonify([])
+    result = [
+        o for o in orders
+        if o.get('durum') == 'aktif' and normalize_staff_name(o.get('garson')) == user_name
+    ]
+    return jsonify(result)
+
 
 @app.route('/api/staff', methods=['GET', 'POST'])
 def staff_api():

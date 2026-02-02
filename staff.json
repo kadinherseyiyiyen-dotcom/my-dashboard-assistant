@@ -2,9 +2,9 @@
   {
     "id": 1,
     "name": "ahmet",
-    "is_active": false,
+    "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-25T23:31:50.997096+03:00",
+    "updated_at": "2026-01-30T20:26:51.497937+03:00",
     "pin_hash": "scrypt:32768:8:1$3V4Nm4ngFCfhNAVr$b692386a5fa606aee45feb445c120d3a166de2de9b4a0e114fa427649b3867596fe9717d17f2d6b3badfd89d252baea26b716bbb89fadb06c87715c60be4da84"
   },
   {
@@ -12,7 +12,7 @@
     "name": "selim",
     "is_active": true,
     "created_at": "2026-01-22T14:44:29.801467+03:00",
-    "updated_at": "2026-01-25T23:31:51.108502+03:00",
+    "updated_at": "2026-01-30T20:26:56.749208+03:00",
     "pin_hash": "scrypt:32768:8:1$NEPHQfdrLA9AxiCi$6de22f85dee6c08486b4f150ded8886b06fee7a83a6740878828bf7e239efffea5480b20014f60e97b80d87332b42e690ed2efc5fb9759b9fc81edcf7a459e8f"
   },
   {

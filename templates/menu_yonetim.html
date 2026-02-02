@@ -347,6 +347,7 @@
             <h3>Garson Yönetimi</h3>
             <div class="staff-toolbar">
                 <input type="text" id="staff-name-input" placeholder="Garson adı">
+                <input type="password" id="staff-pin-input" placeholder="4 haneli şifre" maxlength="4" inputmode="numeric" pattern="\\d{4}">
                 <button class="btn btn-primary" onclick="staffEkle()">Ekle</button>
             </div>
             <div class="staff-list" id="staff-list"></div>
@@ -444,6 +445,10 @@
                 return;
             }
             alert(message);
+        }
+
+        function sanitizePin(value) {
+            return String(value || '').replace(/\D/g, '').slice(0, 4);
         }
 
         function menuYukle() {
@@ -643,6 +648,15 @@
                 input.type = 'text';
                 input.value = item.name || '';
 
+                const pinInput = document.createElement('input');
+                pinInput.type = 'password';
+                pinInput.placeholder = '4 haneli şifre';
+                pinInput.maxLength = 4;
+                pinInput.inputMode = 'numeric';
+                pinInput.addEventListener('input', () => {
+                    pinInput.value = sanitizePin(pinInput.value);
+                });
+
                 const actions = document.createElement('div');
                 actions.className = 'staff-actions';
 
@@ -650,7 +664,14 @@
                 saveBtn.className = 'btn btn-primary';
                 saveBtn.textContent = 'Kaydet';
                 saveBtn.onclick = function () {
-                    UI.Api.updateStaff(item.id, { name: input.value })
+                    const pinValue = sanitizePin(pinInput.value);
+                    if (pinValue && pinValue.length < 4) {
+                        notify('Şifre 4 haneli olmalı.');
+                        return;
+                    }
+                    const payload = { name: input.value };
+                    if (pinValue.length === 4) payload.pin = pinValue;
+                    UI.Api.updateStaff(item.id, payload)
                         .then(() => {
                             notify('Garson güncellendi.');
                             staffYukle();
@@ -674,7 +695,7 @@
                     };
                 } else {
                     toggleBtn.className = 'btn btn-danger';
-                    toggleBtn.textContent = 'Sil';
+                    toggleBtn.textContent = 'Şifre İptal';
                     toggleBtn.onclick = function () {
                         UI.Api.deleteStaff(item.id)
                             .then(() => {
@@ -690,6 +711,7 @@
                 actions.appendChild(toggleBtn);
 
                 row.appendChild(input);
+                row.appendChild(pinInput);
                 row.appendChild(actions);
                 host.appendChild(row);
             });
@@ -697,16 +719,23 @@
 
         function staffEkle() {
             const input = document.getElementById('staff-name-input');
+            const pinInput = document.getElementById('staff-pin-input');
             if (!input) return;
             const name = String(input.value || '').trim();
+            const pin = sanitizePin(pinInput ? pinInput.value : '');
             if (!name) {
                 notify('Garson adı girin.');
                 return;
             }
-            UI.Api.createStaff(name)
+            if (!pin || pin.length !== 4) {
+                notify('4 haneli şifre girin.');
+                return;
+            }
+            UI.Api.createStaff(name, pin)
                 .then(() => {
                     notify('Garson eklendi.');
                     input.value = '';
+                    if (pinInput) pinInput.value = '';
                     staffYukle();
                     if (window.APP && APP.emit) APP.emit('staff:updated', staffList);
                 })

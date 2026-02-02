@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -157,6 +157,15 @@
         }
         .btn-danger {
             background: #dc3545;
+        }
+        /* Mobile bar/sheet default hidden (prevents desktop blocking) */
+        .mobile-order-bar {
+            display: none;
+        }
+        .mobile-order-sheet,
+        .mobile-order-sheet-overlay {
+            display: none;
+            pointer-events: none;
         }
         .btn:hover { 
             transform: translateY(-1px);
@@ -340,11 +349,11 @@
                 z-index: 10;
             }
             /* Mobile quick order bar */
-            .mobile-order-bar {
-                position: fixed;
-                left: 12px;
-                right: 12px;
-                bottom: 12px;
+        .mobile-order-bar {
+            position: fixed;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
                 background: rgba(255, 255, 255, 0.96);
                 border: 1px solid #e2e8f0;
                 border-radius: 14px;
@@ -353,13 +362,27 @@
                 display: none;
                 gap: 10px;
                 align-items: center;
-                z-index: 999;
+                z-index: 2000;
+                pointer-events: auto !important;
+                touch-action: manipulation;
+            }
+            .mobile-order-bar,
+            .mobile-order-bar * {
+                pointer-events: auto !important;
             }
             .mobile-order-bar .mob-summary {
                 flex: 1;
                 font-size: 14px;
                 font-weight: 600;
                 color: #1f2937;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .mobile-order-bar .mob-summary .chevron {
+                font-size: 14px;
+                opacity: 0.6;
             }
             .mobile-order-bar .mob-actions {
                 display: flex;
@@ -379,10 +402,102 @@
             }
             .mobile-order-bar .mob-btn.clear {
                 background: #e5e7eb;
-                color: #111827;
+            color: #111827;
+        }
+        .has-mobile-bar .container {
+            padding-bottom: 90px;
+        }
+        /* Always keep sheet hidden unless opened (prevents blocking clicks on desktop) */
+            .mobile-order-sheet,
+            .mobile-order-sheet-overlay {
+                display: none;
+                pointer-events: none;
             }
-            .has-mobile-bar .container {
-                padding-bottom: 90px;
+            .mobile-order-sheet-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35);
+                display: none;
+                z-index: 1000;
+            }
+            .mobile-order-sheet {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: #fff;
+                border-radius: 16px 16px 0 0;
+                padding: 16px;
+                max-height: 70vh;
+                overflow-y: auto;
+                display: none;
+                z-index: 1001;
+                box-shadow: 0 -12px 30px rgba(0,0,0,0.2);
+            }
+            .mobile-order-sheet.open,
+            .mobile-order-sheet-overlay.open {
+                display: block;
+                pointer-events: auto;
+            }
+            .mobile-order-sheet .sheet-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+            .mobile-order-sheet .sheet-title {
+                font-weight: 700;
+                font-size: 16px;
+            }
+            .mobile-order-sheet .sheet-close {
+                border: none;
+                background: #f3f4f6;
+                border-radius: 10px;
+                padding: 6px 10px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .mobile-order-sheet .sheet-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 0;
+                border-bottom: 1px solid #eee;
+            }
+            .mobile-order-sheet .sheet-item:last-child {
+                border-bottom: none;
+            }
+            .mobile-order-sheet .sheet-name {
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .mobile-order-sheet .sheet-meta {
+                font-size: 12px;
+                color: #6b7280;
+            }
+            .mobile-order-sheet .sheet-controls {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .mobile-order-sheet .sheet-btn {
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: none;
+                background: #ff8c00;
+                color: #fff;
+                font-weight: 700;
+                cursor: pointer;
+            }
+            .mobile-order-sheet .sheet-btn.remove {
+                background: #e53e3e;
+            }
+            .mobile-order-sheet .sheet-total {
+                margin-top: 12px;
+                font-weight: 700;
+                text-align: right;
             }
         }
 
@@ -390,14 +505,14 @@
 </head>
 <body>
     <div class="header">
-        <h2>👨🍳 Garson Paneli</h2>
+        <h2>Garson Paneli</h2>
         <div class="user-info">
             <span>Hoş geldin, {{ user }}!</span>
             <a href="/logout" class="btn btn-danger">Çıkış</a>
         </div>
     </div>
 
-      <div class="container">
+          <div class="container">
         <div class="form-section">
             <div class="form-row">
                 <div class="form-group">
@@ -407,18 +522,11 @@
                         <option value="{{ i }}">Masa {{ i }}</option>
                         {% endfor %}
                     </select>
-      </div>
-      <div class="mobile-order-bar" id="mobileOrderBar">
-          <div class="mob-summary" id="mobSummary">0 ₺ • 0 ürün</div>
-          <div class="mob-actions">
-              <button class="mob-btn clear" onclick="siparisTemizle()">Temizle</button>
-              <button class="mob-btn send" onclick="siparisGonder()">Gönder</button>
-          </div>
-      </div>
+                </div>
                 <div class="form-group">
                     <label>Garson:</label>
                     <select id="garson">
-                        <option value="">Garson secin</option>
+                        <option value="">Garson seçin</option>
                     </select>
                 </div>
             </div>
@@ -427,45 +535,46 @@
         <div class="menu-layout">
             <div>
                 <div class="menu-section">
-                    <h3>🍳 Ana Menü</h3>
+                    <h3>Ana Menü</h3>
                     <div class="menu-grid">
                         {% for item in menu.ana_menu %}
                         <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
-                            <div class="price">{{ item.price }} ₺</div>
+                            <div class="price">{{ item.price }} TL</div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
 
                 <div class="menu-section">
-                    <h3>🍟 Ekstralar</h3>
+                    <h3>Ekstralar</h3>
                     <div class="menu-grid">
                         {% for item in menu.ekstralar %}
                         <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
-                            <div class="price">{{ item.price }} ₺</div>
+                            <div class="price">{{ item.price }} TL</div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
 
                 <div class="menu-section">
-                    <h3>🥤 İçecekler</h3>
+                    <h3>İçecekler</h3>
                     <div class="menu-grid">
                         {% for item in menu.icecekler %}
                         <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
                             <div class="icon">{{ item.image }}</div>
                             <h4>{{ item.name }}</h4>
-                            <div class="price">{{ item.price }} ₺</div>
+                            <div class="price">{{ item.price }} TL</div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
+
                 <div class="menu-section">
-                    <h3>&#350;ark&#252;teri Men&#252;s&#252;</h3>
+                    <h3>Şarküteri Menüsü</h3>
                     <div class="menu-grid">
                         {% for item in menu.sarkuteri or [] %}
                         <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
@@ -480,32 +589,50 @@
 
             <div>
                 <div class="siparis-ozet">
-                    <h3>📝 Sipariş Özeti</h3>
+                    <h3>Sipariş Özeti</h3>
+                    <div id="editModeBanner" style="display:none; background:#fff3cd; color:#7c4a03; padding:8px 10px; border-radius:8px; margin-bottom:10px; font-size:13px; font-weight:600;"></div>
                     <div id="siparis-listesi"></div>
                     <div id="freeSerpmeAddons" class="free-addons" style="display:none;">
-                        <div class="free-addons-title">&#220;cretsiz S&#305;cak Eklemeler</div>
+                        <div class="free-addons-title">Ücretsiz Sıcak Eklemeler</div>
                         <div class="free-addons-input">
-                            <input id="freeHotInput" type="text" placeholder="&#220;cretsiz s&#305;cak &#252;r&#252;n ad&#305;">
+                            <input id="freeHotInput" type="text" placeholder="Ücretsiz sıcak ürün adı">
                             <button type="button" onclick="addFreeHotManual()">Ekle</button>
                         </div>
                         <div id="freeAddonsList" class="free-addons-list"></div>
                     </div>
                     <div class="toplam-section">
                         <div>Toplam</div>
-                        <div class="toplam-amount"><span id="toplam">0</span> ₺</div>
+                        <div class="toplam-amount"><span id="toplam">0</span> TL</div>
                     </div>
                     <div style="text-align: center;">
-                        <button class="btn btn-primary" onclick="siparisGonder()">Sipariş Gönder</button>
-                        <button class="btn btn-secondary" onclick="siparisTemizle()">Temizle</button>
+                        <button id="submitOrderBtn" class="btn btn-primary" onclick="siparisGonder()">Sipariş Gönder</button>
+                        <button id="clearOrderBtn" class="btn btn-secondary" onclick="siparisTemizle()">Temizle</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="my-orders">
-            <h3>📋 Aktif Siparişlerim</h3>
+            <h3>Aktif Siparişlerim</h3>
             <div id="aktif-siparisler"></div>
         </div>
+    </div>
+
+    <div class="mobile-order-bar" id="mobileOrderBar" style="display:none;">
+        <div class="mob-summary" id="mobSummary">0 TL • 0 ürün <span class="chevron">^</span></div>
+        <div class="mob-actions">
+            <button class="mob-btn clear" onclick="siparisTemizle()">Temizle</button>
+            <button class="mob-btn send" onclick="siparisGonder()">Gönder</button>
+        </div>
+    </div>
+    <div class="mobile-order-sheet-overlay" id="mobileOrderSheetOverlay" style="display:none;"></div>
+    <div class="mobile-order-sheet" id="mobileOrderSheet" style="display:none;">
+        <div class="sheet-header">
+            <div class="sheet-title">Sipariş Özeti</div>
+            <button class="sheet-close" type="button" onclick="closeOrderSheet()">Kapat</button>
+        </div>
+        <div id="mobileOrderSheetList"></div>
+        <div class="sheet-total" id="mobileOrderSheetTotal">Toplam: 0 TL</div>
     </div>
 
     <script src="{{ url_for('static', filename='config.js') }}"></script>
@@ -514,9 +641,12 @@
     <script>
         let siparis = [];
         let toplam = 0;
-        const currentUserName = "{{ user }}";
+        let editOrderId = null;
+        let editOriginalItems = null;
+        let editTableValue = null;
+        const currentUserName = {{ user|tojson|safe }};
         let staffList = [];
-        const freeHotItems = {{ (menu.sicak_ucretsiz or [])|tojson|safe }};
+        const freeHotItems = [];
 
         function notify(message) {
             if (window.UI && UI.Toast && UI.Toast.show) {
@@ -538,8 +668,78 @@
                 bar.style.display = 'none';
                 document.body.classList.remove('has-mobile-bar');
             }
-            sum.textContent = `${totalPrice} ₺ • ${totalItems} ürün`;
+            sum.textContent = `${totalPrice} TL • ${totalItems} ürün`;
+            const chev = document.createElement('span');
+            chev.className = 'chevron';
+            chev.textContent = '^';
+            sum.appendChild(chev);
         }
+        function renderOrderSheet() {
+            const list = document.getElementById('mobileOrderSheetList');
+            const totalEl = document.getElementById('mobileOrderSheetTotal');
+            if (!list || !totalEl) return;
+            list.innerHTML = '';
+            let total = 0;
+            if (siparis.length === 0) {
+                list.innerHTML = '<div class="sheet-meta">\u015Eipari\u015F yok.</div>';
+                totalEl.textContent = 'Toplam: 0 TL';
+                return;
+            }
+            siparis.forEach((item, index) => {
+                const isFree = item.is_free_hot;
+                const isComp = item.is_complimentary;
+                const lineTotal = (!isFree && !isComp) ? (item.price * item.adet) : 0;
+                total += lineTotal;
+                const row = document.createElement('div');
+                row.className = 'sheet-item';
+                row.innerHTML = `
+                    <div>
+                        <div class="sheet-name">${item.name}</div>
+                        <div class="sheet-meta">${isComp ? '\u0130kram' : (isFree ? '\u00DCcretsiz S\u0131cak' : (item.price + ' TL x ' + item.adet))}</div>
+                    </div>
+                    <div class="sheet-controls">
+                        <button class="sheet-btn" onclick="azalt(${index})">-</button>
+                        <span>${item.adet}</span>
+                        <button class="sheet-btn" onclick="arttir(${index})">+</button>
+                        <button class="sheet-btn remove" onclick="sil(${index})">X</button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+            totalEl.textContent = `Toplam: ${total} TL`;
+        }
+        function openOrderSheet() {
+            if (window.innerWidth > 768) return;
+            renderOrderSheet();
+            document.getElementById('mobileOrderSheetOverlay')?.classList.add('open');
+            document.getElementById('mobileOrderSheet')?.classList.add('open');
+        }
+        function closeOrderSheet() {
+            document.getElementById('mobileOrderSheetOverlay')?.classList.remove('open');
+            document.getElementById('mobileOrderSheet')?.classList.remove('open');
+        }
+        const _sheetOverlay = document.getElementById('mobileOrderSheetOverlay');
+        const _sheet = document.getElementById('mobileOrderSheet');
+        const _bar = document.getElementById('mobileOrderBar');
+        if (_bar && _bar.parentElement !== document.body) {
+            document.body.appendChild(_bar);
+        }
+        if (_sheetOverlay && _sheet && _sheetOverlay.parentElement !== document.body) {
+            document.body.appendChild(_sheetOverlay);
+            document.body.appendChild(_sheet);
+        }
+        document.getElementById('mobileOrderSheetOverlay')?.addEventListener('click', closeOrderSheet);
+        document.getElementById('mobileOrderBar')?.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            openOrderSheet();
+        });
+        document.getElementById('mobSummary')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openOrderSheet();
+        });
         function scrollToSummary() {
             if (window.innerWidth > 768) return;
             updateMobileBar();
@@ -561,10 +761,56 @@
             } else {
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = 'Garson bulunamadÄ±';
+                option.textContent = 'Garson bulunamadı';
                 select.appendChild(option);
             }
             select.disabled = true;
+        }
+
+        function setEditModeBanner(text) {
+            const banner = document.getElementById('editModeBanner');
+            if (!banner) return;
+            if (text) {
+                banner.textContent = text;
+                banner.style.display = 'block';
+            } else {
+                banner.textContent = '';
+                banner.style.display = 'none';
+            }
+        }
+
+        function enterEditMode(order) {
+            editOrderId = order.id;
+            editOriginalItems = JSON.parse(JSON.stringify(order.items || []));
+            siparis = JSON.parse(JSON.stringify(order.items || []));
+            const masaSelect = document.getElementById('masa');
+            editTableValue = masaSelect ? masaSelect.value : null;
+            if (masaSelect) {
+                masaSelect.value = order.masa;
+                masaSelect.disabled = true;
+            }
+            const submitBtn = document.getElementById('submitOrderBtn');
+            const clearBtn = document.getElementById('clearOrderBtn');
+            if (submitBtn) submitBtn.textContent = 'Düzeltmeyi Gönder';
+            if (clearBtn) clearBtn.textContent = 'Vazgeç';
+            setEditModeBanner(`Düzeltme Modu: Masa ${order.masa} (#${order.id})`);
+            siparisGuncelle();
+            updateMobileBar();
+        }
+
+        function exitEditMode() {
+            editOrderId = null;
+            editOriginalItems = null;
+            const masaSelect = document.getElementById('masa');
+            if (masaSelect) {
+                masaSelect.disabled = false;
+                if (editTableValue) masaSelect.value = editTableValue;
+            }
+            const submitBtn = document.getElementById('submitOrderBtn');
+            const clearBtn = document.getElementById('clearOrderBtn');
+            if (submitBtn) submitBtn.textContent = 'Sipariş Gönder';
+            if (clearBtn) clearBtn.textContent = 'Temizle';
+            setEditModeBanner('');
         }
 
         function loadStaff() {
@@ -613,7 +859,7 @@
         function addFreeHotManual() {
             const serpmeCount = getSerpmeCount();
             if (serpmeCount <= 0) {
-                notify('?nce Serpme Kahvalt? se?melisin.');
+                notify('\u00D6nce Serpme Kahvalt\u0131 se\u00E7melisin.');
                 return;
             }
             const input = document.getElementById('freeHotInput');
@@ -631,7 +877,7 @@
         function addFreeHotManualFrom(name) {
             const serpmeCount = getSerpmeCount();
             if (serpmeCount <= 0) {
-                notify('?nce Serpme Kahvalt? se?melisin.');
+                notify('\u00D6nce Serpme Kahvalt\u0131 se\u00E7melisin.');
                 return;
             }
             const existing = siparis.find(s => s.is_free_hot && s.name === name);
@@ -672,14 +918,32 @@
             freeItems.forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'free-addon-row';
-                row.innerHTML = `
-                    <div class="free-addon-name">${item.name}</div>
-                    <div class="free-addon-controls">
-                        <button onclick="removeFreeHotById('${item.id}')">-</button>
-                        <span class="qty">${item.adet || 0}</span>
-                        <button onclick="addFreeHotManualFrom('${String(item.name).replace(/'/g, "\'")}')">+</button>
-                    </div>
-                `;
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'free-addon-name';
+                nameEl.textContent = item.name;
+
+                const controls = document.createElement('div');
+                controls.className = 'free-addon-controls';
+
+                const btnMinus = document.createElement('button');
+                btnMinus.textContent = '-';
+                btnMinus.addEventListener('click', () => removeFreeHotById(item.id));
+
+                const qty = document.createElement('span');
+                qty.className = 'qty';
+                qty.textContent = item.adet || 0;
+
+                const btnPlus = document.createElement('button');
+                btnPlus.textContent = '+';
+                btnPlus.addEventListener('click', () => addFreeHotManualFrom(item.name));
+
+                controls.appendChild(btnMinus);
+                controls.appendChild(qty);
+                controls.appendChild(btnPlus);
+
+                row.appendChild(nameEl);
+                row.appendChild(controls);
                 listEl.appendChild(row);
             });
         }
@@ -699,7 +963,7 @@
                 div.innerHTML = `
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small>${item.is_complimentary ? 'Ikram' : (item.is_free_hot ? '&#220;cretsiz S&#305;cak' : (item.price + ' ₺ x ' + item.adet))}</small><br>
+                        <small>${item.is_complimentary ? '\u0130kram' : (item.is_free_hot ? '\u00DCcretsiz S\u0131cak' : (item.price + ' TL x ' + item.adet))}</small><br>
                         <input type=\"text\" class=\"item-note-input\" placeholder=\"Not\" value=\"${item.note || ''}\" oninput=\"notGuncelle(${index}, this.value)\">
                         ${item.is_free_hot ? '' : `
                         <label class=\"item-complimentary\">
@@ -712,7 +976,7 @@
                         <button class="quantity-btn" onclick="azalt(${index})">-</button>
                         <span>${item.adet}</span>
                         <button class="quantity-btn" onclick="arttir(${index})">+</button>
-                        <button class="quantity-btn" style="background: #dc3545; margin-left: 10px;" onclick="sil(${index})">×</button>
+                        <button class="quantity-btn" style="background: #dc3545; margin-left: 10px;" onclick="sil(${index})">X</button>
                     </div>
                 `;
                 listesi.appendChild(div);
@@ -758,13 +1022,18 @@
         function siparisTemizle() {
             siparis = [];
             toplam = 0;
+            if (editOrderId) {
+                exitEditMode();
+            }
             siparisGuncelle();
         }
 
         function siparisGonder() {
             if (siparis.length === 0) {
-                notify('Lutfen siparis ekleyin!');
-                return;
+                if (!(editOrderId && editOriginalItems && editOriginalItems.length > 0)) {
+                    notify('Lutfen siparis ekleyin!');
+                    return;
+                }
             }
             const staffId = document.getElementById('garson').value;
             if (!staffId) {
@@ -778,6 +1047,29 @@
                 items: siparis,
                 toplam: toplam
             };
+
+            if (editOrderId) {
+                fetch(`/api/siparis/${editOrderId}/revise`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ items: siparis })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        notify('Duzeltme mutfaga gonderildi!');
+                        siparisTemizle();
+                        aktifSiparisleriYukle();
+                    } else {
+                        notify('Hata: ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    notify('Hata: ' + err.message);
+                });
+                updateMobileBar();
+                return;
+            }
 
             const submit = (window.UI && UI.Api && UI.Api.createOrder)
                 ? UI.Api.createOrder(data)
@@ -809,19 +1101,25 @@
                     container.innerHTML = '';
                     
                     if (orders.length === 0) {
-                        container.innerHTML = '<p style="text-align: center; color: #666;">Aktif siparişiniz bulunmuyor.</p>';
+            container.innerHTML = '<p style="text-align: center; color: #666;">Aktif siparişiniz bulunmuyor.</p>';
                         return;
                     }
                     
                     orders.forEach(order => {
                         const div = document.createElement('div');
                         div.className = 'order-item';
-                        const items = order.items.map(item => `${item.name} x${item.adet}`).join(', ');
+                        const items = (order.items || []).map(item => `${item.name} x${item.adet}`).join(', ');
                         div.innerHTML = `
                             <strong>Masa ${order.masa}</strong> - ${order.zaman}<br>
                             <small>${items}</small><br>
-                            <strong>${order.toplam} ₺</strong>
+                            <strong>${order.toplam} TL</strong>
                         `;
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-secondary';
+                        btn.style.marginTop = '8px';
+                        btn.textContent = 'Düzelt';
+                        btn.addEventListener('click', () => enterEditMode(order));
+                        div.appendChild(btn);
                         container.appendChild(div);
                     });
                 });
@@ -836,3 +1134,13 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
